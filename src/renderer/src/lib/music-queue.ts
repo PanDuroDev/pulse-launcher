@@ -36,6 +36,56 @@ export function trackIndexById(tracks: MusicTrack[], trackId: string | null): nu
   return tracks.findIndex((track) => track.id === trackId)
 }
 
+/** The three buckets the unified search can filter by. */
+export type MusicSourceFilter = 'all' | 'library' | 'online' | 'youtube'
+
+/**
+ * Local files carry no provider, so the absence of one is the signal for
+ * "library". YouTube is a provider of its own because its rows need async
+ * extraction before they can play.
+ */
+export function trackSource(track: MusicTrack): Exclude<MusicSourceFilter, 'all'> {
+  if (track.provider === 'youtube') return 'youtube'
+  return track.provider ? 'online' : 'library'
+}
+
+export function countSources(
+  tracks: MusicTrack[],
+): Record<MusicSourceFilter, number> {
+  const counts: Record<MusicSourceFilter, number> = {
+    all: tracks.length,
+    library: 0,
+    online: 0,
+    youtube: 0,
+  }
+  for (const track of tracks) counts[trackSource(track)] += 1
+  return counts
+}
+
+export function filterBySource(
+  tracks: MusicTrack[],
+  source: MusicSourceFilter,
+): MusicTrack[] {
+  if (source === 'all') return tracks
+  return tracks.filter((track) => trackSource(track) === source)
+}
+
+/**
+ * Merges the per-source result lists into the unified list. YouTube leads
+ * because its rows carry the most complete metadata (API cover, real channel,
+ * exact duration) and it is the source users reach for when a song is not in
+ * their own files. Local hits follow (instant and offline), then the ranked
+ * online catalogs. The order is also the playback order, so it is defined in
+ * one tested place instead of inside the component.
+ */
+export function mergeSources(
+  youtube: MusicTrack[],
+  library: MusicTrack[],
+  online: MusicTrack[],
+): MusicTrack[] {
+  return [...youtube, ...library, ...online]
+}
+
 function randomIndex(length: number, current: number, random: () => number): number {
   if (length <= 1) return 0
   const value = Math.floor(random() * length)

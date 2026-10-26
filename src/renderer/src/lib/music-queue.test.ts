@@ -1,12 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import type { MusicTrack } from '@shared/types'
 import {
+  countSources,
+  filterBySource,
   filterTracks,
   formatDuration,
+  mergeSources,
   nextIndex,
   previousIndex,
   progressRatio,
   trackIndexById,
+  trackSource,
 } from './music-queue'
 
 function track(id: string, title: string, artist: string, album = ''): MusicTrack {
@@ -27,6 +31,74 @@ const library: MusicTrack[] = [
   track('2', 'Glass Horizon', 'Mira Vale', 'Slow Light'),
   track('3', 'Afterglow', 'The Lumen Set', 'Static Bloom'),
 ]
+
+describe('source filtering', () => {
+  const local = track('l1', 'Neon Drift', 'Pulse Sessions')
+  const online = {
+    ...track('o1', 'Glass Horizon', 'Mira Vale'),
+    provider: 'audius' as const,
+    publisher: 'Audius',
+    streamKind: 'full' as const,
+    license: 'CC BY',
+    sourceUrl: 'https://audius.co/x',
+  }
+  const youtube = {
+    ...track('youtube:abc12345678', 'Afterglow', 'The Lumen Set'),
+    provider: 'youtube' as const,
+    youtubeId: 'abc12345678',
+    publisher: 'The Lumen Set',
+    streamKind: 'full' as const,
+    license: null,
+    sourceUrl: 'https://www.youtube.com/watch?v=abc12345678',
+    videoTitle: 'The Lumen Set - Afterglow (Official Video)',
+    streamUrl: '',
+  }
+  const mixed = [local, online, youtube]
+
+  it('classifies local, online, and YouTube rows', () => {
+    expect(trackSource(local)).toBe('library')
+    expect(trackSource(online)).toBe('online')
+    expect(trackSource(youtube)).toBe('youtube')
+  })
+
+  it('counts every bucket including the total', () => {
+    expect(countSources(mixed)).toEqual({
+      all: 3,
+      library: 1,
+      online: 1,
+      youtube: 1,
+    })
+    expect(countSources([])).toEqual({ all: 0, library: 0, online: 0, youtube: 0 })
+  })
+
+  it('returns the whole list for the all filter and narrows otherwise', () => {
+    expect(filterBySource(mixed, 'all')).toHaveLength(3)
+    expect(filterBySource(mixed, 'library')).toEqual([local])
+    expect(filterBySource(mixed, 'online')).toEqual([online])
+    expect(filterBySource(mixed, 'youtube')).toEqual([youtube])
+    expect(filterBySource(mixed, 'youtube')[0]?.id).toBe('youtube:abc12345678')
+  })
+
+  it('merges sources with YouTube first, then local, then online', () => {
+    const merged = mergeSources([youtube], [local], [online])
+    expect(merged.map((entry) => entry.id)).toEqual([
+      'youtube:abc12345678',
+      'l1',
+      'o1',
+    ])
+    // The merged order must agree with the per-source counts and filters.
+    expect(countSources(merged)).toEqual({ all: 3, library: 1, online: 1, youtube: 1 })
+    expect(filterBySource(merged, 'youtube')).toEqual([youtube])
+  })
+
+  it('merges partial sources without reordering the rest', () => {
+    expect(mergeSources([], [local], [online]).map((entry) => entry.id)).toEqual(['l1', 'o1'])
+    expect(mergeSources([youtube], [], []).map((entry) => entry.id)).toEqual([
+      'youtube:abc12345678',
+    ])
+    expect(mergeSources([], [], [])).toEqual([])
+  })
+})
 
 describe('formatDuration', () => {
   it('formats minutes and seconds with a padded seconds field', () => {

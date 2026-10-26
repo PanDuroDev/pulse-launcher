@@ -18,11 +18,16 @@ export function toOverlayState(state: MusicEngineState): MusicOverlayState {
           artist: state.track.artist,
           album: state.track.album,
           artworkUrl: state.track.artworkUrl,
+          provider: state.track.provider,
+          publisher: state.track.publisher,
+          streamKind: state.track.streamKind,
+          license: state.track.license,
         }
       : null,
     positionMs: state.positionMs,
     durationMs: state.durationMs,
     volume: state.volume,
+    muted: state.muted,
     repeat: state.repeat,
     shuffle: state.shuffle,
   }
@@ -51,6 +56,9 @@ export function useMusicEngine(tracks: MusicTrack[], enabled: boolean): void {
       switch (command.type) {
         case 'toggle-play':
           musicEngine.toggle()
+          break
+        case 'toggle-mute':
+          musicEngine.toggleMute()
           break
         case 'next':
           musicEngine.next()

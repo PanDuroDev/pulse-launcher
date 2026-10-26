@@ -3,11 +3,13 @@ import type { MusicOverlaySettings, MusicOverlayState } from '@shared/types'
 import { log } from '../logger'
 
 /**
- * The card is 376×80 and sits 8 px inside the window so the CSS shadow is not
- * clipped by the transparent frame.
+ * The window is exactly the card size. Any transparent padding would let the
+ * desktop show through around the card and would also give a CSS shadow room
+ * to paint a dark halo straight onto whatever is behind the window, which
+ * reads as a dirty smudge on a desktop.
  */
-const OVERLAY_WIDTH = 392
-const OVERLAY_HEIGHT = 96
+const OVERLAY_WIDTH = 440
+const OVERLAY_HEIGHT = 132
 const OVERLAY_MARGIN = 24
 /** Electron silently drops always-on-top when a fullscreen app takes over. */
 const TOP_REASSERT_MS = 1_500
