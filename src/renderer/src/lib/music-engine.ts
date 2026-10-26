@@ -7,6 +7,7 @@ export interface MusicEngineState {
   positionMs: number
   durationMs: number
   volume: number
+  muted: boolean
   repeat: MusicRepeat
   shuffle: boolean
   error: string | null
@@ -55,9 +56,17 @@ function readPrefs(): StoredPrefs {
 class MusicEngine {
   private audio: HTMLAudioElement | null = null
   private library: MusicTrack[] = []
+  private queue: MusicTrack[] = []
+  /**
+   * Online results keep their own queue. A local scan or overlay update must
+   * never stop an online track just because its id is not in the local library.
+   */
+  private queueSource: 'library' | 'online' | 'youtube' = 'library'
   private listeners = new Set<(state: MusicEngineState) => void>()
   private state: MusicEngineState
   private prefs: StoredPrefs
+  /** Invalidates an in-flight YouTube extraction when the user picks another row. */
+  private playToken = 0
 
   constructor() {
     this.prefs = readPrefs()
@@ -67,6 +76,7 @@ class MusicEngine {
       positionMs: 0,
       durationMs: 0,
       volume: this.prefs.volume,
+      muted: false,
       repeat: this.prefs.repeat,
       shuffle: this.prefs.shuffle,
       error: null,
@@ -80,9 +90,11 @@ class MusicEngine {
 
   getState = (): MusicEngineState => this.state
 
-  /** Reconciles the queue with a scan. The current track keeps playing. */
+  /** Reconciles the local queue with a scan. The current track keeps playing. */
   setLibrary(tracks: MusicTrack[]): void {
     this.library = tracks
+    if (this.queueSource !== 'library') return
+    this.queue = tracks
     const current = this.state.track
     if (!current) return
     const fresh = tracks.find((track) => track.id === current.id)
@@ -96,14 +108,48 @@ class MusicEngine {
   }
 
   playTrack(track: MusicTrack): void {
+    this.queueSource = 'library'
+    this.queue = this.library
+    this.startTrack(track)
+  }
+
+  /** Plays a search result and keeps the merged online ranking as the queue. */
+  playOnlineQueue(tracks: MusicTrack[], track: MusicTrack): void {
+    this.queueSource = 'online'
+    this.queue = tracks
+    this.startTrack(track)
+  }
+
+  /** YouTube rows are unresolved until the first play extracts their MP3. */
+  playYouTubeQueue(tracks: MusicTrack[], track: MusicTrack): void {
+    this.queueSource = 'youtube'
+    this.queue = tracks
+    this.startTrack(track)
+  }
+
+  /**
+   * The unified search mixes local files, online streams, and unresolved
+   * YouTube rows in one queue, so next/previous can cross all three sources.
+   */
+  playMixedQueue(tracks: MusicTrack[], track: MusicTrack): void {
+    this.queueSource = track.youtubeId ? 'youtube' : 'online'
+    this.queue = tracks
     this.startTrack(track)
   }
 
   /** Plays the first track when nothing is selected, which is what Play means on an empty player. */
   toggle(): void {
     if (!this.state.track) {
-      const first = this.library[0]
-      if (first) this.startTrack(first)
+      const queue = this.activeQueue()
+      const first = queue[0]
+      if (first) {
+        if (!this.queue.includes(first)) this.queueSource = 'library'
+        this.startTrack(first)
+      }
+      return
+    }
+    if (!this.state.track.streamUrl) {
+      this.startTrack(this.state.track)
       return
     }
     if (this.state.status === 'playing') {
@@ -114,8 +160,16 @@ class MusicEngine {
   }
 
   async resume(): Promise<void> {
-    if (!this.audio || !this.state.track) {
+    if (!this.state.track) {
       this.toggle()
+      return
+    }
+    if (!this.state.track.streamUrl) {
+      this.startTrack(this.state.track)
+      return
+    }
+    if (!this.audio) {
+      this.startTrack(this.state.track)
       return
     }
     try {
@@ -133,8 +187,9 @@ class MusicEngine {
   }
 
   next(): void {
-    const index = trackIndexById(this.library, this.state.track?.id ?? null)
-    const target = nextIndex(this.library.length, index, {
+    const queue = this.activeQueue()
+    const index = trackIndexById(queue, this.state.track?.id ?? null)
+    const target = nextIndex(queue.length, index, {
       repeat: this.state.repeat,
       shuffle: this.state.shuffle,
     })
@@ -142,23 +197,24 @@ class MusicEngine {
       this.audio?.pause()
       return
     }
-    const track = this.library[target]
+    const track = queue[target]
     if (track) this.startTrack(track)
   }
 
   previous(): void {
-    const index = trackIndexById(this.library, this.state.track?.id ?? null)
+    const queue = this.activeQueue()
+    const index = trackIndexById(queue, this.state.track?.id ?? null)
     // A press after the first few seconds restarts the song, like every other player.
     if (this.audio && this.audio.currentTime > 3) {
       this.seek(0)
       return
     }
-    const target = previousIndex(this.library.length, index, {
+    const target = previousIndex(queue.length, index, {
       repeat: this.state.repeat,
       shuffle: this.state.shuffle,
     })
     if (target === null) return
-    const track = this.library[target]
+    const track = queue[target]
     if (track) this.startTrack(track)
   }
 
@@ -177,10 +233,17 @@ class MusicEngine {
 
   setVolume(volume: number): void {
     const value = clampVolume(volume)
+    const muted = value > 0 ? false : this.state.muted
     this.prefs = { ...this.prefs, volume: value }
     this.persist()
-    if (this.audio) this.audio.volume = value
-    this.patch({ volume: value })
+    if (this.audio) this.audio.volume = muted ? 0 : value
+    this.patch({ volume: value, muted })
+  }
+
+  toggleMute(): void {
+    const muted = !this.state.muted
+    if (this.audio) this.audio.volume = muted ? 0 : this.state.volume
+    this.patch({ muted })
   }
 
   setRepeat(repeat: MusicRepeat): void {
@@ -196,11 +259,71 @@ class MusicEngine {
   }
 
   stop(): void {
+    this.playToken += 1
     this.audio?.pause()
     this.patch({ track: null, status: 'idle', positionMs: 0, durationMs: 0, error: null })
   }
 
+  private activeQueue(): MusicTrack[] {
+    if (
+      (this.queueSource === 'online' || this.queueSource === 'youtube') &&
+      this.queue.length > 0
+    ) {
+      return this.queue
+    }
+    return this.library
+  }
+
   private startTrack(track: MusicTrack): void {
+    const token = ++this.playToken
+    if (track.youtubeId && !track.streamUrl) {
+      this.patch({
+        track,
+        status: 'loading',
+        positionMs: 0,
+        durationMs: track.durationMs,
+        error: null,
+      })
+      // Search rows intentionally carry no stream URL. The main process
+      // downloads and converts the MP3 once, then the resolved track joins the
+      // queue so next/previous do not extract it again.
+      void window.launcher.music.youtube
+        .resolve(track.youtubeId)
+        .then((result) => {
+          if (this.playToken !== token) return
+          if (!result.ok || !result.track) {
+            this.patch({
+              status: 'error',
+              error: result.error ?? 'The YouTube audio could not be prepared.',
+            })
+            return
+          }
+          const resolved = result.track
+          this.queue = this.queue.map((entry) =>
+            entry.id === resolved.id ? resolved : entry,
+          )
+          this.startResolvedTrack(resolved)
+        })
+        .catch((error: unknown) => {
+          if (this.playToken !== token) return
+          this.patch({
+            status: 'error',
+            error:
+              error instanceof Error
+                ? error.message
+                : 'The YouTube audio could not be prepared.',
+          })
+        })
+      return
+    }
+    this.startResolvedTrack(track)
+  }
+
+  private startResolvedTrack(track: MusicTrack): void {
+    if (!track.streamUrl) {
+      this.patch({ track, status: 'error', error: 'The audio file is not ready yet.' })
+      return
+    }
     const audio = this.ensureAudio()
     this.patch({
       track,
@@ -210,7 +333,7 @@ class MusicEngine {
       error: null,
     })
     audio.src = track.streamUrl
-    audio.volume = this.state.volume
+    audio.volume = this.state.muted ? 0 : this.state.volume
     audio.load()
     void this.resume()
   }
@@ -220,7 +343,7 @@ class MusicEngine {
 
     const audio = new Audio()
     audio.preload = 'metadata'
-    audio.volume = this.state.volume
+    audio.volume = this.state.muted ? 0 : this.state.volume
 
     audio.addEventListener('loadedmetadata', () => {
       const duration = Number.isFinite(audio.duration)
@@ -240,7 +363,7 @@ class MusicEngine {
     audio.addEventListener('error', () => {
       this.patch({
         status: 'error',
-        error: audio.error?.message || 'This file could not be played.',
+        error: audio.error?.message || 'This track could not be played.',
       })
     })
 
