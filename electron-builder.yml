@@ -1,0 +1,46 @@
+﻿appId: com.pulse.launcher
+productName: Pulse Launcher
+copyright: Copyright (c) 2026 Pulse
+asar: true
+compression: maximum
+directories:
+  buildResources: build
+  output: release
+files:
+  - '!**/.vscode/*'
+  - '!src/*'
+  - '!scripts/*'
+  - '!resources/*'
+  - '!build/*'
+  - '!docs/*'
+  - '!release/*'
+  - '!electron.vite.config.{js,ts,mjs,cjs}'
+  - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
+  - '!{tsconfig.json,tsconfig.node.json,tsconfig.app.json}'
+  - '!{README.md,PLAN.md,CHANGELOG.md}'
+  - '!**/*.map'
+extraResources:
+  - from: resources
+    to: resources
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: build/icon.ico
+  executableName: PulseLauncher
+  requestedExecutionLevel: asInvoker
+  artifactName: Pulse-Launcher-${version}-${arch}.${ext}
+nsis:
+  oneClick: false
+  perMachine: false
+  allowElevation: true
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: always
+  createStartMenuShortcut: true
+  shortcutName: Pulse Launcher
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
+  installerHeaderIcon: build/icon.ico
+  deleteAppDataOnUninstall: false
+
