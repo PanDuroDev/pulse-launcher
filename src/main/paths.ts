@@ -18,6 +18,11 @@ export interface AppPaths {
   musicArtwork: string
   musicLibrary: string
   musicConfig: string
+  /** Extracted YouTube MP3 files and their metadata index. */
+  musicYouTube: string
+  musicYouTubeConfig: string
+  /** Auto-downloaded yt-dlp and optional tools, kept out of the app bundle. */
+  musicBin: string
 }
 
 export function getAppPaths(): AppPaths {
@@ -34,6 +39,9 @@ export function getAppPaths(): AppPaths {
     musicArtwork: path.join(userData, 'music', 'artwork'),
     musicLibrary: path.join(userData, 'music', 'library.json'),
     musicConfig: path.join(userData, 'music', 'config.json'),
+    musicYouTube: path.join(userData, 'music', 'youtube'),
+    musicYouTubeConfig: path.join(userData, 'music', 'youtube.json'),
+    musicBin: path.join(userData, 'music', 'bin'),
   }
 }
 

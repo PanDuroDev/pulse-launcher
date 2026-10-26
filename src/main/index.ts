@@ -26,9 +26,13 @@ import type {
   LaunchResult,
   MusicCommand,
   MusicLibrarySnapshot,
+  MusicOnlineSearchResult,
   MusicOverlayAction,
   MusicOverlaySettings,
   MusicOverlayState,
+  MusicYouTubeResolveResult,
+  MusicYouTubeSearchResult,
+  MusicYouTubeStatus,
   PickerRoots,
   ScanProgress,
   ScanResult,
@@ -66,6 +70,9 @@ import type { GameRunMatch } from './game-processes'
 import { MusicLibraryService } from './music/library'
 import { MusicOverlay } from './music/overlay'
 import { MusicConfigStore } from './music/config'
+import { MusicOnlineService } from './music/online/service'
+import { MusicYouTubeService } from './music/youtube/service'
+import { youtubeWatchUrl } from './music/youtube/parse'
 import {
   applyWindowMode,
   resolveWindowMode,
@@ -87,6 +94,8 @@ let displaySleepBlocker: number | null = null
 let store: AppStore
 let catalog: CatalogService
 let music: MusicLibraryService
+let musicOnline: MusicOnlineService
+let musicYouTube: MusicYouTubeService
 let musicConfig: MusicConfigStore
 let musicOverlay: MusicOverlay | null = null
 let overlayState: MusicOverlayState | null = null
@@ -170,6 +179,46 @@ const MusicOverlayUpdateSchema = z
   })
   .strict()
 
+const OnlineSearchSchema = z
+  .object({
+    query: z.string().trim().min(2).max(120),
+  })
+  .strict()
+
+/**
+ * Renderer crash reports are untrusted input: the renderer could be compromised,
+ * so the strings are capped and the surface is a closed set before they reach
+ * the log file.
+ */
+const RendererErrorSchema = z
+  .object({
+    surface: z.enum(['launcher', 'overlay']),
+    message: z.string().max(2_000),
+    stack: z.string().max(20_000),
+    componentStack: z.string().max(20_000),
+  })
+  .strict()
+
+const YouTubeSearchSchema = z
+  .object({
+    query: z.string().trim().min(2).max(120),
+  })
+  .strict()
+
+const YouTubeVideoSchema = z
+  .object({
+    videoId: z.string().regex(/^[A-Za-z0-9_-]{11}$/),
+  })
+  .strict()
+
+const YouTubeUpdateSchema = z
+  .object({
+    apiKey: z.string().max(200).optional(),
+    ytDlpPath: z.string().max(1024).optional(),
+    ffmpegPath: z.string().max(1024).optional(),
+  })
+  .strict()
+
 const MusicOverlayStateSchema = z
   .object({
     status: z.enum(['idle', 'loading', 'playing', 'paused', 'error']),
@@ -180,12 +229,19 @@ const MusicOverlayStateSchema = z
         artist: z.string().max(400),
         album: z.string().max(400),
         artworkUrl: z.string().max(2048).nullable(),
+        provider: z
+          .enum(['itunes', 'deezer', 'audius', 'openverse', 'archive', 'youtube'])
+          .optional(),
+        publisher: z.string().max(200).optional(),
+        streamKind: z.enum(['preview', 'full']).optional(),
+        license: z.string().max(200).nullable().optional(),
       })
       .strict()
       .nullable(),
     positionMs: z.number().min(0).max(86_400_000),
     durationMs: z.number().min(0).max(86_400_000),
     volume: z.number().min(0).max(1),
+    muted: z.boolean(),
     repeat: z.enum(['off', 'all', 'one']),
     shuffle: z.boolean(),
   })
@@ -768,9 +824,75 @@ function registerIpc(): void {
     if (errorMessage) log.warn('[logs] could not open logs', errorMessage)
   })
 
+  /**
+   * The renderer has no file access, so a crash there would vanish once the
+   * ErrorBoundary replaces the page. Forwarding it here is the only way the
+   * failure survives in `logs/main.log` for a later diagnosis.
+   */
+  ipcMain.on(IPC.appRendererError, (event, payload: unknown) => {
+    // Both the launcher and the overlay can crash, and both load `app://`.
+    assertMusicSender(event)
+    const parsed = RendererErrorSchema.safeParse(payload)
+    if (!parsed.success) return
+    const { surface, message, stack, componentStack } = parsed.data
+    const senderUrl = event.senderFrame?.url ?? 'unknown'
+    log.error(
+      `[renderer] ${surface} crashed: ${message}\n` +
+        `url: ${senderUrl}\n` +
+        `stack: ${stack || '(none)'}\n` +
+        `componentStack: ${componentStack || '(none)'}`,
+    )
+  })
+
   ipcMain.handle(IPC.musicList, (event): MusicLibrarySnapshot => {
     assertMusicSender(event)
     return music.snapshot
+  })
+
+  ipcMain.handle(
+    IPC.musicOnlineSearch,
+    async (event, payload: unknown): Promise<MusicOnlineSearchResult> => {
+      assertMusicSender(event)
+      const { query } = OnlineSearchSchema.parse(payload)
+      return musicOnline.search(query)
+    },
+  )
+
+  ipcMain.handle(
+    IPC.musicYouTubeSearch,
+    async (event, payload: unknown): Promise<MusicYouTubeSearchResult> => {
+      assertMusicSender(event)
+      const { query } = YouTubeSearchSchema.parse(payload)
+      return musicYouTube.search(query)
+    },
+  )
+
+  ipcMain.handle(
+    IPC.musicYouTubeResolve,
+    async (event, payload: unknown): Promise<MusicYouTubeResolveResult> => {
+      assertMusicSender(event)
+      const { videoId } = YouTubeVideoSchema.parse(payload)
+      return musicYouTube.resolve(videoId)
+    },
+  )
+
+  ipcMain.handle(IPC.musicYouTubeStatus, async (event): Promise<MusicYouTubeStatus> => {
+    assertMusicSender(event)
+    return musicYouTube.status()
+  })
+
+  ipcMain.handle(
+    IPC.musicYouTubeUpdate,
+    async (event, payload: unknown): Promise<MusicYouTubeStatus> => {
+      assertMusicSender(event)
+      return musicYouTube.updateSettings(YouTubeUpdateSchema.parse(payload))
+    },
+  )
+
+  ipcMain.handle(IPC.musicYouTubeOpen, async (event, payload: unknown): Promise<void> => {
+    assertMusicSender(event)
+    const { videoId } = YouTubeVideoSchema.parse(payload)
+    await shell.openExternal(youtubeWatchUrl(videoId))
   })
 
   ipcMain.handle(IPC.musicRescan, async (event): Promise<MusicLibrarySnapshot> => {
@@ -903,12 +1025,24 @@ async function bootstrap(): Promise<void> {
     demo: demoMode,
   })
   await music.load()
+  musicOnline = new MusicOnlineService()
+  musicYouTube = new MusicYouTubeService({
+    rootDir: paths.musicYouTube,
+    artworkDir: paths.musicArtwork,
+    configFile: paths.musicYouTubeConfig,
+    binDir: paths.musicBin,
+  })
+  await musicYouTube.load()
 
   installAppProtocol({
     rendererRoot: resolveRendererRoot(),
     artworkRoot: paths.artwork,
     musicArtworkRoot: paths.musicArtwork,
-    resolveMedia: (trackId) => music.getTrackFile(trackId),
+    resolveMedia: (trackId) =>
+      music.getTrackFile(trackId) ?? musicYouTube.getTrackFile(trackId),
+    resolveOnlineMedia: (token) => musicOnline.resolveMedia(token),
+    resolveOnlineArt: (token) => musicOnline.resolveArtwork(token),
+    resolveYouTubeArt: (videoId) => musicYouTube.getArtworkUrls(videoId),
   })
   session.defaultSession.setPermissionRequestHandler(
     (_webContents, _permission, callback) => callback(false),
@@ -959,12 +1093,14 @@ async function bootstrap(): Promise<void> {
 }
 
 async function ensurePaths(): Promise<void> {
-  const { artwork, cache, music, musicArtwork } = getAppPaths()
+  const { artwork, cache, music, musicArtwork, musicYouTube, musicBin } = getAppPaths()
   const { mkdir } = await import('node:fs/promises')
   await mkdir(artwork, { recursive: true })
   await mkdir(cache, { recursive: true })
   await mkdir(music, { recursive: true })
   await mkdir(musicArtwork, { recursive: true })
+  await mkdir(musicYouTube, { recursive: true })
+  await mkdir(musicBin, { recursive: true })
 }
 
 if (!app.requestSingleInstanceLock()) {
