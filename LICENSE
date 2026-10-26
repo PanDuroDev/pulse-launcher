@@ -1,21 +1,88 @@
-MIT License
+Pulse Launcher Source-Available & Non-Commercial License
+Version 1.0 (2026)
 
-Copyright (c) 2026 PanDuroDev
+Copyright (c) 2026 PanDuroDev. All Rights Reserved.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+1. Preamble
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+The source code of Pulse Launcher (the "Software") is made available for
+transparency, security review, and community contributions. It is
+source-available, not public domain and not OSI open source. All rights not
+expressly granted by this License are reserved. Any use, copying, modification,
+or distribution outside this License is prohibited.
+
+2. Personal and Evaluation Use
+
+Subject to this License, you are granted a personal, non-exclusive,
+non-transferable, royalty-free license to:
+
+(a) inspect, study, and review the Software's source code;
+(b) compile, build, and run the Software locally, solely for personal, private,
+    non-commercial, non-monetized purposes;
+(c) modify the Software locally for testing, debugging, or personal
+    experimentation.
+
+No other rights are granted.
+
+3. Upstream Contributions
+
+You may create a fork, branch, or local modification solely to prepare and
+submit a contribution to the official Pulse Launcher repository at
+https://github.com/PanDuroDev/pulse-launcher. By submitting a contribution, you
+grant PanDuroDev a perpetual, irrevocable, worldwide, royalty-free, assignable,
+and sublicensable license to use, reproduce, modify, adapt, publish, distribute,
+and relicense your contribution. You represent that you have the right to grant
+this license.
+
+4. Strict Prohibitions
+
+Unless you have prior written permission from PanDuroDev, you may not:
+
+(a) Commercial exploitation. Sell, license, sublicense, rent, host, or otherwise
+    monetize the Software or any derivative; provide it as a paid service,
+    subscription, ad-supported product, or enterprise offering.
+(b) Public distribution. Publish, distribute, host, deploy, or make available the
+    Software or any derivative in source or binary form for use by third
+    parties, including public forks or packages intended to compete with or
+    substitute for Pulse Launcher.
+(c) Extraction and reuse. Copy, extract, harvest, or reuse the Software's core
+    algorithms, security or cryptographic subsystems, audio processing, lyrics
+    synchronization, visual shaders, or distinctive user-interface designs in a
+    separate third-party application, library, or service.
+(d) Branding. Use the Pulse Launcher name, logo, or other trademarks except for
+    truthful, descriptive attribution or as required by applicable law. No
+    trademark or branding rights are granted.
+
+5. Third-Party Components
+
+Third-party dependencies and vendored components remain under their own
+licenses. This License applies only to original Pulse Launcher code and does not
+alter the terms of those components. See the license files in the relevant
+directories.
+
+6. Termination
+
+This License terminates automatically if you violate any of its terms. On
+termination, you must stop using the Software and destroy all copies, binaries,
+and modified versions in your possession or control.
+
+7. Disclaimer of Warranty
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE, TITLE, AND NON-INFRINGEMENT. YOU BEAR THE ENTIRE RISK
+OF USING THE SOFTWARE.
+
+8. Limitation of Liability
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY CLAIM,
+DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR
+OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE
+OR OTHER DEALINGS IN THE SOFTWARE.
+
+9. General
+
+This License is the entire agreement concerning the Software. If any provision
+is held unenforceable, the remaining provisions remain in effect. A failure to
+enforce a provision is not a waiver. The copyright holder may grant exceptions
+or alternative licenses in writing.

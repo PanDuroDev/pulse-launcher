@@ -252,3 +252,7 @@ The installer is unsigned. Windows SmartScreen may warn until a code-signing cer
 ## Roadmap
 
 Planned work and known bugs are tracked in [GitHub Issues](https://github.com/PanDuroDev/pulse-launcher/issues).
+
+## License
+
+Pulse Launcher is source-available under the [Pulse Launcher Source-Available & Non-Commercial License](LICENSE). It is not OSI open source: personal, non-commercial use and upstream contributions are permitted; commercial use, public redistribution of competing forks, extraction of the project's core algorithms or UI, and use of its branding are not.

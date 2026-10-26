@@ -5,7 +5,7 @@
   "private": true,
   "description": "A PS5-style fullscreen game launcher for Windows",
   "author": "Pulse",
-  "license": "MIT",
+  "license": "SEE LICENSE IN LICENSE",
   "main": "./out/main/index.js",
   "engines": {
     "node": ">=22.12.0"
