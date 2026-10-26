@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { init } from '@noriginmedia/norigin-spatial-navigation-core'
 import './index.css'
 import App from './App'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import { MusicOverlay } from './components/launcher/MusicOverlay'
 
 /**
@@ -23,6 +24,15 @@ if (isOverlay) {
   })
 }
 
+/**
+ * The outermost boundary is the last line of defence: it catches a failure in
+ * the shell itself. Individual pages add their own boundary so one broken page
+ * does not take the whole launcher down with it.
+ */
 createRoot(document.getElementById('root')!).render(
-  <StrictMode>{isOverlay ? <MusicOverlay /> : <App />}</StrictMode>,
+  <StrictMode>
+    <ErrorBoundary surface={isOverlay ? 'overlay' : 'launcher'}>
+      {isOverlay ? <MusicOverlay /> : <App />}
+    </ErrorBoundary>
+  </StrictMode>,
 )

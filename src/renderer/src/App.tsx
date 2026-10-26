@@ -43,6 +43,7 @@ import { Hero } from '@/components/launcher/Hero'
 import { GameRow, SortControl } from '@/components/launcher/GameRow'
 import { SearchPage } from '@/components/launcher/SearchPage'
 import { MusicPage } from '@/components/launcher/MusicPage'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { HintBar } from '@/components/launcher/HintBar'
 import { PowerMenu } from '@/components/launcher/PowerMenu'
 import { SettingsPage } from '@/components/launcher/SettingsPage'
@@ -1313,59 +1314,84 @@ export default function App() {
           }`}
         >
           {searchOpen ? (
-            <SearchPage
-              games={games}
-              query={searchQuery}
-              onQueryChange={setSearchQuery}
-              onBack={closeSearch}
-              onSelect={handleSelect}
-              onLaunch={(game) => void handleLaunch(game)}
-            />
+            <ErrorBoundary
+              surface="launcher"
+              onBack={{ label: 'Back to library', onClick: closeSearch }}
+            >
+              <SearchPage
+                games={games}
+                query={searchQuery}
+                onQueryChange={setSearchQuery}
+                onBack={closeSearch}
+                onSelect={handleSelect}
+                onLaunch={(game) => void handleLaunch(game)}
+              />
+            </ErrorBoundary>
           ) : addOpen ? (
-            <AddGamePage
-              mode={addMode}
-              onBack={closeAddGame}
-              onAdded={addMode === 'game' ? handleGameAdded : undefined}
-              onPicked={
-                addMode === 'image'
-                  ? handlePickedArtwork
-                  : addMode === 'path'
-                    ? handlePickedPath
-                    : undefined
-              }
-            />
+            <ErrorBoundary
+              surface="launcher"
+              onBack={{ label: 'Back to library', onClick: closeAddGame }}
+            >
+              <AddGamePage
+                mode={addMode}
+                onBack={closeAddGame}
+                onAdded={addMode === 'game' ? handleGameAdded : undefined}
+                onPicked={
+                  addMode === 'image'
+                    ? handlePickedArtwork
+                    : addMode === 'path'
+                      ? handlePickedPath
+                      : undefined
+                }
+              />
+            </ErrorBoundary>
           ) : detailsGame ? (
-            <GameDetailsPage
-              key={detailsGame.id}
-              game={detailsGame}
-              pending={Boolean(
-                pendingLaunch && pendingLaunch.id === detailsGame.id,
-              )}
-              action={selectedAction}
-              draft={
-                manualDraft && manualDraft.gameId === detailsGame.id
-                  ? manualDraft
-                  : null
-              }
-              saving={detailsSaving}
-              removing={detailsRemoving}
-              onDraftChange={(patch) =>
-                setManualDraft((current) =>
-                  current ? { ...current, ...patch } : current,
-                )
-              }
-              onSave={() => void handleSaveDetails()}
-              onRemove={() => void handleRemoveDetails()}
-              onBack={closeDetails}
-              onLaunch={(game) => void handleLaunch(game)}
-              onToggleFavorite={(game) => void handleToggleFavorite(game)}
-              onPickExecutable={() => openDetailsPicker('path')}
-              onPickArtwork={() => openDetailsPicker('image')}
-            />
+            <ErrorBoundary
+              surface="launcher"
+              onBack={{ label: 'Back to library', onClick: closeDetails }}
+            >
+              <GameDetailsPage
+                key={detailsGame.id}
+                game={detailsGame}
+                pending={Boolean(
+                  pendingLaunch && pendingLaunch.id === detailsGame.id,
+                )}
+                action={selectedAction}
+                draft={
+                  manualDraft && manualDraft.gameId === detailsGame.id
+                    ? manualDraft
+                    : null
+                }
+                saving={detailsSaving}
+                removing={detailsRemoving}
+                onDraftChange={(patch) =>
+                  setManualDraft((current) =>
+                    current ? { ...current, ...patch } : current,
+                  )
+                }
+                onSave={() => void handleSaveDetails()}
+                onRemove={() => void handleRemoveDetails()}
+                onBack={closeDetails}
+                onLaunch={(game) => void handleLaunch(game)}
+                onToggleFavorite={(game) => void handleToggleFavorite(game)}
+                onPickExecutable={() => openDetailsPicker('path')}
+                onPickArtwork={() => openDetailsPicker('image')}
+              />
+            </ErrorBoundary>
           ) : musicOpen ? (
-            <MusicPage onBack={closeMusic} />
+            <ErrorBoundary
+              surface="launcher"
+              onBack={{ label: 'Back to library', onClick: closeMusic }}
+            >
+              <MusicPage onBack={closeMusic} />
+            </ErrorBoundary>
           ) : settingsOpen ? (
-            <SettingsPage onBack={closeSettings} onAddGame={handleAddFromSettings} />
+            <ErrorBoundary
+              surface="launcher"
+              onBack={{ label: 'Back to library', onClick: closeSettings }}
+            >
+              <SettingsPage onBack={closeSettings} onAddGame={handleAddFromSettings} />
+            </ErrorBoundary>
           ) : showLoading ? (
             <LibraryLoading scanning={refreshing || status === 'loading'} />
           ) : showEmpty ? (
