@@ -3,6 +3,18 @@ productName: Pulse Launcher
 copyright: Copyright (c) 2026 Pulse
 asar: true
 compression: maximum
+# Fuses are switches compiled into the Electron binary. They are flipped by
+# electron-builder itself, right before signing, so the packaged exe cannot be
+# used as a generic Node interpreter, cannot be launched with NODE_OPTIONS, and
+# cannot be attached to with --inspect. ASAR integrity is validated at boot, so a
+# swapped app.asar refuses to run.
+electronFuses:
+  runAsNode: false
+  enableNodeOptionsEnvironmentVariable: false
+  enableNodeCliInspectArguments: false
+  enableCookieEncryption: true
+  onlyLoadAppFromAsar: true
+  enableEmbeddedAsarIntegrityValidation: true
 directories:
   buildResources: build
   output: release
