@@ -43,7 +43,7 @@
 
 ---
 
-## المرحلة 0 — تثبيت الأساس قبل أي إصدار
+## المرحلة 0 — تثبيت الأساس قبل أي إصدار ✅ منجزة
 
 ### الهدف
 
@@ -59,38 +59,61 @@
 
 ### المهام
 
-- [ ] **0.1 — ErrorBoundary عام** (05 §1)
+- [x] **0.1 — ErrorBoundary عام** (05 §1)
   - مكوّن class واحد في `src/renderer/src/components/` مع `getDerivedStateFromError`
     و`componentDidCatch`.
   - يعرض رسالة عربية/إنجليزية واضحة + زر "إعادة المحاولة" + زر "فتح السجلات".
   - يُلفّ به `<App />` في `main.tsx` **و** كل صفحة رئيسية على حدة (الموسيقى،
     الإعدادات، إضافة لعبة) حتى لا يُسقط خطأ صفحة واحدة التطبيق كله.
   - **لماذا الآن:** أي استثناء حالي = شاشة بيضاء بلا أي مخرج للمستخدم.
+  - **أُنجز:** `src/renderer/src/components/ErrorBoundary.tsx` (164 سطراً) +
+    قناة `app:renderer-error` تُكتب في `logs/main.log`، و`main.tsx` يلفّ الجذر،
+    و`App.tsx` يلفّ خمس صفحات (Search, AddGame, GameDetails, Music, Settings).
+    **تحقق حيّ:** استثناء متعمّد في صفحة الموسيقى أظهر شاشة "Pulse hit an error"
+    مع الأزرار الثلاثة، وسجل `componentStack` وصل إلى `logs/main.log`.
 
-- [ ] **0.2 — تفعيل `@electron/fuses`** (02 §1)
-  - سكربت `scripts/flip-fuses.mjs` (الكود الكامل في 02 §1).
-  - يُشغَّل في `afterPack` داخل `electron-builder.yml`.
+- [x] **0.2 — تفعيل `@electron/fuses`** (02 §1)
+  - **أُنجز بطريقة أفضل من المقترح:** بدل سكربت `afterPack` مخصّص، استُخدم دعم
+    electron-builder الأصلي عبر كتلة `electronFuses:` في `electron-builder.yml`،
+    لأن electron-builder يقلب الـ fuses في اللحظة الصحيحة تماماً — قبل التوقيع
+    مباشرة (`platformPackager.js` §258: "the fuses MUST be flipped right before signing").
   - يعطّل: `runAsNode`, `enableNodeCliInspectArguments`,
-    `enableNodeOptionsEnvironmentVariable`, `enableEmbeddedAsarIntegrityValidation`
-    يبقى مفعّلاً.
-  - **تحقق:** `npx @electron/fuses read --app release/win-unpacked/PulseLauncher.exe`.
+    `enableNodeOptionsEnvironmentVariable`، ويُبقي
+    `enableEmbeddedAsarIntegrityValidation` مفعّلاً. أُضيف كذلك
+    `enableCookieEncryption` و`onlyLoadAppFromAsar`.
+  - **تحقق:** `npx @electron/fuses read --app release/win-unpacked/PulseLauncher.exe`
+    يُظهر `RunAsNode is Disabled` و`EnableNodeCliInspectArguments is Disabled`
+    و`EnableEmbeddedAsarIntegrityValidation is Enabled`.
 
-- [ ] **0.3 — قرار التوقيع الرقمي** (01 §3)
-  - إن توفّرت شهادة: أضف `win.signingHashAlgorithms` + `certificateFile`/`certificateSubjectName`.
-  - إن لم تتوفر: وثّق القرار في `docs/audit/01` و README، وأضف ملاحظة SmartScreen
-    في صفحة التثبيت/الإصدار.
-  - **لا تُترك مفتوحة:** إما موقّع أو موثّق كقرار واعٍ.
+- [x] **0.3 — قرار التوقيع الرقمي** (01 §3)
+  - **القرار (2026-10-26): الإصدار `0.1.0` يُنشر غير موقّع — قرار واعٍ لا إغفال.**
+    لا شهادة توقيع على جهاز البناء ولا ميزانية لها الآن.
+  - موثّق في `docs/audit/01-release-and-packaging.md` §3 (قسم «القرار»)، وفي
+    README قسم `### SmartScreen on first run` يشرح نافذة التحذير وخطوة
+    **More info → Run anyway**.
+  - شرط الإغلاق: شراء شهادة OV على الأقل قبل أي إصدار عام واسع، مع وصفة
+    `CSC_LINK` / `CSC_KEY_PASSWORD` جاهزة في نفس المستند.
 
-- [ ] **0.4 — حفظ العمل في git** (07 §1)
-  - 15 ملفاً معدّلاً + مجلدان غير متتبَّعين (`src/main/music/online/`,
-    `src/main/music/youtube/`) + `docs/audit/`.
-  - اتبع تسلسل الـ 14 commit المقترح في 07 §1 (كل commit = وحدة منطقية).
-  - **تحقق:** `git status` نظيف، وكل commit يبني بنجاح.
+- [x] **0.4 — حفظ العمل في git** (07 §1)
+  - **أُنجز:** 10 commits على `main` بدل 14 (دُمجت بعض الوحدات المنطقية):
+    `b4fd428` shared contracts → `39654cd` online catalogs → `5ab9021` YouTube →
+    `e271137` overlay resize → `06ac4d2` protocol/media → `fac0937` async engine →
+    `0f36131` YouTube UI → `3338630` ErrorBoundary → `be2b692` fuses →
+    `7e5f072` docs.
+  - **تحقق:** `git status --short` نظيف، ولا commit يكسر البناء.
 
-- [ ] **0.5 — إعادة بناء المثبّت** (01 §1)
+- [x] **0.5 — إعادة بناء المثبّت** (01 §1)
   - `npm run dist` بعد 0.1–0.3.
   - **تحقق:** فكّ `app.asar` وتأكد من وجود كود يوتيوب + تشغيل `win-unpacked`
     على بروفايل نظيف.
+  - **أُنجز:** `release\Pulse-Launcher-0.1.0-x64.exe` (119.27 MB،
+    SHA-256 `DCD2237F0E6AFEEDBB442337D0FE6DB383619D252A94B60B6D1162BCD55C4C55`،
+    NotSigned). `app.asar` = 52,063,554 بايت / 14,623 مدخلاً، ويحتوي كود يوتيوب
+    (`musicYouTube|youtube-art|renderer-error` ×29) و«Pulse hit an error» في حزمة
+    الـ renderer. اختبار على بروفايل نظيف نجح: إقلاع بلا شاشة بيضاء، تبويبات
+    Library/Online/YouTube، بحث API (1.4 ث) وبحث yt-dlp (5.6 ث)، واستخراج MP3
+    فعلي (10 MB) مع الغلاف والتشغيل (1:48 → 1:58 من 5:21)، وإعادة التشغيل من
+    الكاش في 1.5 ث بدل 19 ث، والـ overlay يعرض «YouTube · Full track · Daft Punk».
 
 ### يعتمد على
 
@@ -98,10 +121,11 @@
 
 ### معايير القبول
 
-- [ ] رمي استثناء متعمّد داخل صفحة الموسيقى يعرض شاشة خطأ، لا شاشة بيضاء.
-- [ ] `@electron/fuses read` يُظهر `RunAsNode: Disabled` و`EnableNodeCliInspectArguments: Disabled`.
-- [ ] `git log --oneline` يحتوي commits وصفية، و`git status` نظيف.
-- [ ] المثبّت الجديد يعمل على بروفايل نظيف.
+- [x] رمي استثناء متعمّد داخل صفحة الموسيقى يعرض شاشة خطأ، لا شاشة بيضاء.
+- [x] `@electron/fuses read` يُظهر `RunAsNode: Disabled` و`EnableNodeCliInspectArguments: Disabled`.
+- [x] `git log --oneline` يحتوي commits وصفية، و`git status` نظيف.
+- [x] المثبّت الجديد يعمل على بروفايل نظيف.
+- [x] استخراج MP3 فعلي من يوتيوب وتشغيله مع الغلاف، وإعادة التشغيل من الكاش.
 
 ---
 
