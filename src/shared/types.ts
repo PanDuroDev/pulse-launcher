@@ -319,6 +319,16 @@ export interface MusicTrack {
   streamUrl: string
   /** Display name of the folder the file was found in, used to group the list. */
   folder: string
+  /** Online catalog metadata; local files leave these unset. */
+  provider?: MusicProvider
+  publisher?: string
+  streamKind?: MusicOnlineStreamKind
+  license?: string | null
+  sourceUrl?: string | null
+  /** Set for YouTube results; `streamUrl` is empty until the MP3 is prepared. */
+  youtubeId?: string
+  /** Original YouTube upload title, when it differs from the parsed song title. */
+  videoTitle?: string
 }
 
 export interface MusicFolder {
@@ -361,6 +371,11 @@ export interface MusicOverlayTrack {
   artist: string
   album: string
   artworkUrl: string | null
+  /** Present when the track came from an online catalog or YouTube. */
+  provider?: MusicProvider
+  publisher?: string
+  streamKind?: MusicOnlineStreamKind
+  license?: string | null
 }
 
 export interface MusicOverlayState {
@@ -369,6 +384,7 @@ export interface MusicOverlayState {
   positionMs: number
   durationMs: number
   volume: number
+  muted: boolean
   repeat: MusicRepeat
   shuffle: boolean
 }
@@ -376,6 +392,7 @@ export interface MusicOverlayState {
 /** Sent by the overlay window; `close` and `focus` are handled in main. */
 export type MusicOverlayAction =
   | { type: 'toggle-play' }
+  | { type: 'toggle-mute' }
   | { type: 'next' }
   | { type: 'previous' }
   | { type: 'seek'; positionMs: number }
@@ -385,10 +402,113 @@ export type MusicOverlayAction =
 /** Relayed to the launcher window, where the audio element lives. */
 export type MusicCommand =
   | { type: 'toggle-play' }
+  | { type: 'toggle-mute' }
   | { type: 'next' }
   | { type: 'previous' }
   | { type: 'seek'; positionMs: number }
   | { type: 'focus' }
+
+export type MusicOnlineProvider = 'itunes' | 'deezer' | 'audius' | 'openverse' | 'archive'
+export type MusicProvider = MusicOnlineProvider | 'youtube'
+export type MusicOnlineStreamKind = 'preview' | 'full'
+
+export interface MusicOnlineTrack extends MusicTrack {
+  provider: MusicOnlineProvider
+  publisher: string
+  streamKind: MusicOnlineStreamKind
+  license: string | null
+  sourceUrl: string | null
+}
+
+export interface MusicOnlineProviderStatus {
+  provider: MusicOnlineProvider
+  ok: boolean
+  count: number
+  error: string | null
+}
+
+export interface MusicOnlineSearchResult {
+  query: string
+  tracks: MusicOnlineTrack[]
+  providers: MusicOnlineProviderStatus[]
+}
+
+/** A YouTube search result before its audio has been extracted. */
+export interface MusicYouTubeTrack extends MusicTrack {
+  provider: 'youtube'
+  youtubeId: string
+  videoTitle: string
+  publisher: string
+  streamKind: 'full'
+  license: null
+  sourceUrl: string
+}
+
+export type MusicYouTubeSearchSource = 'api' | 'yt-dlp'
+
+export interface MusicYouTubeSearchResult {
+  query: string
+  tracks: MusicYouTubeTrack[]
+  source: MusicYouTubeSearchSource
+  warning: string | null
+}
+
+export interface MusicYouTubeSettings {
+  /** Empty means search falls back to yt-dlp; the key is never sent to the renderer logs. */
+  apiKey: string
+  ytDlpPath: string
+  ffmpegPath: string
+}
+
+export type MusicYouTubeToolSource =
+  | 'configured'
+  | 'bundled'
+  | 'path'
+  | 'downloaded'
+  | 'missing'
+
+export interface MusicYouTubeToolInfo {
+  ok: boolean
+  path: string | null
+  version: string | null
+  source: MusicYouTubeToolSource
+  error: string | null
+}
+
+export interface MusicYouTubeStatus {
+  settings: MusicYouTubeSettings
+  ytDlp: MusicYouTubeToolInfo
+  ffmpeg: MusicYouTubeToolInfo
+  cache: {
+    tracks: number
+    bytes: number
+  }
+}
+
+export interface MusicYouTubeUpdate {
+  apiKey?: string
+  ytDlpPath?: string
+  ffmpegPath?: string
+}
+
+export interface MusicYouTubeResolveResult {
+  ok: boolean
+  track?: MusicYouTubeTrack
+  error?: string
+}
+
+/**
+ * A renderer crash forwarded to the main process so it reaches the log file.
+ * The renderer cannot write logs itself, and an ErrorBoundary needs a durable
+ * record of what happened after the screen has already been replaced.
+ */
+export interface RendererErrorReport {
+  message: string
+  stack: string
+  componentStack: string
+  /** Which surface failed, so the log line is readable without context. */
+  surface: 'launcher' | 'overlay'
+}
 
 export interface AppInfo {
   version: string
@@ -460,6 +580,19 @@ export interface LauncherApi {
     addFolder: () => Promise<MusicLibrarySnapshot>
     removeFolder: (folder: string) => Promise<MusicLibrarySnapshot>
     onChanged: (listener: (snapshot: MusicLibrarySnapshot) => void) => () => void
+    /** Searches the legal online catalogs and returns the merged ranking. */
+    online: { search: (query: string) => Promise<MusicOnlineSearchResult> }
+    /**
+     * YouTube search plus on-demand MP3 extraction. `streamUrl` on a search
+     * result is empty until `resolve` has prepared the audio file.
+     */
+    youtube: {
+      search: (query: string) => Promise<MusicYouTubeSearchResult>
+      resolve: (videoId: string) => Promise<MusicYouTubeResolveResult>
+      status: () => Promise<MusicYouTubeStatus>
+      updateSettings: (update: MusicYouTubeUpdate) => Promise<MusicYouTubeStatus>
+      open: (videoId: string) => Promise<void>
+    }
     overlay: {
       get: () => Promise<MusicOverlaySettings>
       update: (update: Partial<MusicOverlaySettings>) => Promise<MusicOverlaySettings>
@@ -480,6 +613,8 @@ export interface LauncherApi {
     hide: () => Promise<void>
     quit: () => Promise<void>
     openLogs: () => Promise<void>
+    /** Records a renderer crash in the main log so it survives the white screen. */
+    reportRendererError: (report: RendererErrorReport) => void
   }
 }
 

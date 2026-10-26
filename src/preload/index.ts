@@ -15,9 +15,14 @@ import type {
   LauncherApi,
   MusicCommand,
   MusicLibrarySnapshot,
+  MusicOnlineSearchResult,
   MusicOverlayAction,
   MusicOverlaySettings,
   MusicOverlayState,
+  MusicYouTubeResolveResult,
+  MusicYouTubeSearchResult,
+  MusicYouTubeStatus,
+  MusicYouTubeUpdate,
   PickerKind,
   PickerRoots,
   RemoveManualResult,
@@ -100,6 +105,21 @@ const api: LauncherApi = {
       ipcRenderer.invoke(IPC.musicRemoveFolder, { folder }) as Promise<MusicLibrarySnapshot>,
     onChanged: (listener: (snapshot: MusicLibrarySnapshot) => void) =>
       subscribe<MusicLibrarySnapshot>(IPC.musicChanged, listener),
+    online: {
+      search: (query: string) =>
+        ipcRenderer.invoke(IPC.musicOnlineSearch, { query }) as Promise<MusicOnlineSearchResult>,
+    },
+    youtube: {
+      search: (query: string) =>
+        ipcRenderer.invoke(IPC.musicYouTubeSearch, { query }) as Promise<MusicYouTubeSearchResult>,
+      resolve: (videoId: string) =>
+        ipcRenderer.invoke(IPC.musicYouTubeResolve, { videoId }) as Promise<MusicYouTubeResolveResult>,
+      status: () => ipcRenderer.invoke(IPC.musicYouTubeStatus) as Promise<MusicYouTubeStatus>,
+      updateSettings: (update: MusicYouTubeUpdate) =>
+        ipcRenderer.invoke(IPC.musicYouTubeUpdate, update) as Promise<MusicYouTubeStatus>,
+      open: (videoId: string) =>
+        ipcRenderer.invoke(IPC.musicYouTubeOpen, { videoId }) as Promise<void>,
+    },
     overlay: {
       get: () => ipcRenderer.invoke(IPC.musicOverlayGet) as Promise<MusicOverlaySettings>,
       update: (update: Partial<MusicOverlaySettings>) =>
@@ -119,6 +139,7 @@ const api: LauncherApi = {
     hide: () => ipcRenderer.invoke(IPC.appHide) as Promise<void>,
     quit: () => ipcRenderer.invoke(IPC.appQuit) as Promise<void>,
     openLogs: () => ipcRenderer.invoke(IPC.appOpenLogs) as Promise<void>,
+    reportRendererError: (report) => ipcRenderer.send(IPC.appRendererError, report),
   },
 }
 
