@@ -1,5 +1,5 @@
 import { useEffect, useState, useSyncExternalStore } from 'react'
-import type { ArtKind } from '@shared/types'
+import type { ArtKind } from '@shared/contracts/games'
 
 const cache = new Map<string, string | null>()
 const pending = new Map<string, Promise<string | null>>()
