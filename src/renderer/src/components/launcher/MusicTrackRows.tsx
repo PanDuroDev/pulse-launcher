@@ -4,11 +4,8 @@ import { useFocusable } from '@noriginmedia/norigin-spatial-navigation-react'
 import type { MusicOnlineTrack, MusicTrack, MusicYouTubeTrack } from '@shared/types'
 import { formatDuration, trackSource } from '@/lib/music-queue'
 import { PROVIDER_LABELS, SOURCE_LABELS } from '@/lib/music-labels'
-import type { MusicSourceFilter } from '@/lib/music-queue'
 import { uiAccent } from '@/lib/accent'
 import { cn } from 'cn'
-
-type SourceFilter = MusicSourceFilter
 
 const YOUTUBE_CANCEL_KEY = 'music-youtube-cancel'
 const YOUTUBE_WATCH_KEY = 'music-youtube-watch'
