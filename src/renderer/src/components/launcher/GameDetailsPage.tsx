@@ -19,7 +19,7 @@ import {
   resume,
   setFocus,
 } from '@noriginmedia/norigin-spatial-navigation-core'
-import type { GameSummary } from '@shared/types'
+import type { GameSummary } from '@shared/contracts/games'
 import { formatBytes, formatLastPlayed, sourceLabel } from '@shared/format'
 import { describeRunEvidence, runAssurance } from '@shared/run-state'
 import { cn } from 'cn'
