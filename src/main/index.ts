@@ -16,7 +16,6 @@ import type {
   AppInfo,
   MusicOverlayState,
   ScanProgress,
-  SelectionResult,
   WindowMode,
 } from '@shared/types'
 import { DEFAULT_SETTINGS } from '@shared/types'
@@ -40,6 +39,7 @@ import { registerLibraryIpc } from './ipc/library'
 import { registerSettingsIpc } from './ipc/settings'
 import { registerCatalogIpc } from './ipc/catalog'
 import { registerAppIpc } from './ipc/app'
+import { registerSelectionIpc } from './ipc/selection'
 import { MusicOverlay } from './music/overlay'
 import { MusicConfigStore } from './music/config'
 import { MusicOnlineService } from './music/online/service'
@@ -76,10 +76,6 @@ let windowMode: WindowMode = DEFAULT_SETTINGS.windowMode
 let autoReturn: AutoReturnState = NO_AUTO_RETURN
 let restoreShortcutRegistered = false
 let captureScheduled = false
-
-const SelectionSchema = z.object({
-  gameId: z.string().min(1).max(200).nullable(),
-})
 
 function knownPath(name: 'home' | 'desktop' | 'documents' | 'downloads'): string | undefined {
   try {
@@ -435,19 +431,10 @@ function registerIpc(): void {
     placeCandidates,
   })
 
-  ipcMain.handle(IPC.selectionGet, (event): string | null => {
-    assertTrustedSender(event)
-    return store.getLastSelectedId()
+  registerSelectionIpc({
+    assertTrustedSender,
+    store,
   })
-
-  ipcMain.handle(
-    IPC.selectionSet,
-    async (event, payload: unknown): Promise<SelectionResult> => {
-      assertTrustedSender(event)
-      const parsed = SelectionSchema.parse(payload)
-      return store.setLastSelectedId(parsed.gameId)
-    },
-  )
 
   registerAppIpc({
     assertTrustedSender,
