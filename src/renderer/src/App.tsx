@@ -11,6 +11,7 @@ import { FORCE_QUIT_GRACE_MS } from '@shared/game-control'
 import { useLauncherStore } from '@/store/launcher'
 import { useLibraryView } from '@/hooks/use-library-view'
 import { useLauncherBootSequence } from '@/hooks/use-launcher-boot-sequence'
+import { useLauncherViewTransition } from '@/hooks/use-launcher-view-transition'
 import { useLauncherInitialization } from '@/hooks/use-launcher-initialization'
 import { useGameActionController } from '@/hooks/use-game-action-controller'
 import { useGameLaunchController } from '@/hooks/use-game-launch-controller'
@@ -30,7 +31,6 @@ import { useUISounds } from '@/hooks/use-ui-sounds'
 import { useMusicEngine } from '@/hooks/use-music-engine'
 import { useMusicStore } from '@/store/music'
 import { markMoodFor } from '@/lib/mark-mood'
-import { playUI } from '@/lib/ui-sfx'
 import { Backdrop } from '@/components/launcher/Backdrop'
 import { TopBar } from '@/components/launcher/TopBar'
 import { Hero } from '@/components/launcher/Hero'
@@ -162,34 +162,14 @@ export default function App() {
     else pause()
   }, [bootDone])
 
-  // One place decides the page-change cue, so every entry point (button,
-  // shortcut, gamepad, picker return) sounds the same.
-  const view = powerOpen
-    ? 'power'
-    : searchOpen
-      ? 'search'
-      : addOpen
-        ? 'add'
-        : detailsOpen
-          ? 'details'
-          : musicOpen
-            ? 'music'
-            : settingsOpen
-              ? 'settings'
-              : 'library'
-  const previousView = useRef(view)
-  useEffect(() => {
-    const from = previousView.current
-    if (from === view) return
-    previousView.current = view
-    if (view === 'library') {
-      playUI('back')
-    } else if (from === 'library' || view === 'power') {
-      playUI('open')
-    } else {
-      playUI('close')
-    }
-  }, [view])
+  useLauncherViewTransition({
+    addOpen,
+    detailsOpen,
+    musicOpen,
+    powerOpen,
+    searchOpen,
+    settingsOpen,
+  })
 
   useLauncherFocusManagement({
     bootDone,
