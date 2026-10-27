@@ -1,4 +1,4 @@
-import type { MusicPlaybackStatus, MusicRepeat, MusicTrack } from '@shared/types'
+import type { MusicPlaybackStatus, MusicRepeat, MusicTrack } from '@shared/contracts/music'
 import { nextIndex, previousIndex, trackIndexById } from './music-queue'
 
 export interface MusicEngineState {
