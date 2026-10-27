@@ -61,6 +61,12 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
+          $tag = $env:GITHUB_REF_NAME
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          if ($tag -ne "v$version") {
+            throw "Release tag '$tag' does not match package.json version 'v$version'. Update package.json or push the matching tag."
+          }
+
           $exe = @(Get-ChildItem release -File -Filter 'Pulse-Launcher-*-x64.exe')
           $blockmap = @(Get-ChildItem release -File -Filter 'Pulse-Launcher-*-x64.exe.blockmap')
           $latest = Join-Path $PWD 'release/latest.yml'
@@ -101,7 +107,7 @@ jobs:
           retention-days: 30
 
       - name: Upload release metadata artifact
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: pulse-launcher-${{ github.ref_name }}-metadata
           path: |
@@ -128,13 +134,34 @@ jobs:
             (Join-Path $PWD 'release/latest.yml')
             (Join-Path $PWD 'release/SHA256SUMS.txt')
           )
+          $assetNames = @($exe[0].Name, $blockmap[0].Name, 'latest.yml', 'SHA256SUMS.txt')
 
-          gh release view $tag --json tagName *> $null
+          $releaseJson = gh api "repos/$env:GITHUB_REPOSITORY/releases/tags/$tag" 2>$null
           if ($LASTEXITCODE -eq 0) {
-            gh release upload $tag $assets --clobber
+            $release = $releaseJson | ConvertFrom-Json
+            $existingNames = @($release.assets | ForEach-Object { $_.name })
+            $present = @($assetNames | Where-Object { $existingNames -contains $_ })
+            if ($present.Count -gt 0 -and $present.Count -ne $assetNames.Count) {
+              throw "Release '$tag' has only some expected assets. Refusing to overwrite/delete published files; repair the release assets manually and rerun."
+            }
+            if ($present.Count -eq 0) {
+              gh release upload $tag $assets
+              if ($LASTEXITCODE -ne 0) {
+                throw "Failed to upload assets to release '$tag'."
+              }
+            } else {
+              Write-Host "All expected assets already exist on '$tag'; preserving them on rerun."
+            }
+
+            if ($release.draft) {
+              gh api --method PATCH "repos/$env:GITHUB_REPOSITORY/releases/$($release.id)" -F draft=false | Out-Null
+              if ($LASTEXITCODE -ne 0) {
+                throw "Assets uploaded, but failed to publish draft release '$tag'."
+              }
+            }
           } else {
             gh release create $tag $assets --verify-tag --generate-notes --title "Pulse Launcher $tag"
-          }
-          if ($LASTEXITCODE -ne 0) {
-            throw "Failed to publish release assets for tag $tag."
+            if ($LASTEXITCODE -ne 0) {
+              throw "Failed to create release '$tag' with its assets."
+            }
           }
