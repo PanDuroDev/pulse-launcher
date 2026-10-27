@@ -1,11 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import {
-  doesFocusableExist,
-  getCurrentFocusKey,
-  pause,
-  resume,
-  setFocus,
-} from '@noriginmedia/norigin-spatial-navigation-core'
+import { pause, resume } from '@noriginmedia/norigin-spatial-navigation-core'
 import type { GameSummary } from '@shared/contracts/games'
 import { FORCE_QUIT_GRACE_MS } from '@shared/game-control'
 import { useLauncherStore } from '@/store/launcher'
@@ -16,8 +10,7 @@ import { useLauncherInitialization } from '@/hooks/use-launcher-initialization'
 import { useGameActionController } from '@/hooks/use-game-action-controller'
 import { useGameLaunchController } from '@/hooks/use-game-launch-controller'
 import { useLibraryActions } from '@/hooks/use-library-actions'
-import { useLauncherKeyboardShortcuts } from '@/hooks/use-launcher-keyboard-shortcuts'
-import { useLauncherGamepad } from '@/hooks/use-launcher-gamepad'
+import { useLauncherInputHandlers } from '@/hooks/use-launcher-input-handlers'
 import { useLauncherFocusManagement } from '@/hooks/use-launcher-focus-management'
 import { useGameDetailsActions } from '@/hooks/use-game-details-actions'
 import { useGameDetailsNavigation } from '@/hooks/use-game-details-navigation'
@@ -246,59 +239,22 @@ export default function App() {
     setManualDraft,
   })
 
-  /** Tab traversal over an explicit order, so keys never leave the view. */
-  const cycleFocus = useCallback(
-    (keys: Array<string | null>, backwards: boolean): boolean => {
-      const available = keys.filter(
-        (key): key is string => Boolean(key) && doesFocusableExist(key as string),
-      )
-      if (available.length === 0) return false
-      const current = getCurrentFocusKey()
-      const index = current ? available.indexOf(current) : -1
-      const step = backwards ? -1 : 1
-      const nextIndex =
-        index === -1
-          ? backwards
-            ? available.length - 1
-            : 0
-          : (index + step + available.length) % available.length
-      const next = available[nextIndex]
-      if (!next) return false
-      void setFocus(next)
-      return true
-    },
-    [],
-  )
-
   const handleAddFromSettings = useCallback(() => {
     closeSettings()
     window.setTimeout(() => handleAddGame(), 140)
   }, [closeSettings, handleAddGame])
 
-  const openPower = useCallback(() => {
-    if (powerOpen) return
-    setPowerOpen(true)
-  }, [powerOpen])
-
-  const closePower = useCallback(() => {
-    setPowerOpen(false)
-    window.setTimeout(() => {
-      if (doesFocusableExist('tool-power')) void setFocus('tool-power')
-    }, 80)
-  }, [])
-
-  useLauncherKeyboardShortcuts({
+  const { openPower, closePower } = useLauncherInputHandlers({
     addOpen,
     bootDone,
     closeAddGame,
     closeDetails,
     closeMusic,
-    closePower,
     closeSearch,
     closeSettings,
-    cycleFocus,
     detailsOpen,
     handleCycleSort,
+    handleLaunch,
     handleRefresh,
     handleToggleFavorite,
     initialFocusKey,
@@ -306,31 +262,12 @@ export default function App() {
     musicOpen,
     openDetails,
     openMusic,
-    openPower,
     openSearch,
     openSettings,
     powerOpen,
     searchOpen,
     selected,
-    settingsOpen,
-  })
-
-  useLauncherGamepad({
-    addOpen,
-    bootDone,
-    closeAddGame,
-    closeDetails,
-    closeMusic,
-    closePower,
-    closeSearch,
-    closeSettings,
-    detailsOpen,
-    handleLaunch,
-    musicOpen,
-    openSettings,
-    powerOpen,
-    searchOpen,
-    selected,
+    setPowerOpen,
     settingsOpen,
   })
 
