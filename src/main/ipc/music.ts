@@ -12,7 +12,7 @@ import type {
   MusicYouTubeResolveResult,
   MusicYouTubeSearchResult,
   MusicYouTubeStatus,
-} from '@shared/types'
+} from '@shared/contracts/music'
 import { log } from '../logger'
 import type { MusicLibraryService } from '../music/library'
 import type { MusicOverlay } from '../music/overlay'
