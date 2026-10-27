@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import type { GameSummary } from '@shared/types'
+import type { GameSummary } from '@shared/contracts/games'
 import { runAssurance } from '@shared/run-state'
 import { announceAttention } from '@/lib/attention'
 import { playUI } from '@/lib/ui-sfx'
