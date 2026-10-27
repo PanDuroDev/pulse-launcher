@@ -30,8 +30,7 @@ coverage
 *.sln
 *.sw?
 
-# Local plans, reviews, reference clones, and internal agent notes
+# Local plans, reviews, reference clones (AGENTS.md is tracked on purpose)
 PLAN.md
 docs/design-review.md
 ps5-launcher-inspection-*/
-AGENTS.md
