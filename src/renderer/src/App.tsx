@@ -7,10 +7,7 @@ import {
   setFocus,
 } from '@noriginmedia/norigin-spatial-navigation-core'
 import { toast } from 'sonner'
-import type {
-  GameSummary,
-  UpdateManualGameInput,
-} from '@shared/types'
+import type { GameSummary, UpdateManualGameInput } from '@shared/contracts/games'
 import { FORCE_QUIT_GRACE_MS } from '@shared/game-control'
 import { useLauncherStore } from '@/store/launcher'
 import { useGamepad } from '@/hooks/use-gamepad'
