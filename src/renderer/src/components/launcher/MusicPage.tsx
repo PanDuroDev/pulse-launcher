@@ -34,7 +34,6 @@ import {
   formatDuration,
   mergeSources,
   progressRatio,
-  trackSource,
 } from '@/lib/music-queue'
 import type { MusicSourceFilter } from '@/lib/music-queue'
 import { uiAccent } from '@/lib/accent'
@@ -44,7 +43,7 @@ import { useMusicStore } from '@/store/music'
 import { cn } from 'cn'
 import { Tool, ModeTab, Transport } from '@/components/launcher/MusicControls'
 import { YouTubeSetup } from '@/components/launcher/YouTubeSetup'
-import { PROVIDER_LABELS, SOURCE_LABELS, SourceChip, MixedTrackRow, YouTubeTrackRow, WatchOnYouTube, TrackRow, OnlineTrackRow } from '@/components/launcher/MusicTrackRows'
+import { Cover, PROVIDER_LABELS, SOURCE_LABELS, SourceChip, MixedTrackRow, YouTubeTrackRow, WatchOnYouTube, TrackRow, OnlineTrackRow } from '@/components/launcher/MusicTrackRows'
 
 const BACK_KEY = 'music-back'
 const MODE_ALL_KEY = 'music-mode-all'
@@ -52,6 +51,7 @@ const MODE_LIBRARY_KEY = 'music-mode-library'
 const MODE_ONLINE_KEY = 'music-mode-online'
 const MODE_YOUTUBE_KEY = 'music-mode-youtube'
 const FILTER_KEY = 'music-filter'
+const SOURCE_FILTER_PREFIX = 'music-source'
 const YOUTUBE_SETUP_KEY = 'music-youtube-setup'
 const SCAN_CANCEL_KEY = 'music-scan-cancel'
 const ADD_KEY = 'music-add-folder'
