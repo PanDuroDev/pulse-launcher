@@ -49,16 +49,6 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Cache Electron
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: |
-            ~\AppData\Local\electron\Cache
-            ~\AppData\Local\electron-builder\Cache
-          key: ${{ runner.os }}-electron-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-electron-
-
       - run: npm ci --no-audit --no-fund
 
       - name: Build and verify installer
