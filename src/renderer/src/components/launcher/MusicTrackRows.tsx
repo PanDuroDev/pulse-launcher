@@ -1,8 +1,9 @@
 import { ExternalLinkFilled, MusicFilled, YoutubeFilled } from '@mingcute/react/core-filled'
 import { useState } from 'react'
 import { useFocusable } from '@noriginmedia/norigin-spatial-navigation-react'
-import type { MusicOnlineTrack, MusicProvider, MusicTrack, MusicYouTubeTrack } from '@shared/types'
+import type { MusicOnlineTrack, MusicTrack, MusicYouTubeTrack } from '@shared/types'
 import { formatDuration, trackSource } from '@/lib/music-queue'
+import { PROVIDER_LABELS, SOURCE_LABELS } from '@/lib/music-labels'
 import type { MusicSourceFilter } from '@/lib/music-queue'
 import { uiAccent } from '@/lib/accent'
 import { cn } from 'cn'
@@ -13,22 +14,6 @@ const YOUTUBE_CANCEL_KEY = 'music-youtube-cancel'
 const YOUTUBE_WATCH_KEY = 'music-youtube-watch'
 const trackKey = (trackId: string): string => `music-track-${trackId}`
 const youtubeLinkKey = (videoId: string): string => `music-youtube-link-${videoId}`
-
-export const PROVIDER_LABELS: Record<MusicProvider, string> = {
-  itunes: 'iTunes',
-  deezer: 'Deezer',
-  audius: 'Audius',
-  openverse: 'Openverse',
-  archive: 'Archive',
-  youtube: 'YouTube',
-}
-
-export const SOURCE_LABELS: Record<SourceFilter, string> = {
-  all: 'All',
-  library: 'Library',
-  online: 'Online',
-  youtube: 'YouTube',
-}
 
 export function Cover({ track, size }: { track: MusicTrack | null; size: string }) {
   // Remote covers do fail: online-art tokens expire and some YouTube videos
