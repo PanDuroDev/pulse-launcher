@@ -19,6 +19,7 @@ import { useLauncherGamepad } from '@/hooks/use-launcher-gamepad'
 import { useLauncherFocusManagement } from '@/hooks/use-launcher-focus-management'
 import { useGameDetailsActions } from '@/hooks/use-game-details-actions'
 import { useGameAddedFocus } from '@/hooks/use-game-added-focus'
+import { useSearchNavigation } from '@/hooks/use-search-navigation'
 import { actionForGame, forceRemainingMs } from '@/lib/game-actions'
 import { useAutoHideCursor } from '@/hooks/use-clock'
 import { useUISounds } from '@/hooks/use-ui-sounds'
@@ -77,7 +78,6 @@ export default function App() {
   /** True once the landed mark has had a beat to settle and the library can follow. */
   const [revealed, setRevealed] = useState(false)
   const lastFocusKey = useRef<string | null>(null)
-  const searchReturnFocus = useRef<string | null>(null)
   const detailsReturnFocus = useRef<string | null>(null)
 
   const {
@@ -213,42 +213,16 @@ export default function App() {
     [select],
   )
 
-  const openSearch = useCallback(() => {
-    if (searchOpen || settingsOpen || addOpen || powerOpen) return
-    const current = getCurrentFocusKey()
-    searchReturnFocus.current =
-      current && !current.startsWith('search-') ? current : lastFocusKey.current
-    setSearchQuery('')
-    setSearchOpen(true)
-  }, [addOpen, powerOpen, searchOpen, settingsOpen])
-
-  const closeSearch = useCallback(() => {
-    setSearchOpen(false)
-    setSearchQuery('')
-    window.setTimeout(() => {
-      const preferred = searchReturnFocus.current
-      if (
-        preferred &&
-        !preferred.startsWith('search-') &&
-        doesFocusableExist(preferred)
-      ) {
-        void setFocus(preferred)
-        return
-      }
-      const fallback = lastFocusKey.current ?? initialFocusKey
-      if (
-        fallback &&
-        !fallback.startsWith('search-') &&
-        doesFocusableExist(fallback)
-      ) {
-        void setFocus(fallback)
-        return
-      }
-      if (initialFocusKey && doesFocusableExist(initialFocusKey)) {
-        void setFocus(initialFocusKey)
-      }
-    }, 80)
-  }, [initialFocusKey])
+  const { openSearch, closeSearch } = useSearchNavigation({
+    addOpen,
+    initialFocusKey,
+    lastFocusKey,
+    powerOpen,
+    searchOpen,
+    setSearchOpen,
+    setSearchQuery,
+    settingsOpen,
+  })
 
   const openSettings = useCallback(() => {
     if (settingsOpen) return
