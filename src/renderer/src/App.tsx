@@ -20,6 +20,7 @@ import { useLauncherFocusManagement } from '@/hooks/use-launcher-focus-managemen
 import { useGameDetailsActions } from '@/hooks/use-game-details-actions'
 import { useGameAddedFocus } from '@/hooks/use-game-added-focus'
 import { useSearchNavigation } from '@/hooks/use-search-navigation'
+import { useSecondaryPageNavigation } from '@/hooks/use-secondary-page-navigation'
 import { actionForGame, forceRemainingMs } from '@/lib/game-actions'
 import { useAutoHideCursor } from '@/hooks/use-clock'
 import { useUISounds } from '@/hooks/use-ui-sounds'
@@ -224,72 +225,20 @@ export default function App() {
     settingsOpen,
   })
 
-  const openSettings = useCallback(() => {
-    if (settingsOpen) return
-    setPowerOpen(false)
-    setSettingsOpen(true)
-    window.setTimeout(() => {
-      if (doesFocusableExist('settings-back')) void setFocus('settings-back')
-    }, 80)
-  }, [settingsOpen])
-
-  const closeSettings = useCallback(() => {
-    // A text field owns the keyboard while it is being edited: the first
-    // Escape/Back leaves the field instead of closing the page.
-    const active = document.activeElement
-    if (
-      active instanceof HTMLElement &&
-      (active.tagName === 'INPUT' ||
-        active.tagName === 'TEXTAREA' ||
-        active.isContentEditable)
-    ) {
-      active.blur()
-      return
-    }
-    setSettingsOpen(false)
-    window.setTimeout(() => {
-      if (doesFocusableExist('tool-settings')) {
-        void setFocus('tool-settings')
-        return
-      }
-      const target = lastFocusKey.current ?? initialFocusKey
-      if (target && doesFocusableExist(target)) {
-        void setFocus(target)
-      } else if (games.length === 0 && doesFocusableExist('empty-refresh')) {
-        void setFocus('empty-refresh')
-      }
-    }, 80)
-  }, [games.length, initialFocusKey])
-
-  const openMusic = useCallback(() => {
-    setPowerOpen(false)
-    setMusicOpen(true)
-    window.setTimeout(() => {
-      if (doesFocusableExist('music-back')) void setFocus('music-back')
-    }, 80)
-  }, [])
-
-  const closeMusic = useCallback(() => {
-    // A field on the music page owns the keyboard: the first Escape leaves the
-    // field, the second closes the page — same contract as Settings.
-    const active = document.activeElement
-    if (
-      active instanceof HTMLElement &&
-      (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)
-    ) {
-      active.blur()
-      return
-    }
-    setMusicOpen(false)
-    window.setTimeout(() => {
-      if (doesFocusableExist('tool-music')) {
-        void setFocus('tool-music')
-        return
-      }
-      const target = lastFocusKey.current ?? initialFocusKey
-      if (target && doesFocusableExist(target)) void setFocus(target)
-    }, 80)
-  }, [initialFocusKey])
+  const {
+    openSettings,
+    closeSettings,
+    openMusic,
+    closeMusic,
+  } = useSecondaryPageNavigation({
+    gamesEmpty: games.length === 0,
+    initialFocusKey,
+    lastFocusKey,
+    setMusicOpen,
+    setPowerOpen,
+    setSettingsOpen,
+    settingsOpen,
+  })
 
   const closeAddGame = useCallback(() => {
     const returningToDetails = addMode !== 'game' && detailsOpen
