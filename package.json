@@ -19,8 +19,9 @@
     "test:watch": "vitest",
     "icon": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/generate-icon.ps1",
     "build": "npm run typecheck && electron-vite build",
-    "pack": "npm run build && electron-builder --dir",
-    "dist": "npm run build && electron-builder --win nsis"
+    "pack": "npm run build && electron-builder --dir && node scripts/verify-installer.mjs --unpacked",
+    "dist": "npm run build && electron-builder --win nsis && node scripts/verify-installer.mjs",
+    "verify:release": "node scripts/verify-installer.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
