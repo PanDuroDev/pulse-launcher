@@ -132,6 +132,15 @@ Search rows carry no audio URL. The renderer asks the main process to resolve th
 selected video, and the main process keeps one extraction per video in flight, so
 double-clicking never starts two downloads. The YouTube queue is the current
 search result list; next and previous extract the neighbouring results as needed.
+While a row shows **Preparing…**, a **Stop** button cancels the extraction for
+real: the yt-dlp/FFmpeg process tree is killed and the temporary directory is
+removed, so a slow or wrong video never blocks the page. Choosing another row
+cancels the extraction in progress automatically.
+
+The library scan can be stopped the same way. A **Stop** control appears next to
+**Rescan** while Pulse is walking your folders, keeps the tracks found so far,
+and returns the page to idle. Pressing Rescan during a scan cancels the current
+walk and queues exactly one fresh one.
 
 Setup (the gear button in YouTube mode) stores the API key, an optional yt-dlp
 path, and an optional FFmpeg path in `music/youtube.json`. The key is masked in
@@ -144,14 +153,25 @@ downloaded automatically: install it (for example with
 `winget install Gyan.FFmpeg`) or point Setup at `ffmpeg.exe`. Setup shows both
 tools, their versions and source, and the current cache size.
 
+Setup also owns the MP3 cache. The **MP3 cache limit (MB)** field defaults to
+2048 and accepts 100–20000; the limit is stored in `music/youtube.json` next to
+the key and tool paths, not in the global settings. When a new extraction pushes
+the cache over the limit, Pulse deletes the least recently downloaded tracks
+first, using `downloadedAt` from `index.json`. The track that was just written
+and the newest existing track are always kept, so the cache can sit over the
+limit by one file but never more. The panel lists the cached tracks oldest first
+with a **Delete** button per row and a **Clear cache** button that empties
+`music/youtube/` and the cover files without touching settings or the tools.
+
 YouTube thumbnails are proxied through `app://launcher/youtube-art/<videoId>`,
 and the cached MP3 is served through `app://launcher/media/youtube:<videoId>`
 with range support. The renderer still never loads a remote URL directly.
 
 Only extract content you have the rights to. YouTube's Terms of Service and local
 copyright law apply, and Pulse does not bypass DRM, paywalls, age gates, or
-advertisements. Delete files in `music/youtube/` to reclaim space; playing a
-deleted video again extracts it and rewrites its metadata.
+advertisements. Use **Clear cache** in Setup (or delete files in
+`music/youtube/`) to reclaim space; playing a deleted video again extracts it and
+rewrites its metadata.
 
 ## Playback
 

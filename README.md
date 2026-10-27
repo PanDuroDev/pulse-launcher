@@ -112,7 +112,7 @@ Pulse includes a music player for local folders, legal online catalogs, and YouT
 - Local playback stays on the machine. An online search sends only the typed query to those catalogs; YouTube setup sends the key only to `googleapis.com`. No local file, tag, account, or listening history is uploaded.
 - Pulse downloads only content you choose to play. It does not bypass DRM, paywalls, or advertisements; YouTube's terms and local copyright law still apply.
 
-YouTube needs the official yt-dlp and FFmpeg. Pulse downloads yt-dlp automatically to `music/bin/yt-dlp.exe` on first use. FFmpeg must be installed separately, for example with `winget install Gyan.FFmpeg`, or pointed to in the YouTube setup panel.
+YouTube needs the official yt-dlp and FFmpeg. Pulse downloads yt-dlp automatically to `music/bin/yt-dlp.exe` on first use. FFmpeg must be installed separately, for example with `winget install Gyan.FFmpeg`, or pointed to in the YouTube setup panel. Setup also sets the MP3 cache limit (2048 MB by default), lists the cached tracks with a **Delete** button each, offers **Clear cache**, and the **Stop** button cancels an extraction in progress instead of leaving you waiting. A large library scan can be stopped the same way.
 
 See [docs/MUSIC.md](docs/MUSIC.md) for sources, formats, storage, troubleshooting, and architecture.
 
@@ -239,7 +239,7 @@ npm run lint
 npm run build
 ```
 
-The suite currently contains 36 files and 367 tests covering VDF parsing, Steam and Epic manifests, manual game normalization, shared formatting helpers, the music queue and source filtering, online catalog normalization and ranking, online provider mapping, YouTube video ids and durations, YouTube title/artist/channel parsing, YouTube API mapping and thumbnail selection, yt-dlp error mapping, secret redaction, URL safety, and renderer logic.
+The suite currently contains 37 files and 379 tests covering VDF parsing, Steam and Epic manifests, manual game normalization, shared formatting helpers, the music queue and source filtering, online catalog normalization and ranking, online provider mapping, YouTube video ids and durations, YouTube title/artist/channel parsing, YouTube API mapping and thumbnail selection, yt-dlp error mapping, secret redaction, URL safety, and renderer logic.
 
 ## Packaging
 
