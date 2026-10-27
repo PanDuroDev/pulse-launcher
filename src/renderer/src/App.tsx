@@ -1,30 +1,20 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { pause, resume } from '@noriginmedia/norigin-spatial-navigation-core'
-import type { GameSummary } from '@shared/contracts/games'
 import { useLauncherStore } from '@/store/launcher'
-import { useLibraryView } from '@/hooks/use-library-view'
 import { useLauncherBootSequence } from '@/hooks/use-launcher-boot-sequence'
-import { useLauncherViewTransition } from '@/hooks/use-launcher-view-transition'
 import { useLauncherInitialization } from '@/hooks/use-launcher-initialization'
 import { useGameActionController } from '@/hooks/use-game-action-controller'
 import { useGameLaunchController } from '@/hooks/use-game-launch-controller'
 import { useLibraryActions } from '@/hooks/use-library-actions'
 import { useLauncherInputHandlers } from '@/hooks/use-launcher-input-handlers'
+import { useLauncherNavigationController } from '@/hooks/use-launcher-navigation-controller'
 import { useLauncherViewModel } from '@/hooks/use-launcher-view-model'
-import { useLauncherFocusManagement } from '@/hooks/use-launcher-focus-management'
-import { useGameDetailsActions } from '@/hooks/use-game-details-actions'
-import { useGameDetailsNavigation } from '@/hooks/use-game-details-navigation'
-import { useGameAddedFocus } from '@/hooks/use-game-added-focus'
-import { useSearchNavigation } from '@/hooks/use-search-navigation'
-import { useAddGameNavigation } from '@/hooks/use-add-game-navigation'
-import { useSecondaryPageNavigation } from '@/hooks/use-secondary-page-navigation'
 import { useAutoHideCursor } from '@/hooks/use-clock'
 import { useUISounds } from '@/hooks/use-ui-sounds'
 import { useMusicEngine } from '@/hooks/use-music-engine'
 import { useMusicStore } from '@/store/music'
 import { LauncherPageContent } from '@/components/launcher/LauncherPageContent'
 import { LauncherFrame } from '@/components/launcher/LauncherFrame'
-import type { GameDetailsDraft } from '@/components/launcher/GameDetailsPage'
 
 export default function App() {
   const games = useLauncherStore((state) => state.games)
@@ -39,52 +29,62 @@ export default function App() {
   const select = useLauncherStore((state) => state.select)
   const updateSettings = useLauncherStore((state) => state.updateSettings)
 
-  const [settingsOpen, setSettingsOpen] = useState(false)
-  const [addOpen, setAddOpen] = useState(false)
-  const [addMode, setAddMode] = useState<'game' | 'path' | 'image'>('game')
-  const [detailsOpen, setDetailsOpen] = useState(false)
-  const [detailsSnapshot, setDetailsSnapshot] = useState<GameSummary | null>(null)
-  const [manualDraft, setManualDraft] = useState<GameDetailsDraft | null>(null)
-  const [detailsSaving, setDetailsSaving] = useState(false)
-  const [detailsRemoving, setDetailsRemoving] = useState(false)
-  const [searchOpen, setSearchOpen] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [powerOpen, setPowerOpen] = useState(false)
-  const [musicOpen, setMusicOpen] = useState(false)
   const [demo, setDemo] = useState(false)
-  /** True once the landed mark has had a beat to settle and the library can follow. */
-  const lastFocusKey = useRef<string | null>(null)
-
-  const rememberFocusKey = useCallback((focusKey: string) => {
-    lastFocusKey.current = focusKey
-  }, [])
-
   const { bootDone, finishBoot, revealed, bootPhase } = useLauncherBootSequence(status)
 
   const {
-    rows,
-    selected,
-    detailsGame,
-    initialFocusKey,
-  } = useLibraryView({
+    page,
+    library,
+    focus,
+    navigation,
+  } = useLauncherNavigationController({
     games,
     selectedId,
     librarySort: settings.librarySort,
-    detailsOpen,
-    detailsSnapshot,
+    refreshing,
+    status,
+    bootDone,
+    select,
   })
 
-  const { handleAddGame, closeAddGame } = useAddGameNavigation({
+  const {
+    settingsOpen,
+    addOpen,
     addMode,
     detailsOpen,
-    gamesEmpty: games.length === 0,
-    initialFocusKey,
-    lastFocusKey,
-    setAddMode,
-    setAddOpen,
+    manualDraft,
+    setManualDraft,
+    detailsSaving,
+    detailsRemoving,
+    searchOpen,
+    searchQuery,
+    setSearchQuery,
+    powerOpen,
     setPowerOpen,
-    setSettingsOpen,
-  })
+    musicOpen,
+  } = page
+  const { rows, selected, detailsGame, initialFocusKey } = library
+  const { lastFocusKey } = focus
+  const {
+    handleAddGame,
+    closeAddGame,
+    handleSelect,
+    handleGameAdded,
+    openSearch,
+    closeSearch,
+    openSettings,
+    closeSettings,
+    openMusic,
+    closeMusic,
+    openDetails,
+    closeDetails,
+    openDetailsPicker,
+    handlePickedPath,
+    handlePickedArtwork,
+    handleSaveDetails,
+    handleRemoveDetails,
+    handleAddFromSettings,
+  } = navigation
 
   const {
     gameAction,
