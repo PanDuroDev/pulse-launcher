@@ -9,7 +9,6 @@ import {
 import { toast } from 'sonner'
 import type {
   GameSummary,
-  LibrarySort,
   UpdateManualGameInput,
 } from '@shared/types'
 import { FORCE_QUIT_GRACE_MS } from '@shared/game-control'
