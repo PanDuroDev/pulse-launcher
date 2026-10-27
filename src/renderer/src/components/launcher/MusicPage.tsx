@@ -21,7 +21,6 @@ import type {
   MusicOnlineProviderStatus,
   MusicOnlineTrack,
   MusicTrack,
-  MusicYouTubeStatus,
   MusicYouTubeTrack,
 } from '@shared/types'
 import {
@@ -41,6 +40,7 @@ import { YouTubeSetup } from '@/components/launcher/YouTubeSetup'
 import { Cover, PROVIDER_LABELS, SOURCE_LABELS, SourceChip, MixedTrackRow, YouTubeTrackRow, WatchOnYouTube, TrackRow, OnlineTrackRow } from '@/components/launcher/MusicTrackRows'
 import { OverlaySwitch, SeekBar, VolumeControl } from '@/components/launcher/MusicPlaybackControls'
 import { useMusicSearch } from '@/hooks/use-music-search'
+import { useYouTubeSetup } from '@/hooks/use-youtube-setup'
 
 const BACK_KEY = 'music-back'
 const MODE_ALL_KEY = 'music-mode-all'
@@ -105,6 +105,28 @@ export function MusicPage({ onBack }: MusicPageProps) {
   const toggleOverlay = useMusicStore((state) => state.toggleOverlay)
 
   const playback = useMusicEngineState()
+  const {
+    youtubeStatus,
+    youtubeStatusLoading,
+    youtubeStatusError,
+    setupOpen,
+    youtubeApiKey,
+    youtubeYtDlpPath,
+    youtubeFfmpegPath,
+    youtubeSaving,
+    youtubeSaveError,
+    youtubeCacheLimit,
+    youtubeClearing,
+    setYoutubeApiKey,
+    setYoutubeYtDlpPath,
+    setYoutubeFfmpegPath,
+    setYoutubeCacheLimit,
+    loadYouTubeStatus,
+    saveYouTubeSettings,
+    clearYouTubeCache,
+    removeCachedTrack,
+    toggleSetup,
+  } = useYouTubeSetup()
   const [mode, setMode] = useState<MusicMode>('all')
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all')
   const [query, setQuery] = useState('')
@@ -128,19 +150,7 @@ export function MusicPage({ onBack }: MusicPageProps) {
     searchYouTube,
     searchAll,
   } = useMusicSearch()
-  const [youtubeStatus, setYoutubeStatus] = useState<MusicYouTubeStatus | null>(null)
-  const [youtubeStatusLoading, setYoutubeStatusLoading] = useState(false)
-  const [youtubeStatusError, setYoutubeStatusError] = useState<string | null>(null)
-  const [setupOpen, setSetupOpen] = useState(false)
-  const [youtubeApiKey, setYoutubeApiKey] = useState('')
-  const [youtubeYtDlpPath, setYoutubeYtDlpPath] = useState('')
-  const [youtubeFfmpegPath, setYoutubeFfmpegPath] = useState('')
-  const [youtubeSaving, setYoutubeSaving] = useState(false)
-  const [youtubeSaveError, setYoutubeSaveError] = useState<string | null>(null)
-  const [youtubeCacheLimit, setYoutubeCacheLimit] = useState('')
-  const [youtubeClearing, setYoutubeClearing] = useState(false)
-  /** True once the draft fields hold the stored settings, so Save cannot blank them. */
-  const [draftSynced, setDraftSynced] = useState(false)
+
 
 
   const visible = useMemo(() => filterTracks(tracks, query), [tracks, query])
@@ -211,87 +221,7 @@ export function MusicPage({ onBack }: MusicPageProps) {
     }
   }, [])
 
-  const loadYouTubeStatus = useCallback((syncDraft: boolean) => {
-    setYoutubeStatusLoading(true)
-    setYoutubeStatusError(null)
-    void window.launcher.music.youtube
-      .status()
-      .then((status) => {
-        setYoutubeStatus(status)
-        if (syncDraft) {
-          setYoutubeApiKey(status.settings.apiKey)
-          setYoutubeYtDlpPath(status.settings.ytDlpPath)
-          setYoutubeFfmpegPath(status.settings.ffmpegPath)
-          setYoutubeCacheLimit(String(status.settings.cacheLimitMb))
-          setDraftSynced(true)
-        }
-        setYoutubeStatusLoading(false)
-      })
-      .catch(() => {
-        setYoutubeStatusError('Could not read the YouTube setup on this machine.')
-        setYoutubeStatusLoading(false)
-      })
-  }, [])
 
-  const saveYouTubeSettings = useCallback(() => {
-    setYoutubeSaving(true)
-    setYoutubeSaveError(null)
-    const parsedLimit = Number.parseInt(youtubeCacheLimit, 10)
-    void window.launcher.music.youtube
-      .updateSettings({
-        apiKey: youtubeApiKey,
-        ytDlpPath: youtubeYtDlpPath,
-        ffmpegPath: youtubeFfmpegPath,
-        // An unreadable value falls back to the stored limit instead of 0.
-        cacheLimitMb: Number.isFinite(parsedLimit) ? parsedLimit : undefined,
-      })
-      .then((status) => {
-        setYoutubeStatus(status)
-        setYoutubeApiKey(status.settings.apiKey)
-        setYoutubeYtDlpPath(status.settings.ytDlpPath)
-        setYoutubeFfmpegPath(status.settings.ffmpegPath)
-        setYoutubeCacheLimit(String(status.settings.cacheLimitMb))
-        setDraftSynced(true)
-        setYoutubeSaving(false)
-      })
-      .catch(() => {
-        setYoutubeSaveError('Could not save the YouTube setup.')
-        setYoutubeSaving(false)
-      })
-  }, [youtubeApiKey, youtubeCacheLimit, youtubeFfmpegPath, youtubeYtDlpPath])
-
-  const clearYouTubeCache = useCallback(() => {
-    setYoutubeClearing(true)
-    void window.launcher.music.youtube
-      .clearCache()
-      .then((status) => {
-        setYoutubeStatus(status)
-        setYoutubeClearing(false)
-      })
-      .catch(() => {
-        setYoutubeSaveError('Could not clear the MP3 cache.')
-        setYoutubeClearing(false)
-      })
-  }, [])
-
-  const removeCachedTrack = useCallback((videoId: string) => {
-    void window.launcher.music.youtube
-      .removeCached(videoId)
-      .then((status) => setYoutubeStatus(status))
-      .catch(() => setYoutubeSaveError('Could not delete that cached MP3.'))
-  }, [])
-
-  /**
-   * The setup panel is reachable from the All tab too, which never loads the
-   * status. Opening it must hydrate the draft fields first, otherwise Save
-   * would write empty values over a key that is already stored.
-   */
-  const toggleSetup = useCallback(() => {
-    setSetupOpen((open) => {
-      if (!open && !draftSynced) loadYouTubeStatus(true)
-      return !open
-    })
-  }, [draftSynced, loadYouTubeStatus])
 
   const selectMode = (next: MusicMode): void => {
     if (next === mode) return
