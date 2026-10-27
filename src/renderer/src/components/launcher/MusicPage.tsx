@@ -1,10 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowLeftFilled,
-  ExternalLinkFilled,
   FolderOpenFilled,
   MiniplayerFilled,
-  MusicFilled,
   PauseFilled,
   PlayFilled,
   Refresh2Filled,
@@ -24,7 +22,6 @@ import { pause, resume } from '@noriginmedia/norigin-spatial-navigation-core'
 import type {
   MusicOnlineProviderStatus,
   MusicOnlineTrack,
-  MusicProvider,
   MusicTrack,
   MusicYouTubeSearchSource,
   MusicYouTubeStatus,
