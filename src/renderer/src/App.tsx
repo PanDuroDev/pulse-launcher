@@ -14,7 +14,7 @@ import type {
   UpdateManualGameInput,
 } from '@shared/types'
 import { sourceLabel } from '@shared/format'
-import { favoriteGames, nextLibrarySort, recentlyPlayed, sortGames } from '@shared/library'
+import { nextLibrarySort } from '@shared/library'
 import { runAssurance } from '@shared/run-state'
 import { FORCE_QUIT_GRACE_MS } from '@shared/game-control'
 import { useLauncherStore } from '@/store/launcher'
@@ -30,6 +30,7 @@ import {
   startGameAction,
 } from '@/lib/game-actions'
 import { useGamepad } from '@/hooks/use-gamepad'
+import { useLibraryView } from '@/hooks/use-library-view'
 import { useAutoHideCursor } from '@/hooks/use-clock'
 import { useUISounds } from '@/hooks/use-ui-sounds'
 import { useMusicEngine } from '@/hooks/use-music-engine'
@@ -58,12 +59,6 @@ import { LibraryLoading } from '@/components/launcher/LibraryLoading'
 import { BootScreen } from '@/components/launcher/BootScreen'
 import { bootPhaseFor } from '@/lib/boot'
 import { Toaster } from '@/components/ui/sonner'
-
-interface Row {
-  id: string
-  title: string
-  games: GameSummary[]
-}
 
 const LAUNCH_DETECT_TIMEOUT_MS = 60_000
 
@@ -119,78 +114,18 @@ export default function App() {
   const searchReturnFocus = useRef<string | null>(null)
   const detailsReturnFocus = useRef<string | null>(null)
 
-  const runningGames = useMemo(
-    () =>
-      [...games]
-        .filter((game) => game.running)
-        .sort((left, right) => left.name.localeCompare(right.name)),
-    [games],
-  )
-
-  const continueGames = useMemo(() => recentlyPlayed(games), [games])
-  const favoriteList = useMemo(() => favoriteGames(games), [games])
-  const sortedGames = useMemo(
-    () => sortGames(games, settings.librarySort),
-    [games, settings.librarySort],
-  )
-
-  const rows = useMemo<Row[]>(() => {
-    const next: Row[] = []
-    // Live games come first: Up from Running Now reaches the hero, not another
-    // game's card, and a running session is the most immediate thing to act on.
-    if (runningGames.length > 0) {
-      next.push({ id: 'running', title: 'Running Now', games: runningGames })
-    }
-    if (continueGames.length > 0) {
-      next.push({ id: 'continue', title: 'Continue Playing', games: continueGames })
-    }
-    if (favoriteList.length > 0) {
-      next.push({ id: 'favorites', title: 'Favorites', games: favoriteList })
-    }
-    next.push({ id: 'all', title: 'All Games', games: sortedGames })
-
-    const sources = new Set(games.map((game) => game.source))
-    if (sources.size > 1) {
-      const steam = sortedGames.filter((game) => game.source === 'steam')
-      const epic = sortedGames.filter((game) => game.source === 'epic')
-      const local = sortedGames.filter(
-        (game) => game.source === 'manual' || game.source === 'start-menu',
-      )
-      if (steam.length > 0) next.push({ id: 'steam', title: 'Steam', games: steam })
-      if (epic.length > 0) next.push({ id: 'epic', title: 'Epic Games', games: epic })
-      if (local.length > 0) {
-        next.push({ id: 'local', title: 'Local & Desktop', games: local })
-      }
-    }
-    return next
-  }, [continueGames, favoriteList, games, runningGames, sortedGames])
-
-  const selected = useMemo(
-    () => games.find((game) => game.id === selectedId) ?? games[0],
-    [games, selectedId],
-  )
-
-  // The page follows catalog updates by id. The snapshot keeps it rendering
-  // while a save that changed the id is still propagating through the store.
-  const detailsGame = useMemo(() => {
-    if (!detailsOpen) return null
-    const wanted = detailsSnapshot?.id
-    if (!wanted) return null
-    return games.find((game) => game.id === wanted) ?? detailsSnapshot
-  }, [detailsOpen, detailsSnapshot, games])
-
-  const initialFocusKey = useMemo(() => {
-    if (games.length === 0) return null
-    const row = rows.find((candidate) =>
-      candidate.games.some((game) => game.id === selected?.id),
-    )
-    const target = selected && row ? { row, game: selected } : {
-      row: rows[0],
-      game: rows[0]?.games[0],
-    }
-    if (!target.row || !target.game) return null
-    return `${target.row.id}-${target.game.id}`
-  }, [games.length, rows, selected])
+  const {
+    rows,
+    selected,
+    detailsGame,
+    initialFocusKey,
+  } = useLibraryView({
+    games,
+    selectedId,
+    librarySort: settings.librarySort,
+    detailsOpen,
+    detailsSnapshot,
+  })
 
   const updatePendingLaunch = useCallback((value: PendingLaunch | null) => {
     pendingLaunchRef.current = value
