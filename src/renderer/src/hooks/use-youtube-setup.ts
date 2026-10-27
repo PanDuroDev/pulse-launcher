@@ -7,7 +7,7 @@ export function useYouTubeSetup() {
   const [youtubeStatusError, setYoutubeStatusError] = useState<string | null>(null)
   const [setupOpen, setSetupOpen] = useState(false)
   const setupOpenRef = useRef(false)
-  const draftRevisionRef = useRef(0)
+  const draftRevisionRef = useRef({ apiKey: 0, ytDlpPath: 0, ffmpegPath: 0, cacheLimit: 0 })
   const [youtubeApiKey, setYoutubeApiKey] = useState('')
   const [youtubeYtDlpPath, setYoutubeYtDlpPath] = useState('')
   const [youtubeFfmpegPath, setYoutubeFfmpegPath] = useState('')
@@ -19,21 +19,27 @@ export function useYouTubeSetup() {
   const [draftSynced, setDraftSynced] = useState(false)
 
   const loadYouTubeStatus = useCallback((syncDraft: boolean) => {
-    const draftRevision = draftRevisionRef.current
+    const draftRevision = { ...draftRevisionRef.current }
     setYoutubeStatusLoading(true)
     setYoutubeStatusError(null)
     void window.launcher.music.youtube
       .status()
       .then((status) => {
         setYoutubeStatus(status)
-        if (syncDraft && draftRevisionRef.current === draftRevision) {
-          setYoutubeApiKey(status.settings.apiKey)
-          setYoutubeYtDlpPath(status.settings.ytDlpPath)
-          setYoutubeFfmpegPath(status.settings.ffmpegPath)
-          setYoutubeCacheLimit(String(status.settings.cacheLimitMb))
-          setDraftSynced(true)
-        } else if (syncDraft) {
-          // Keep edits made while the status request was pending.
+        if (syncDraft) {
+          // Hydrate untouched fields without overwriting edits made while loading.
+          if (draftRevisionRef.current.apiKey === draftRevision.apiKey) {
+            setYoutubeApiKey(status.settings.apiKey)
+          }
+          if (draftRevisionRef.current.ytDlpPath === draftRevision.ytDlpPath) {
+            setYoutubeYtDlpPath(status.settings.ytDlpPath)
+          }
+          if (draftRevisionRef.current.ffmpegPath === draftRevision.ffmpegPath) {
+            setYoutubeFfmpegPath(status.settings.ffmpegPath)
+          }
+          if (draftRevisionRef.current.cacheLimit === draftRevision.cacheLimit) {
+            setYoutubeCacheLimit(String(status.settings.cacheLimitMb))
+          }
           setDraftSynced(true)
         }
         setYoutubeStatusLoading(false)
@@ -45,6 +51,7 @@ export function useYouTubeSetup() {
   }, [])
 
   const saveYouTubeSettings = useCallback(() => {
+    if (!draftSynced || youtubeSaving) return
     setYoutubeSaving(true)
     setYoutubeSaveError(null)
     const parsedLimit = Number.parseInt(youtubeCacheLimit, 10)
@@ -69,7 +76,7 @@ export function useYouTubeSetup() {
         setYoutubeSaveError('Could not save the YouTube setup.')
         setYoutubeSaving(false)
       })
-  }, [youtubeApiKey, youtubeCacheLimit, youtubeFfmpegPath, youtubeYtDlpPath])
+  }, [draftSynced, youtubeApiKey, youtubeCacheLimit, youtubeFfmpegPath, youtubeSaving, youtubeYtDlpPath])
 
   const clearYouTubeCache = useCallback(() => {
     setYoutubeClearing(true)
@@ -98,22 +105,22 @@ export function useYouTubeSetup() {
    * would write empty values over a key that is already stored.
    */
   const updateYoutubeApiKey = useCallback((value: string) => {
-    draftRevisionRef.current += 1
+    draftRevisionRef.current.apiKey += 1
     setYoutubeApiKey(value)
   }, [])
 
   const updateYoutubeYtDlpPath = useCallback((value: string) => {
-    draftRevisionRef.current += 1
+    draftRevisionRef.current.ytDlpPath += 1
     setYoutubeYtDlpPath(value)
   }, [])
 
   const updateYoutubeFfmpegPath = useCallback((value: string) => {
-    draftRevisionRef.current += 1
+    draftRevisionRef.current.ffmpegPath += 1
     setYoutubeFfmpegPath(value)
   }, [])
 
   const updateYoutubeCacheLimit = useCallback((value: string) => {
-    draftRevisionRef.current += 1
+    draftRevisionRef.current.cacheLimit += 1
     setYoutubeCacheLimit(value)
   }, [])
 
@@ -136,6 +143,7 @@ export function useYouTubeSetup() {
     youtubeSaveError,
     youtubeCacheLimit,
     youtubeClearing,
+    draftSynced,
     setYoutubeApiKey: updateYoutubeApiKey,
     setYoutubeYtDlpPath: updateYoutubeYtDlpPath,
     setYoutubeFfmpegPath: updateYoutubeFfmpegPath,
