@@ -10,13 +10,13 @@ import { toast } from 'sonner'
 import type { GameSummary, UpdateManualGameInput } from '@shared/contracts/games'
 import { FORCE_QUIT_GRACE_MS } from '@shared/game-control'
 import { useLauncherStore } from '@/store/launcher'
-import { useGamepad } from '@/hooks/use-gamepad'
 import { useLibraryView } from '@/hooks/use-library-view'
 import { useLauncherInitialization } from '@/hooks/use-launcher-initialization'
 import { useGameActionController } from '@/hooks/use-game-action-controller'
 import { useGameLaunchController } from '@/hooks/use-game-launch-controller'
 import { useLibraryActions } from '@/hooks/use-library-actions'
 import { useLauncherKeyboardShortcuts } from '@/hooks/use-launcher-keyboard-shortcuts'
+import { useLauncherGamepad } from '@/hooks/use-launcher-gamepad'
 import { actionForGame, forceRemainingMs } from '@/lib/game-actions'
 import { useAutoHideCursor } from '@/hooks/use-clock'
 import { useUISounds } from '@/hooks/use-ui-sounds'
@@ -668,59 +668,23 @@ export default function App() {
     settingsOpen,
   })
 
-  useGamepad({
-    enabled: !bootDone,
-    onConfirm: () => {
-      if (!bootDone) return
-      if (searchOpen) {
-        // The field owns the keyboard while typing; confirm opens the first
-        // match. On a card, confirm opens that card.
-        const focusKey = getCurrentFocusKey()
-        const selector =
-          focusKey && focusKey.startsWith('search-result-')
-            ? `[data-focus-key="${CSS.escape(focusKey)}"]`
-            : '[data-focus-key^="search-result-"]'
-        document.querySelector<HTMLElement>(selector)?.click()
-        return
-      }
-      if (powerOpen || settingsOpen || addOpen || detailsOpen || musicOpen) {
-        // Confirm the control that owns the spatial focus, even after a text
-        // field let go of the DOM focus on Escape.
-        playUI('press')
-        const focusKey = getCurrentFocusKey()
-        const focused = focusKey
-          ? document.querySelector<HTMLElement>(
-              `[data-focus-key="${CSS.escape(focusKey)}"]`,
-            )
-          : null
-        const target =
-          focused ??
-          (document.activeElement instanceof HTMLElement ? document.activeElement : null)
-        target?.click()
-        return
-      }
-      if (selected) void handleLaunch(selected)
-    },
-    onBack: () => {
-      if (!bootDone) return
-      if (powerOpen) closePower()
-      else if (searchOpen) closeSearch()
-      else if (addOpen) closeAddGame()
-      else if (detailsOpen) closeDetails()
-      else if (musicOpen) closeMusic()
-      else if (settingsOpen) closeSettings()
-      else void window.launcher.app.hide()
-    },
-    onMenu: () => {
-      if (!bootDone) return
-      if (powerOpen) closePower()
-      else if (searchOpen) closeSearch()
-      else if (addOpen) closeAddGame()
-      else if (detailsOpen) closeDetails()
-      else if (musicOpen) closeMusic()
-      else if (settingsOpen) closeSettings()
-      else openSettings()
-    },
+  useLauncherGamepad({
+    addOpen,
+    bootDone,
+    closeAddGame,
+    closeDetails,
+    closeMusic,
+    closePower,
+    closeSearch,
+    closeSettings,
+    detailsOpen,
+    handleLaunch,
+    musicOpen,
+    openSettings,
+    powerOpen,
+    searchOpen,
+    selected,
+    settingsOpen,
   })
 
   const showLoading = status === 'loading' || (games.length === 0 && refreshing)
