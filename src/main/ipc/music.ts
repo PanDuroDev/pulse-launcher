@@ -1,4 +1,5 @@
-import { dialog, ipcMain, shell, BrowserWindow } from 'electron'
+import { dialog, ipcMain, shell } from 'electron'
+import type { BrowserWindow } from 'electron'
 import { z } from 'zod'
 import { IPC } from '@shared/ipc'
 import type {
@@ -13,11 +14,11 @@ import type {
   MusicYouTubeStatus,
 } from '@shared/types'
 import { log } from '../logger'
-import { MusicLibraryService } from '../music/library'
-import { MusicOverlay } from '../music/overlay'
-import { MusicConfigStore } from '../music/config'
-import { MusicOnlineService } from '../music/online/service'
-import { MusicYouTubeService } from '../music/youtube/service'
+import type { MusicLibraryService } from '../music/library'
+import type { MusicOverlay } from '../music/overlay'
+import type { MusicConfigStore } from '../music/config'
+import type { MusicOnlineService } from '../music/online/service'
+import type { MusicYouTubeService } from '../music/youtube/service'
 import { youtubeWatchUrl } from '../music/youtube/parse'
 
 const MusicFolderSchema = z.object({ path: z.string().min(1).max(1024) }).strict()
