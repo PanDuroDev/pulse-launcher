@@ -4,7 +4,6 @@ import {
   getCurrentFocusKey,
   setFocus,
 } from '@noriginmedia/norigin-spatial-navigation-core'
-import type { GameSummary } from '@shared/contracts/games'
 import { useLauncherKeyboardShortcuts } from '@/hooks/use-launcher-keyboard-shortcuts'
 import { useLauncherGamepad } from '@/hooks/use-launcher-gamepad'
 
