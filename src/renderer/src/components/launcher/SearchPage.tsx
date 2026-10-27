@@ -11,7 +11,7 @@ import {
   resume,
   setFocus,
 } from '@noriginmedia/norigin-spatial-navigation-core'
-import type { GameSummary } from '@shared/types'
+import type { GameSummary } from '@shared/contracts/games'
 import { filterGames } from '@shared/library'
 import { sourceLabel } from '@shared/format'
 import { uiAccent } from '@/lib/accent'
