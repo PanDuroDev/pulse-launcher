@@ -1,7 +1,7 @@
 import { StarFilled } from '@mingcute/react/core-filled'
 import { useFocusable } from '@noriginmedia/norigin-spatial-navigation-react'
 import { cn } from 'cn'
-import type { GameSummary } from '@shared/types'
+import type { GameSummary } from '@shared/contracts/games'
 import { accentAlpha, initialsFor, uiAccent } from '@/lib/accent'
 import { announceAttention } from '@/lib/attention'
 import { prefersReducedMotion } from '@/lib/motion'
