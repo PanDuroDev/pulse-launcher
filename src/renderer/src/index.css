@@ -64,6 +64,9 @@
     --radius-card: 1.25rem;
     --duration-focus: 120ms;
     --duration-panel: 200ms;
+    /* Page gutter: one horizontal inset for every screen, replaces the old
+       viewport-relative padding. */
+    --spacing-gutter: clamp(1.5rem, 4vw, 4rem);
 }
 
 :root {

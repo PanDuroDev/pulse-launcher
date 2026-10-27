@@ -399,7 +399,7 @@ export function GameDetailsPage({
       data-page="game-details"
       data-game-id={game.id}
     >
-      <div className="px-[6vw] pb-4">
+      <div className="px-gutter pb-4">
         <div className="mx-auto flex w-full max-w-[64rem] items-center gap-4">
           <button
             ref={backRef}
@@ -439,7 +439,7 @@ export function GameDetailsPage({
 
       <div
         ref={scrollerRef}
-        className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-[6vw] pb-16"
+        className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-gutter pb-16"
       >
         <div className="mx-auto grid w-full max-w-[64rem] gap-7 rounded-2xl border border-white/10 bg-[#08080d]/92 px-6 py-6 backdrop-blur-xl md:grid-cols-[15rem_minmax(0,1fr)]">
           <div className="flex flex-col gap-3">

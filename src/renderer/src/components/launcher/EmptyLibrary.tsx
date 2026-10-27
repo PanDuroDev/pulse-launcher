@@ -41,7 +41,7 @@ interface EmptyLibraryProps {
 
 export function EmptyLibrary({ error, onRefresh, onAddGame }: EmptyLibraryProps) {
   return (
-    <div className="relative z-10 grid min-h-0 flex-1 place-items-center px-[6vw] pb-20">
+    <div className="relative z-10 grid min-h-0 flex-1 place-items-center px-gutter pb-20">
       <Empty className="max-w-lg border border-white/8 bg-black/20 backdrop-blur-xl">
         <EmptyHeader>
           <EmptyMedia

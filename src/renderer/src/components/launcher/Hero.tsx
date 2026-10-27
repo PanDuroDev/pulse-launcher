@@ -238,7 +238,7 @@ export function Hero({
   }
 
   return (
-    <div className="relative z-10 flex min-h-0 flex-1 items-end px-[6vw] pb-7">
+    <div className="relative z-10 flex min-h-0 flex-1 items-end px-gutter pb-7">
       <AnimatePresence mode="wait">
         {game ? (
           <motion.div

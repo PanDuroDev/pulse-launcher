@@ -12,7 +12,7 @@ interface HintBarProps {
 
 export function HintBar({ gameCount }: HintBarProps) {
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex items-end justify-between bg-gradient-to-t from-[#050508] via-[#050508]/75 to-transparent px-[6vw] pt-14 pb-5">
+    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex items-end justify-between bg-gradient-to-t from-[#050508] via-[#050508]/75 to-transparent px-gutter pt-14 pb-5">
       <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-caption text-white/55">
         <span className="flex items-center gap-1.5">
           <KbdGroup>

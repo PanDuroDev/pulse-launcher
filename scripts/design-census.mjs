@@ -57,7 +57,7 @@ const radius = /\brounded-\[[^\]]+\]/g
 const duration = /\bduration-\d+\b/g
 const blur = /\bbackdrop-blur-\d?[a-z]*\b/g
 const glow = /0 0 \d+px/g
-const viewportGutter = /px-\[[^\]]*vw\]/g
+const viewportGutter = /(?:px|scroll-px)-\[[^\]]*vw\]/g
 
 const rules = [
   ['أحجام خطوط مخصّصة', fontSize, LIMITS.fontSizes, (t) => t !== 'text-[14px]'],

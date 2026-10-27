@@ -137,7 +137,7 @@ export function TopBar({
   })
 
   return (
-    <header className="relative z-20 flex items-center justify-between gap-4 px-[6vw] pt-6 pb-3">
+    <header className="relative z-20 flex items-center justify-between gap-4 px-gutter pt-6 pb-3">
       <div className="flex min-w-0 items-center gap-3">
         <BrandMark reducedMotion={reducedMotion} visible={markVisible} mood={markMood} />
         <div className="flex min-w-0 items-baseline gap-2">

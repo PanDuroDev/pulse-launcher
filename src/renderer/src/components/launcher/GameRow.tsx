@@ -98,7 +98,7 @@ export function GameRow({
 
   return (
     <section ref={ref} className="relative">
-      <div className="mb-2.5 flex items-center gap-3 px-[6vw]">
+      <div className="mb-2.5 flex items-center gap-3 px-gutter">
         <h2
           className={`text-body font-semibold tracking-wide transition-colors duration-[--duration-focus] ${
             hasFocusedChild ? 'text-white' : 'text-white/70'
@@ -119,7 +119,7 @@ export function GameRow({
       </div>
       <div
         data-game-strip={rowId}
-        className="no-scrollbar flex snap-x scroll-px-[6vw] gap-4 overflow-x-auto overflow-y-hidden px-[6vw] pt-8 pb-12"
+        className="no-scrollbar flex snap-x scroll-px-gutter gap-4 overflow-x-auto overflow-y-hidden px-gutter pt-8 pb-12"
       >
         {games.map((game) => (
           <GameCard

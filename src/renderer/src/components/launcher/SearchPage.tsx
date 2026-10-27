@@ -151,7 +151,7 @@ export function SearchPage({
     <section data-search-page="" className="flex min-h-0 flex-1 flex-col">
       <h1 className="sr-only">Search</h1>
 
-      <div className="flex items-center gap-4 px-[6vw] pt-6">
+      <div className="flex items-center gap-4 px-gutter pt-6">
         <button
           ref={backRef}
           type="button"
@@ -226,7 +226,7 @@ export function SearchPage({
 
       <p
         aria-live="polite"
-        className="mt-4 px-[6vw] text-caption font-medium tracking-[0.14em] text-white/40 uppercase"
+        className="mt-4 px-gutter text-caption font-medium tracking-[0.14em] text-white/40 uppercase"
       >
         {trimmed
           ? `${results.length} ${results.length === 1 ? 'match' : 'matches'} for “${trimmed}”`
@@ -236,7 +236,7 @@ export function SearchPage({
       {results.length > 0 ? (
         <div
           data-search-results=""
-          className="no-scrollbar mt-2 flex min-h-0 flex-1 snap-x scroll-px-[6vw] items-start gap-4 overflow-x-auto overflow-y-hidden px-[6vw] pt-8 pb-20"
+          className="no-scrollbar mt-2 flex min-h-0 flex-1 snap-x scroll-px-gutter items-start gap-4 overflow-x-auto overflow-y-hidden px-gutter pt-8 pb-20"
         >
           {results.map((game, index) => (
             <GameCard
@@ -259,7 +259,7 @@ export function SearchPage({
           ))}
         </div>
       ) : (
-        <div className="flex min-h-0 flex-1 flex-col items-start px-[6vw] pt-10">
+        <div className="flex min-h-0 flex-1 flex-col items-start px-gutter pt-10">
           <p className="text-body text-white/70">
             No games match “{trimmed}”.
           </p>
@@ -273,7 +273,7 @@ export function SearchPage({
         </div>
       )}
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex items-center gap-5 bg-gradient-to-t from-[#050508] via-[#050508]/80 to-transparent px-[6vw] pt-10 pb-5 text-caption text-white/50">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex items-center gap-5 bg-gradient-to-t from-[#050508] via-[#050508]/80 to-transparent px-gutter pt-10 pb-5 text-caption text-white/50">
         <span>
           <span className="text-white/70">Type</span> to filter instantly
         </span>

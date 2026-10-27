@@ -819,7 +819,7 @@ export function MusicPage({ onBack }: MusicPageProps) {
     <section data-music-page="" className="flex min-h-0 flex-1 flex-col">
       <h1 className="sr-only">Music</h1>
 
-      <div className="flex items-center gap-4 px-[6vw] pt-6">
+      <div className="flex items-center gap-4 px-gutter pt-6">
         <button
           ref={backRef}
           type="button"
@@ -911,7 +911,7 @@ export function MusicPage({ onBack }: MusicPageProps) {
         </div>
       </div>
 
-      <div className="mt-5 flex min-h-0 flex-1 gap-6 px-[6vw] pb-8">
+      <div className="mt-5 flex min-h-0 flex-1 gap-6 px-gutter pb-8">
         <div className="flex min-h-0 min-w-0 flex-1 flex-col rounded-[1.35rem] border border-white/10 bg-black/30 backdrop-blur-xl">
           {(mode === 'youtube' || mode === 'all') && setupOpen ? (
             <YouTubeSetup

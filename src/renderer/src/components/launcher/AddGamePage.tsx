@@ -533,7 +533,7 @@ export function AddGamePage({
 
   return (
     <main className="relative z-10 flex min-h-0 flex-1 flex-col">
-      <div className="px-[6vw] pb-4">
+      <div className="px-gutter pb-4">
         <div className="mx-auto flex w-full max-w-[64rem] items-center gap-4">
           <button
             ref={backRef}
@@ -577,7 +577,7 @@ export function AddGamePage({
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 gap-4 px-[6vw] pb-8">
+      <div className="flex min-h-0 flex-1 gap-4 px-gutter pb-8">
         {places.length > 0 ? (
           <aside className="hidden w-52 shrink-0 flex-col rounded-2xl border border-white/10 bg-[#08080d]/92 p-2 backdrop-blur-xl sm:flex">
             <p className="px-2 pt-1.5 pb-2 text-caption font-semibold tracking-[0.2em] text-white/45 uppercase">
