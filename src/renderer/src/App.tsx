@@ -17,6 +17,7 @@ import { useGameLaunchController } from '@/hooks/use-game-launch-controller'
 import { useLibraryActions } from '@/hooks/use-library-actions'
 import { useLauncherKeyboardShortcuts } from '@/hooks/use-launcher-keyboard-shortcuts'
 import { useLauncherGamepad } from '@/hooks/use-launcher-gamepad'
+import { useLauncherFocusManagement } from '@/hooks/use-launcher-focus-management'
 import { actionForGame, forceRemainingMs } from '@/lib/game-actions'
 import { useAutoHideCursor } from '@/hooks/use-clock'
 import { useUISounds } from '@/hooks/use-ui-sounds'
@@ -76,8 +77,6 @@ export default function App() {
   /** True once the landed mark has had a beat to settle and the library can follow. */
   const [revealed, setRevealed] = useState(false)
   const lastFocusKey = useRef<string | null>(null)
-  const initialFocusDone = useRef(false)
-  const emptyFocusDone = useRef(false)
   const pendingFocusGame = useRef<string | null>(null)
   const searchReturnFocus = useRef<string | null>(null)
   const detailsReturnFocus = useRef<string | null>(null)
@@ -191,62 +190,14 @@ export default function App() {
     }
   }, [view])
 
-  const focusFirstElement = useCallback(() => {
-    if (games.length === 0) {
-      if (emptyFocusDone.current) return
-      window.setTimeout(() => {
-        if (!doesFocusableExist('empty-refresh')) return
-        emptyFocusDone.current = true
-        void setFocus('empty-refresh')
-      }, 200)
-      return
-    }
-    emptyFocusDone.current = false
-    if (initialFocusDone.current || !initialFocusKey) return
-    window.setTimeout(() => {
-      if (!doesFocusableExist(initialFocusKey)) return
-      initialFocusDone.current = true
-      lastFocusKey.current = initialFocusKey
-      void setFocus(initialFocusKey)
-    }, 250)
-  }, [games.length, initialFocusKey])
-
-  useEffect(() => {
-    if (status === 'loading' || !bootDone) return
-    focusFirstElement()
-  }, [bootDone, focusFirstElement, refreshing, status])
-
-  useEffect(() => {
-    if (status !== 'ready' || !lastFocusKey.current) return
-    const timer = window.setTimeout(() => {
-      if (!doesFocusableExist(lastFocusKey.current ?? '')) {
-        const fallback = initialFocusKey
-        if (fallback && doesFocusableExist(fallback)) {
-          lastFocusKey.current = fallback
-          void setFocus(fallback)
-        }
-      }
-    }, 180)
-    return () => window.clearTimeout(timer)
-  }, [games, initialFocusKey, status])
-
-  useEffect(() => {
-    if (!bootDone) return
-    const onWindowFocus = (): void => {
-      window.setTimeout(() => {
-        // Keep the user's place when it still exists. Focus is only recovered
-        // when the focused control unmounted, for example a running-only hero
-        // action after the game exits. Bringing a game to the front and back
-        // must not move focus from the hero row to the last cover.
-        const current = getCurrentFocusKey()
-        if (current && doesFocusableExist(current)) return
-        const target = lastFocusKey.current ?? initialFocusKey
-        if (target && doesFocusableExist(target)) void setFocus(target)
-      }, 60)
-    }
-    window.addEventListener('focus', onWindowFocus)
-    return () => window.removeEventListener('focus', onWindowFocus)
-  }, [bootDone, initialFocusKey])
+  useLauncherFocusManagement({
+    bootDone,
+    games,
+    initialFocusKey,
+    lastFocusKey,
+    refreshing,
+    status,
+  })
 
   const handleAddGame = useCallback(() => {
     setPowerOpen(false)
