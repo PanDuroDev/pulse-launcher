@@ -321,12 +321,14 @@ result. A YouTube Data API key improves search quality but does not bypass these
 restrictions.
 
 **YouTube search returns fewer results than expected**
+Pulse currently requests only the first page from the Data API and caps both
+search paths at 25 results per query; it does not fetch additional pages. Try a
+more specific query with both the artist and song title to narrow the matches.
 As of October 2026, `search.list` has a separate default quota of 100 calls per
-day, and each call costs 1 unit in that bucket. Each additional results page is
-another request. When the search quota runs out or the API fails, Pulse falls
-back to yt-dlp automatically and shows a warning. The fallback has no Data API
-quota, but it still depends on YouTube's undocumented web-facing behaviour and
-can be rate-limited or blocked.
+day, and each call costs 1 unit in that bucket. When the search quota runs out
+or the API fails, Pulse falls back to yt-dlp automatically and shows a warning.
+The fallback has no Data API quota, but it still depends on YouTube's
+undocumented web-facing behaviour and can be rate-limited or blocked.
 
 **The first YouTube play is slow**
 The first play downloads the audio and converts it to MP3; long videos take
