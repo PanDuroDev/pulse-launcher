@@ -26,6 +26,8 @@ export function useMusicSearch() {
   const [youtubeWarning, setYoutubeWarning] = useState<string | null>(null)
   const [youtubeSearching, setYoutubeSearching] = useState(false)
   const [youtubeError, setYoutubeError] = useState<string | null>(null)
+  /** Tracks completion of the combined online-catalog and YouTube search. */
+  const [allSearching, setAllSearching] = useState(false)
   const searchTimer = useRef<number | null>(null)
   const searchRequest = useRef(0)
   const youtubeTimer = useRef<number | null>(null)
