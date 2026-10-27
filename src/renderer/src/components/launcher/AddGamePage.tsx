@@ -103,7 +103,7 @@ function PageAction({
         if (!disabled) onPress()
       }}
       className={cn(
-        'inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-[0.78rem] font-semibold outline-none transition-colors',
+        'inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-caption font-semibold outline-none transition-colors',
         primary
           ? 'bg-white text-black hover:bg-white/90'
           : 'border border-white/10 bg-white/[0.06] text-white/80 hover:bg-white/12 hover:text-white',
@@ -143,7 +143,7 @@ function PlaceButton({ place, activePath, onOpen, onArrowPress }: PlaceButtonPro
       data-focus-key={FOCUS.place(place.id)}
       onClick={() => onOpen(place)}
       className={cn(
-        'flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[0.72rem] outline-none transition-colors',
+        'flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-caption outline-none transition-colors',
         active
           ? 'bg-white/12 text-white'
           : 'text-white/60 hover:bg-white/[0.07] hover:text-white/90',
@@ -237,8 +237,8 @@ function EntryRow({
         )}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[0.8rem] font-medium">{entry.name}</span>
-        <span className="mt-0.5 block text-[0.62rem] tracking-wide text-white/45 uppercase">
+        <span className="block truncate text-caption font-medium">{entry.name}</span>
+        <span className="mt-0.5 block text-caption tracking-wide text-white/45 uppercase">
           {isFile
             ? kind === 'image'
               ? `${entry.extension} image`
@@ -247,7 +247,7 @@ function EntryRow({
         </span>
       </span>
       {isFile ? (
-        <span className="shrink-0 rounded-md border border-white/10 px-1.5 py-0.5 text-[0.58rem] font-semibold tracking-wider text-white/50 uppercase">
+        <span className="shrink-0 rounded-md border border-white/10 px-1.5 py-0.5 text-caption font-semibold tracking-wider text-white/50 uppercase">
           {entry.extension}
         </span>
       ) : (
@@ -543,7 +543,7 @@ export function AddGamePage({
             data-focus-key={FOCUS.back}
             onClick={onBack}
             className={cn(
-              'inline-flex h-9 shrink-0 items-center gap-2 rounded-full px-3.5 text-[0.72rem] font-medium outline-none transition-colors',
+              'inline-flex h-9 shrink-0 items-center gap-2 rounded-full px-3.5 text-caption font-medium outline-none transition-colors',
               backFocused
                 ? 'bg-white text-black'
                 : 'bg-white/[0.05] text-white/70 ring-1 ring-white/15 hover:bg-white/10 hover:text-white',
@@ -554,14 +554,14 @@ export function AddGamePage({
             {pickOnly ? 'Details' : 'Library'}
           </button>
           <div className="min-w-0">
-            <h1 className="text-[1.05rem] font-semibold tracking-tight text-white/95">
+            <h1 className="text-label font-semibold tracking-tight text-white/95">
               {imageMode
                 ? 'Choose cover art'
                 : mode === 'path'
                   ? 'Choose the game file'
                   : 'Add a local game'}
             </h1>
-            <p className="mt-0.5 text-[0.7rem] text-white/60">
+            <p className="mt-0.5 text-caption text-white/60">
               {imageMode
                 ? 'Browse for a PNG, JPEG, WebP, or AVIF image to use as the cover.'
                 : mode === 'path'
@@ -569,7 +569,7 @@ export function AddGamePage({
                   : 'Browse for a game .exe or a .lnk shortcut, then add it to your library.'}
             </p>
           </div>
-          <p className="ml-auto hidden text-right text-[0.62rem] leading-relaxed text-white/55 md:block">
+          <p className="ml-auto hidden text-right text-caption leading-relaxed text-white/55 md:block">
             Enter opens or selects
             <br />
             {pickOnly ? 'Esc returns to game details' : 'Esc returns to the library'}
@@ -580,7 +580,7 @@ export function AddGamePage({
       <div className="flex min-h-0 flex-1 gap-4 px-[6vw] pb-8">
         {places.length > 0 ? (
           <aside className="hidden w-52 shrink-0 flex-col rounded-2xl border border-white/10 bg-[#08080d]/92 p-2 backdrop-blur-xl sm:flex">
-            <p className="px-2 pt-1.5 pb-2 text-[0.58rem] font-semibold tracking-[0.2em] text-white/45 uppercase">
+            <p className="px-2 pt-1.5 pb-2 text-caption font-semibold tracking-[0.2em] text-white/45 uppercase">
               Places
             </p>
             <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto">
@@ -623,7 +623,7 @@ export function AddGamePage({
             >
               <ArrowUpFilled className="size-4" />
             </button>
-            <div className="no-scrollbar flex min-w-0 flex-1 items-center gap-1 overflow-x-auto whitespace-nowrap text-[0.68rem]">
+            <div className="no-scrollbar flex min-w-0 flex-1 items-center gap-1 overflow-x-auto whitespace-nowrap text-caption">
               {crumbs.map((crumb, index) => (
                 <span key={crumb.path} className="flex shrink-0 items-center gap-1">
                   {index > 0 ? <span className="text-white/25">/</span> : null}
@@ -642,7 +642,7 @@ export function AddGamePage({
                 <span className="text-white/45">Select a place to start</span>
               ) : null}
             </div>
-            <span className="hidden shrink-0 text-[0.62rem] text-white/40 sm:inline">
+            <span className="hidden shrink-0 text-caption text-white/40 sm:inline">
               {folderCount} folders · {fileCount} {imageMode ? 'images' : 'games'}
             </span>
           </div>
@@ -650,7 +650,7 @@ export function AddGamePage({
           {error ? (
             <p
               role="alert"
-              className="mx-3 mt-3 rounded-lg border border-amber-300/20 bg-amber-300/[0.08] px-3 py-2 text-[0.68rem] text-amber-100/85"
+              className="mx-3 mt-3 rounded-lg border border-amber-300/20 bg-amber-300/[0.08] px-3 py-2 text-caption text-amber-100/85"
             >
               {error}
             </p>
@@ -659,7 +659,7 @@ export function AddGamePage({
           <div ref={scrollerRef} className="no-scrollbar min-h-0 flex-1 overflow-y-auto p-2">
             {loading ? (
               <div className="grid gap-1.5" aria-live="polite" aria-busy>
-                <p className="flex items-center gap-2 px-2 py-1.5 text-[0.68rem] text-white/55">
+                <p className="flex items-center gap-2 px-2 py-1.5 text-caption text-white/55">
                   <Spinner className="size-4" />
                   Reading folder…
                 </p>
@@ -673,10 +673,10 @@ export function AddGamePage({
             ) : entries.length === 0 ? (
               <div className="grid place-items-center gap-2 px-4 py-12 text-center">
                 <FolderOpenFilled className="size-8 text-white/25" />
-                <p className="text-[0.8rem] font-medium text-white/75">
+                <p className="text-caption font-medium text-white/75">
                   {imageMode ? 'No folders or images here' : 'No folders or game files here'}
                 </p>
-                <p className="max-w-[22rem] text-[0.68rem] leading-relaxed text-white/45">
+                <p className="max-w-[22rem] text-caption leading-relaxed text-white/45">
                   {imageMode
                     ? 'Pulse shows folders plus PNG, JPEG, WebP and AVIF images. Use Up one level or pick another place.'
                     : 'Pulse shows folders plus .exe and .lnk files. Use Up one level or pick another place.'}
@@ -697,7 +697,7 @@ export function AddGamePage({
                   />
                 ))}
                 {listing?.truncated ? (
-                  <p className="px-3 py-2 text-[0.64rem] text-white/40">
+                  <p className="px-3 py-2 text-caption text-white/40">
                     Showing the first entries only. Open a subfolder to narrow the list.
                   </p>
                 ) : null}
@@ -709,11 +709,11 @@ export function AddGamePage({
             {selected ? (
               <div className="flex flex-wrap items-center gap-3">
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[0.78rem] font-medium text-white/90">
+                  <p className="truncate text-caption font-medium text-white/90">
                     {selected.name}
                   </p>
                   <p
-                    className="truncate text-[0.62rem] text-white/45"
+                    className="truncate text-caption text-white/45"
                     title={selected.path}
                   >
                     {selected.path}
@@ -756,7 +756,7 @@ export function AddGamePage({
                 </div>
               </div>
             ) : (
-              <p className="px-1 text-[0.64rem] text-white/45">
+              <p className="px-1 text-caption text-white/45">
                 {loading
                   ? 'Reading this folder…'
                   : imageMode

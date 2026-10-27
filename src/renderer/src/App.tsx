@@ -1256,7 +1256,7 @@ export default function App() {
           content, once the mark has landed. */}
       <div
         aria-hidden={!revealed}
-        className={`transition-opacity duration-700 ease-out ${
+        className={`transition-opacity duration-[--duration-focus] ease-out ${
           revealed ? 'opacity-100' : 'opacity-0'
         }`}
       >
@@ -1267,7 +1267,7 @@ export default function App() {
         {/* Chrome first, and early: the splash ball flies into the mark, so the
             header has to be there — dimmed to nothing until the ball lands. */}
         <div
-          className={`transition-opacity duration-200 ease-out ${
+          className={`transition-opacity duration-[--duration-focus] ease-out ${
             bootDone ? 'opacity-100' : 'opacity-0'
           }`}
         >
@@ -1309,7 +1309,7 @@ export default function App() {
 
         {/* Everything else waits for the landing, then rises into place. */}
         <div
-          className={`flex min-h-0 flex-1 flex-col transition-opacity duration-500 ease-out ${
+          className={`flex min-h-0 flex-1 flex-col transition-opacity duration-[--duration-focus] ease-out ${
             revealed ? 'opacity-100' : 'opacity-0'
           }`}
         >
@@ -1446,7 +1446,7 @@ export default function App() {
 
         {settingsOpen || addOpen || searchOpen || powerOpen || detailsOpen || musicOpen ? null : (
           <div
-            className={`transition-opacity duration-500 ease-out ${
+            className={`transition-opacity duration-[--duration-focus] ease-out ${
               revealed ? 'opacity-100' : 'opacity-0'
             }`}
           >

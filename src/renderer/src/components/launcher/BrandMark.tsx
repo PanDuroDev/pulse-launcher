@@ -174,7 +174,7 @@ export function BrandMark({ reducedMotion, visible = true, mood }: BrandMarkProp
     >
       <span
         aria-hidden
-        className="pointer-events-none absolute -inset-0.5 scale-95 rounded-full ring-1 ring-[hsl(var(--pulse-accent))]/0 transition-all duration-300 group-hover:scale-105 group-hover:ring-[hsl(var(--pulse-accent))]/30"
+        className="pointer-events-none absolute -inset-0.5 scale-95 rounded-full ring-1 ring-[hsl(var(--pulse-accent))]/0 transition-all duration-[--duration-focus] group-hover:scale-105 group-hover:ring-[hsl(var(--pulse-accent))]/30"
       />
       <BloubBot
         size={MARK_SIZE}
@@ -186,7 +186,7 @@ export function BrandMark({ reducedMotion, visible = true, mood }: BrandMarkProp
         gaze={still ? null : gaze}
         frozenAt={still ? 0.85 : undefined}
         ariaLabel="Pulse"
-        className="relative transition-transform duration-300 ease-out group-hover:scale-[1.05] group-active:scale-95"
+        className="relative transition-transform duration-[--duration-focus] ease-out group-hover:scale-[1.05] group-active:scale-95"
       />
       {ripple > 0 ? (
         <motion.span

@@ -84,7 +84,7 @@ function SeekBar({ positionMs, durationMs, onSeek }: SeekBarProps) {
     >
       <span className="absolute inset-x-0 h-1 overflow-hidden rounded-full bg-white/10">
         <span
-          className="block h-full rounded-full transition-[width] duration-200"
+          className="block h-full rounded-full transition-[width] duration-[--duration-focus]"
           style={{ width: `${Math.round(ratio * 100)}%`, background: uiAccent(0.95) }}
         />
       </span>
@@ -239,14 +239,14 @@ export function MusicOverlay() {
             <p
               dir="auto"
               title={title}
-              className="truncate text-[14px] font-semibold leading-tight text-white"
+              className="truncate text-body font-semibold leading-tight text-white"
             >
               {title}
             </p>
             <p
               dir="auto"
               title={artist}
-              className="mt-0.5 truncate text-[12px] leading-tight text-white/65"
+              className="mt-0.5 truncate text-caption leading-tight text-white/65"
             >
               {artist}
             </p>
@@ -254,7 +254,7 @@ export function MusicOverlay() {
               dir="auto"
               title={source}
               aria-live="polite"
-              className="mt-1 flex items-center gap-1.5 truncate text-[10.5px] leading-tight text-white/55"
+              className="mt-1 flex items-center gap-1.5 truncate text-caption leading-tight text-white/55"
             >
               <span
                 className="size-1.5 shrink-0 rounded-full"
@@ -302,7 +302,7 @@ export function MusicOverlay() {
           >
             {muted ? <VolumeMuteFilled className="size-3.5" /> : <VolumeFilled className="size-3.5" />}
           </button>
-          <span className="w-8 text-right text-[10px] tabular-nums text-white/55">
+          <span className="w-8 text-right text-caption tabular-nums text-white/55">
             {formatDuration(positionMs)}
           </span>
           <SeekBar
@@ -310,7 +310,7 @@ export function MusicOverlay() {
             durationMs={state.durationMs}
             onSeek={(next) => send({ type: 'seek', positionMs: next })}
           />
-          <span className="w-8 text-[10px] tabular-nums text-white/45">
+          <span className="w-8 text-caption tabular-nums text-white/45">
             {formatDuration(state.durationMs)}
           </span>
         </div>

@@ -90,7 +90,7 @@ function ToolButton({ focusKey, label, icon, disabled = false, onClick }: ToolBu
         if (!disabled) onClick()
       }}
       className={cn(
-        'flex h-9 items-center gap-2 rounded-full px-3 text-[0.72rem] font-medium outline-none transition-colors',
+        'flex h-9 items-center gap-2 rounded-full px-3 text-caption font-medium outline-none transition-colors',
         focused
           ? 'bg-white text-black'
           : 'bg-white/[0.04] text-white/65 hover:bg-white/10 hover:text-white',
@@ -141,16 +141,16 @@ export function TopBar({
       <div className="flex min-w-0 items-center gap-3">
         <BrandMark reducedMotion={reducedMotion} visible={markVisible} mood={markMood} />
         <div className="flex min-w-0 items-baseline gap-2">
-          <span className="text-[0.78rem] font-semibold tracking-[0.4em] text-white/90">
+          <span className="text-caption font-semibold tracking-[0.4em] text-white/90">
             PULSE
           </span>
           <span className="hidden text-white/20 sm:inline">/</span>
-          <span className="truncate text-[0.66rem] font-medium tracking-[0.18em] text-white/45 uppercase">
+          <span className="truncate text-caption font-medium tracking-[0.18em] text-white/45 uppercase">
             {title}
           </span>
         </div>
         {demo ? (
-          <span className="ml-1 rounded-full border border-amber-300/25 bg-amber-300/10 px-2 py-0.5 text-[0.55rem] font-semibold tracking-[0.16em] text-amber-200/80">
+          <span className="ml-1 rounded-full border border-amber-300/25 bg-amber-300/10 px-2 py-0.5 text-caption font-semibold tracking-[0.16em] text-amber-200/80">
             DEMO
           </span>
         ) : null}
@@ -159,12 +159,12 @@ export function TopBar({
       <div className="flex shrink-0 items-center gap-4">
         <div className="hidden min-h-5 items-center md:flex">
           {scanning ? (
-            <div className="flex items-center gap-2 rounded-full border border-white/10 bg-black/25 px-3 py-1 text-[0.64rem] font-medium text-white/60 backdrop-blur-xl">
+            <div className="flex items-center gap-2 rounded-full border border-white/10 bg-black/25 px-3 py-1 text-caption font-medium text-white/60 backdrop-blur-xl">
               <Refresh2Filled className="size-4 animate-spin" />
               {scanning}
             </div>
           ) : staleLabel ? (
-            <div className="flex max-w-[22rem] items-center gap-2 truncate rounded-full border border-amber-300/20 bg-amber-300/8 px-3 py-1 text-[0.64rem] font-medium text-amber-100/75 backdrop-blur-xl">
+            <div className="flex max-w-[22rem] items-center gap-2 truncate rounded-full border border-amber-300/20 bg-amber-300/8 px-3 py-1 text-caption font-medium text-amber-100/75 backdrop-blur-xl">
               <WarningFilled className="size-4 shrink-0" />
               <span className="truncate">{staleLabel}</span>
             </div>
@@ -174,10 +174,10 @@ export function TopBar({
         <div className="hidden items-center gap-2 text-right lg:flex">
           <ClockFilled className="size-5 text-white/25" />
           <div>
-            <p className="text-[0.72rem] leading-none font-semibold tracking-wide text-white/75 tabular-nums">
+            <p className="text-caption leading-none font-semibold tracking-wide text-white/75 tabular-nums">
               {time}
             </p>
-            <p className="mt-1 hidden text-[0.52rem] leading-none tracking-[0.1em] text-white/35 uppercase xl:block">
+            <p className="mt-1 hidden text-caption leading-none tracking-[0.1em] text-white/35 uppercase xl:block">
               {date}
             </p>
           </div>

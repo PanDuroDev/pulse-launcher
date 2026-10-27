@@ -84,7 +84,7 @@ export function GameCard({
       // The outline/shadow live on this layer, so it must never clip. Only the
       // inner cover layer below owns overflow and the rounded corners.
       className={cn(
-        'group relative aspect-[2/3] w-[clamp(8.5rem,11vw,12rem)] shrink-0 snap-start scroll-mt-6 scroll-mb-10 rounded-[1.35rem] bg-white/5 text-left outline-none transition-[transform,box-shadow,filter] duration-300 ease-out',
+        'group relative aspect-[2/3] w-[clamp(8.5rem,11vw,12rem)] shrink-0 snap-start scroll-mt-6 scroll-mb-10 rounded-[1.35rem] bg-white/5 text-left outline-none transition-[transform,box-shadow,filter] duration-[--duration-focus] ease-out',
         focused
           ? 'z-20 -translate-y-1 scale-[1.035]'
           : 'ring-1 ring-white/10 hover:ring-white/25 hover:shadow-[0_10px_24px_-18px_rgba(0,0,0,0.85)]',
@@ -110,7 +110,7 @@ export function GameCard({
             src={cover}
             alt=""
             draggable={false}
-            className={`absolute inset-0 h-full w-full object-cover transition-all duration-500 ${
+            className={`absolute inset-0 h-full w-full object-cover transition-all duration-[--duration-focus] ${
               focused ? 'scale-[1.03] brightness-105 saturate-[1.08]' : 'brightness-90 saturate-100'
             }`}
           />
@@ -126,7 +126,7 @@ export function GameCard({
         <div className="absolute inset-x-0 bottom-0 p-3.5">
           <p
             className={cn(
-              'line-clamp-2 text-[0.86rem] leading-tight font-semibold text-white transition-all duration-200',
+              'line-clamp-2 text-body leading-tight font-semibold text-white transition-all duration-[--duration-focus]',
               focused ? 'opacity-100' : 'opacity-0',
             )}
           >
@@ -134,7 +134,7 @@ export function GameCard({
           </p>
           <p
             className={cn(
-              'mt-1 text-[0.62rem] font-medium tracking-[0.16em] text-white/50 uppercase transition-all duration-200',
+              'mt-1 text-caption font-medium tracking-[0.16em] text-white/50 uppercase transition-all duration-[--duration-focus]',
               focused ? 'opacity-100' : 'opacity-0',
             )}
           >
@@ -143,7 +143,7 @@ export function GameCard({
         </div>
 
         <div
-          className={`absolute top-3 left-3 size-1.5 rounded-full transition-opacity duration-200 ${
+          className={`absolute top-3 left-3 size-1.5 rounded-full transition-opacity duration-[--duration-focus] ${
             focused ? 'opacity-100' : 'opacity-0'
           }`}
           style={{ background: game.accent ? `hsl(${game.accent})` : undefined }}
@@ -158,7 +158,7 @@ export function GameCard({
           </span>
         ) : null}
         <div
-          className={`pointer-events-none absolute inset-0 rounded-[1.35rem] transition-opacity duration-300 ${
+          className={`pointer-events-none absolute inset-0 rounded-[1.35rem] transition-opacity duration-[--duration-focus] ${
             focused ? 'opacity-100' : 'opacity-0'
           }`}
           style={{

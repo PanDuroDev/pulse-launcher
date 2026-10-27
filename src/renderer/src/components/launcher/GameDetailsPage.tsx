@@ -86,7 +86,7 @@ function moveTo(focusKey: string | null): boolean {
 
 function SectionLabel({ children }: { children: ReactNode }) {
   return (
-    <p className="text-[0.6rem] font-semibold tracking-[0.2em] text-white/55 uppercase">
+    <p className="text-caption font-semibold tracking-[0.2em] text-white/55 uppercase">
       {children}
     </p>
   )
@@ -137,7 +137,7 @@ function DetailsAction({
         if (!disabled) onPress()
       }}
       className={cn(
-        'inline-flex h-10 items-center justify-center gap-2 rounded-full px-5 text-[0.8rem] font-medium outline-none transition-colors',
+        'inline-flex h-10 items-center justify-center gap-2 rounded-full px-5 text-caption font-medium outline-none transition-colors',
         primary
           ? 'bg-white font-semibold text-black hover:bg-white/90'
           : danger
@@ -409,7 +409,7 @@ export function GameDetailsPage({
             data-focus-key={FOCUS.back}
             onClick={onBack}
             className={cn(
-              'inline-flex h-9 shrink-0 items-center gap-2 rounded-full px-3.5 text-[0.72rem] font-medium outline-none transition-colors',
+              'inline-flex h-9 shrink-0 items-center gap-2 rounded-full px-3.5 text-caption font-medium outline-none transition-colors',
               backFocused
                 ? 'bg-white text-black'
                 : 'bg-white/[0.05] text-white/70 ring-1 ring-white/15 hover:bg-white/10 hover:text-white',
@@ -420,16 +420,16 @@ export function GameDetailsPage({
             Library
           </button>
           <div className="min-w-0">
-            <h1 className="text-[1.05rem] font-semibold tracking-tight text-white/95">
+            <h1 className="text-label font-semibold tracking-tight text-white/95">
               Game details
             </h1>
-            <p className="mt-0.5 text-[0.7rem] text-white/60">
+            <p className="mt-0.5 text-caption text-white/60">
               {manual
                 ? 'Edit the name, launch file, or cover of this local game.'
                 : 'What Pulse knows about this game.'}
             </p>
           </div>
-          <p className="ml-auto hidden text-right text-[0.62rem] leading-relaxed text-white/55 md:block">
+          <p className="ml-auto hidden text-right text-caption leading-relaxed text-white/55 md:block">
             Enter activates
             <br />
             Esc returns to the library
@@ -465,8 +465,8 @@ export function GameDetailsPage({
                 </div>
               )}
             </div>
-            <div className="flex flex-wrap items-center gap-2 text-[0.66rem] text-white/45">
-              <span className="rounded-full bg-white/8 px-2.5 py-1 text-[0.58rem] font-semibold tracking-[0.16em] text-white/65 uppercase ring-1 ring-white/12">
+            <div className="flex flex-wrap items-center gap-2 text-caption text-white/45">
+              <span className="rounded-full bg-white/8 px-2.5 py-1 text-caption font-semibold tracking-[0.16em] text-white/65 uppercase ring-1 ring-white/12">
                 {sourceLabel(game.source)}
               </span>
               {statusText ? (
@@ -488,7 +488,7 @@ export function GameDetailsPage({
               <h2 className="truncate text-[clamp(1.6rem,3.2vw,2.6rem)] leading-tight font-semibold tracking-[-0.03em] text-white">
                 {game.name}
               </h2>
-              <p className="mt-1.5 max-w-2xl text-[0.76rem] leading-relaxed text-white/45">
+              <p className="mt-1.5 max-w-2xl text-caption leading-relaxed text-white/45">
                 {running
                   ? assurance === 'confirmed'
                     ? `${game.name} is running. Use Bring to front to switch back to it.`
@@ -498,7 +498,7 @@ export function GameDetailsPage({
                     : (game.subtitle ??
                       `Ready to ${actionLabel === 'Play' ? 'jump back in' : 'launch'} from your ${sourceLabel(game.source)} library.`)}
               </p>
-              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[0.68rem] text-white/45">
+              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-caption text-white/45">
                 {lastPlayed ? (
                   <span className="flex items-center gap-1.5">
                     <ClockFilled className="size-4" />
@@ -578,7 +578,7 @@ export function GameDetailsPage({
                 <section className="grid gap-3 border-t border-white/10 pt-5">
                   <SectionLabel>Name and launch file</SectionLabel>
                   <div className="grid gap-1.5">
-                    <label htmlFor="details-name-field" className="text-[0.72rem] text-white/70">
+                    <label htmlFor="details-name-field" className="text-caption text-white/70">
                       Name
                     </label>
                     <Input
@@ -594,7 +594,7 @@ export function GameDetailsPage({
                       spellCheck={false}
                       autoComplete="off"
                     />
-                    <p className="text-[0.64rem] text-white/40">
+                    <p className="text-caption text-white/40">
                       Up to 80 characters. Saving a new name keeps the game, its
                       favorite, and its play history.
                     </p>
@@ -602,19 +602,19 @@ export function GameDetailsPage({
 
                   <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
                     <div className="min-w-0">
-                      <p className="flex items-center gap-2 text-[0.78rem] font-medium text-white/85">
+                      <p className="flex items-center gap-2 text-caption font-medium text-white/85">
                         <FolderOpenFilled className="size-4 text-white/50" />
                         Launch file
                       </p>
                       <p
-                        className="mt-1 truncate text-[0.66rem] text-white/45"
+                        className="mt-1 truncate text-caption text-white/45"
                         title={draft.executable}
                         data-details-path=""
                       >
                         {draft.executable || 'No file chosen'}
                       </p>
                       {draft.executable !== (game.executable ?? '') ? (
-                        <p className="mt-1 text-[0.62rem] text-amber-200/80">
+                        <p className="mt-1 text-caption text-amber-200/80">
                           Changed — saving also updates the game's id and play history.
                         </p>
                       ) : null}
@@ -635,12 +635,12 @@ export function GameDetailsPage({
                   <SectionLabel>Cover art</SectionLabel>
                   <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
                     <div className="min-w-0">
-                      <p className="flex items-center gap-2 text-[0.78rem] font-medium text-white/85">
+                      <p className="flex items-center gap-2 text-caption font-medium text-white/85">
                         <PicFilled className="size-4 text-white/50" />
                         {hasCustomArtwork ? 'Custom image' : 'No custom image'}
                       </p>
                       <p
-                        className="mt-1 truncate text-[0.66rem] text-white/45"
+                        className="mt-1 truncate text-caption text-white/45"
                         title={chosenArtwork ?? undefined}
                         data-details-art=""
                       >

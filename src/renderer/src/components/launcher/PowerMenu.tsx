@@ -85,13 +85,13 @@ function PowerAction({
       <span className="min-w-0">
         <span
           className={cn(
-            'block text-[0.78rem] font-medium',
+            'block text-caption font-medium',
             tone === 'danger' ? 'text-red-200' : 'text-white/85',
           )}
         >
           {label}
         </span>
-        <span className="mt-0.5 block text-[0.62rem] leading-snug text-white/35">
+        <span className="mt-0.5 block text-caption leading-snug text-white/35">
           {description}
         </span>
       </span>
@@ -158,7 +158,7 @@ export function PowerMenu({ onClose, onHide, onQuit }: PowerMenuProps) {
         className="absolute top-[4.6rem] right-[6vw] z-10 w-[17rem] rounded-2xl border border-white/10 bg-[#0b0b11]/97 p-1.5 shadow-[0_24px_70px_-20px_rgba(0,0,0,0.9)] backdrop-blur-2xl"
       >
         <div className="px-3 pt-2 pb-1.5">
-          <p className="text-[0.58rem] font-semibold tracking-[0.2em] text-white/35 uppercase">
+          <p className="text-caption font-semibold tracking-[0.2em] text-white/35 uppercase">
             Power
           </p>
         </div>
@@ -190,7 +190,7 @@ export function PowerMenu({ onClose, onHide, onQuit }: PowerMenuProps) {
           }}
           onArrowPress={quitNeighbours}
         />
-        <p className="px-3 py-2 text-[0.58rem] leading-relaxed text-white/25">
+        <p className="px-3 py-2 text-caption leading-relaxed text-white/25">
           Esc or Back closes this menu.
         </p>
       </div>

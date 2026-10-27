@@ -84,7 +84,7 @@ function moveTo(focusKey: string | null): boolean {
 
 function SectionLabel({ children }: { children: ReactNode }) {
   return (
-    <p className="text-[0.6rem] font-semibold tracking-[0.2em] text-white/55 uppercase">
+    <p className="text-caption font-semibold tracking-[0.2em] text-white/55 uppercase">
       {children}
     </p>
   )
@@ -147,7 +147,7 @@ function SettingsAction({
         if (!disabled) onPress()
       }}
       className={cn(
-        'inline-flex h-10 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.06] px-3 text-[0.78rem] font-medium text-white/85 outline-none transition-colors hover:bg-white/12 hover:text-white',
+        'inline-flex h-10 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.06] px-3 text-caption font-medium text-white/85 outline-none transition-colors hover:bg-white/12 hover:text-white',
         disabled && 'cursor-default opacity-50',
         className,
       )}
@@ -218,8 +218,8 @@ function SettingsToggle({
           </span>
         ) : null}
         <span className="min-w-0">
-          <span className="block text-[0.8rem] font-medium text-white/90">{label}</span>
-          <span className="mt-1 block text-[0.67rem] leading-relaxed text-white/50">
+          <span className="block text-caption font-medium text-white/90">{label}</span>
+          <span className="mt-1 block text-caption leading-relaxed text-white/50">
             {description}
           </span>
         </span>
@@ -283,7 +283,7 @@ function SettingsChoice({
       disabled={disabled}
       onClick={onPress}
       className={cn(
-        'rounded-md px-2.5 py-1.5 text-[0.7rem] font-medium outline-none transition-colors',
+        'rounded-md px-2.5 py-1.5 text-caption font-medium outline-none transition-colors',
         selected ? 'bg-white text-black' : 'text-white/60 hover:text-white',
         disabled && 'cursor-default opacity-60',
       )}
@@ -315,8 +315,8 @@ function ManualGameRow({
   return (
     <div className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">
       <div className="min-w-0">
-        <p className="truncate text-[0.78rem] font-medium text-white/85">{game.name}</p>
-        <p className="text-[0.62rem] tracking-[0.12em] text-white/50 uppercase">
+        <p className="truncate text-caption font-medium text-white/85">{game.name}</p>
+        <p className="text-caption tracking-[0.12em] text-white/50 uppercase">
           {sourceLabel(game.source)}
         </p>
       </div>
@@ -365,7 +365,7 @@ function BackToLibrary({
       data-focus-key={FOCUS.back}
       onClick={onBack}
       className={cn(
-        'inline-flex h-9 shrink-0 items-center gap-2 rounded-full px-3.5 text-[0.72rem] font-medium outline-none transition-colors',
+        'inline-flex h-9 shrink-0 items-center gap-2 rounded-full px-3.5 text-caption font-medium outline-none transition-colors',
         focused
           ? 'bg-white text-black'
           : 'bg-white/[0.05] text-white/70 ring-1 ring-white/15 hover:bg-white/10 hover:text-white',
@@ -729,12 +729,12 @@ export function SettingsPage({ onBack, onAddGame }: SettingsPageProps) {
         <div className="mx-auto flex w-full max-w-[48rem] items-center gap-4">
           <BackToLibrary onBack={onBack} onArrowPress={backArrows} />
           <div className="min-w-0">
-            <h1 className="text-[1.05rem] font-semibold tracking-tight text-white/95">Settings</h1>
-            <p className="mt-0.5 text-[0.7rem] text-white/60">
+            <h1 className="text-label font-semibold tracking-tight text-white/95">Settings</h1>
+            <p className="mt-0.5 text-caption text-white/60">
               Library, artwork, and window preferences.
             </p>
           </div>
-          <p className="ml-auto hidden text-right text-[0.62rem] leading-relaxed text-white/55 md:block">
+          <p className="ml-auto hidden text-right text-caption leading-relaxed text-white/55 md:block">
             Tab moves between controls
             <br />
             Esc leaves a field, then closes
@@ -780,7 +780,7 @@ export function SettingsPage({ onBack, onAddGame }: SettingsPageProps) {
             />
             {manualGames.length > 0 ? (
               <div className="grid gap-2">
-                <p className="text-[0.7rem] text-white/50">Manually added</p>
+                <p className="text-caption text-white/50">Manually added</p>
                 {manualGames.map((game) => (
                   <ManualGameRow
                     key={game.id}
@@ -802,7 +802,7 @@ export function SettingsPage({ onBack, onAddGame }: SettingsPageProps) {
                 <RowIcon>
                   <Key2Filled className="size-4" />
                 </RowIcon>
-                <label htmlFor="sgdb-key" className="text-[0.8rem] text-white/90">
+                <label htmlFor="sgdb-key" className="text-caption text-white/90">
                   SteamGridDB API key
                 </label>
               </div>
@@ -848,7 +848,7 @@ export function SettingsPage({ onBack, onAddGame }: SettingsPageProps) {
                   {savingKey ? <Spinner className="size-5" /> : 'Save'}
                 </SettingsAction>
               </div>
-              <p className="text-[0.67rem] leading-relaxed text-white/50">
+              <p className="text-caption leading-relaxed text-white/50">
                 Used only when a game has no Steam artwork. Leave empty to use generated covers.
               </p>
             </div>
@@ -864,8 +864,8 @@ export function SettingsPage({ onBack, onAddGame }: SettingsPageProps) {
                   <CursorFilled className="size-4" />
                 </RowIcon>
                 <div>
-                  <p className="text-[0.8rem] text-white/90">Hide cursor after</p>
-                  <p className="text-[0.67rem] text-white/50">Seconds of inactivity</p>
+                  <p className="text-caption text-white/90">Hide cursor after</p>
+                  <p className="text-caption text-white/50">Seconds of inactivity</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -880,7 +880,7 @@ export function SettingsPage({ onBack, onAddGame }: SettingsPageProps) {
                   data-focus-key={FOCUS.cursor}
                   aria-label="Cursor hide delay in seconds"
                 />
-                <span className="text-[0.72rem] text-white/50">sec</span>
+                <span className="text-caption text-white/50">sec</span>
               </div>
             </div>
 
@@ -890,8 +890,8 @@ export function SettingsPage({ onBack, onAddGame }: SettingsPageProps) {
                   <MonitorFilled className="size-4" />
                 </RowIcon>
                 <div>
-                  <p className="text-[0.8rem] text-white/90">Motion</p>
-                  <p className="text-[0.67rem] text-white/50">Animations and parallax</p>
+                  <p className="text-caption text-white/90">Motion</p>
+                  <p className="text-caption text-white/50">Animations and parallax</p>
                 </div>
               </div>
               <div
@@ -933,8 +933,8 @@ export function SettingsPage({ onBack, onAddGame }: SettingsPageProps) {
                   <FullscreenFilled className="size-4" />
                 </RowIcon>
                 <div>
-                  <p className="text-[0.8rem] text-white/90">Window mode</p>
-                  <p className="text-[0.67rem] text-white/50">Saved and used at startup</p>
+                  <p className="text-caption text-white/90">Window mode</p>
+                  <p className="text-caption text-white/50">Saved and used at startup</p>
                 </div>
               </div>
               <div
@@ -956,13 +956,13 @@ export function SettingsPage({ onBack, onAddGame }: SettingsPageProps) {
               </div>
             </div>
             {settings.windowMode === 'kiosk' ? (
-              <p className="rounded-lg border border-amber-300/20 bg-amber-300/[0.08] px-3 py-2 text-[0.68rem] leading-relaxed text-amber-100/85">
+              <p className="rounded-lg border border-amber-300/20 bg-amber-300/[0.08] px-3 py-2 text-caption leading-relaxed text-amber-100/85">
                 Kiosk stays above other windows and hides from the taskbar. Press
                 <span className="font-medium text-amber-100"> Ctrl+Alt+L </span>
                 to restore it, and quit from the Power menu or the tray icon.
               </p>
             ) : (
-              <p className="text-[0.67rem] leading-relaxed text-white/50">
+              <p className="text-caption leading-relaxed text-white/50">
                 Escape and the close button only hide the launcher. Use the Power menu or the
                 tray icon to exit. Switching to Windowed reloads the window.
               </p>
@@ -983,7 +983,7 @@ export function SettingsPage({ onBack, onAddGame }: SettingsPageProps) {
 
           <section className="grid gap-3">
             <SectionLabel>About</SectionLabel>
-            <div className="grid gap-1.5 text-[0.7rem] text-white/55">
+            <div className="grid gap-1.5 text-caption text-white/55">
               <p>
                 Pulse Launcher {info?.version ?? '…'}
                 {info?.demo ? ' · Demo mode' : ''}
@@ -1016,7 +1016,7 @@ export function SettingsPage({ onBack, onAddGame }: SettingsPageProps) {
                 <Document2Filled className="size-5" />
                 Open logs
               </SettingsAction>
-              <p className="text-[0.67rem] text-white/50">Hide and quit are in the Power menu.</p>
+              <p className="text-caption text-white/50">Hide and quit are in the Power menu.</p>
             </div>
           </section>
         </div>

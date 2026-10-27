@@ -58,7 +58,7 @@ export function SortControl({ sort, onPress }: SortControlProps) {
       aria-label={`Sort library, currently ${librarySortDescription(sort)}`}
       onClick={onPress}
       className={cn(
-        'ml-auto inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-[0.66rem] font-semibold tracking-[0.08em] uppercase outline-none transition-colors',
+        'ml-auto inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-caption font-semibold tracking-[0.08em] uppercase outline-none transition-colors',
         focused
           ? 'bg-white text-black'
           : 'bg-white/5 text-white/55 ring-1 ring-white/10 hover:bg-white/10 hover:text-white',
@@ -100,15 +100,15 @@ export function GameRow({
     <section ref={ref} className="relative">
       <div className="mb-2.5 flex items-center gap-3 px-[6vw]">
         <h2
-          className={`text-[0.95rem] font-semibold tracking-wide transition-colors duration-200 ${
+          className={`text-body font-semibold tracking-wide transition-colors duration-[--duration-focus] ${
             hasFocusedChild ? 'text-white' : 'text-white/70'
           }`}
         >
           {title}
         </h2>
-        <span className="text-[0.65rem] font-medium text-white/25">{games.length}</span>
+        <span className="text-caption font-medium text-white/25">{games.length}</span>
         <div
-          className={`h-px flex-1 transition-opacity duration-300 ${
+          className={`h-px flex-1 transition-opacity duration-[--duration-focus] ${
             hasFocusedChild ? 'opacity-30' : 'opacity-0'
           }`}
           style={{
