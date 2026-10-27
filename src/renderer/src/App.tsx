@@ -31,6 +31,7 @@ import {
 } from '@/lib/game-actions'
 import { useGamepad } from '@/hooks/use-gamepad'
 import { useLibraryView } from '@/hooks/use-library-view'
+import { useLauncherInitialization } from '@/hooks/use-launcher-initialization'
 import { useAutoHideCursor } from '@/hooks/use-clock'
 import { useUISounds } from '@/hooks/use-ui-sounds'
 import { useMusicEngine } from '@/hooks/use-music-engine'
@@ -76,14 +77,8 @@ export default function App() {
   const refreshing = useLauncherStore((state) => state.refreshing)
   const staleSources = useLauncherStore((state) => state.staleSources)
   const scanProgress = useLauncherStore((state) => state.scanProgress)
-  const initialize = useLauncherStore((state) => state.initialize)
   const refresh = useLauncherStore((state) => state.refresh)
   const select = useLauncherStore((state) => state.select)
-  const receiveGames = useLauncherStore((state) => state.receiveGames)
-  const receiveRunning = useLauncherStore((state) => state.receiveRunning)
-  const receiveScanProgress = useLauncherStore((state) => state.receiveScanProgress)
-  const receiveStaleSources = useLauncherStore((state) => state.receiveStaleSources)
-  const setSettings = useLauncherStore((state) => state.setSettings)
   const updateSettings = useLauncherStore((state) => state.updateSettings)
 
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -149,42 +144,12 @@ export default function App() {
     )
   }, [])
 
-  useEffect(() => {
-    void initialize()
-    const offGames = window.launcher.catalog.onChanged(receiveGames)
-    const offRunning = window.launcher.catalog.onRunningChanged((infos) => {
-      receiveRunning(infos)
-      clearFinishedGameAction(infos)
-    })
-    const offProgress = window.launcher.catalog.onScanProgress(receiveScanProgress)
-    const offStale = window.launcher.catalog.onStaleChanged(receiveStaleSources)
-    const offSettings = window.launcher.settings.onChanged(setSettings)
-    void window.launcher.app
-      .info()
-      .then((info) => setDemo(info.demo))
-      .catch(() => undefined)
-    return () => {
-      offGames()
-      offRunning()
-      offProgress()
-      offStale()
-      offSettings()
-    }
-  }, [
+  useLauncherInitialization({
     clearFinishedGameAction,
-    initialize,
-    receiveGames,
-    receiveRunning,
-    receiveScanProgress,
-    receiveStaleSources,
-    setSettings,
-  ])
+    onDemoLoaded: setDemo,
+  })
 
-  const initializeMusic = useMusicStore((state) => state.initialize)
   const musicTracks = useMusicStore((state) => state.tracks)
-  useEffect(() => {
-    void initializeMusic()
-  }, [initializeMusic])
   useMusicEngine(musicTracks, bootDone)
 
   useEffect(() => {
