@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import type { MusicYouTubeStatus } from '@shared/types'
 
 export function useYouTubeSetup() {
@@ -6,6 +6,7 @@ export function useYouTubeSetup() {
   const [youtubeStatusLoading, setYoutubeStatusLoading] = useState(false)
   const [youtubeStatusError, setYoutubeStatusError] = useState<string | null>(null)
   const [setupOpen, setSetupOpen] = useState(false)
+  const setupOpenRef = useRef(false)
   const [youtubeApiKey, setYoutubeApiKey] = useState('')
   const [youtubeYtDlpPath, setYoutubeYtDlpPath] = useState('')
   const [youtubeFfmpegPath, setYoutubeFfmpegPath] = useState('')
@@ -92,10 +93,10 @@ export function useYouTubeSetup() {
    * would write empty values over a key that is already stored.
    */
   const toggleSetup = useCallback(() => {
-    setSetupOpen((open) => {
-      if (!open && !draftSynced) loadYouTubeStatus(true)
-      return !open
-    })
+    const nextOpen = !setupOpenRef.current
+    setupOpenRef.current = nextOpen
+    setSetupOpen(nextOpen)
+    if (nextOpen && !draftSynced) loadYouTubeStatus(true)
   }, [draftSynced, loadYouTubeStatus])
 
   return {
