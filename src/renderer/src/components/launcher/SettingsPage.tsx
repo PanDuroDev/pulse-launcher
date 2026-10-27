@@ -25,7 +25,9 @@ import {
   setFocus,
 } from '@noriginmedia/norigin-spatial-navigation-core'
 import { toast } from 'sonner'
-import type { AppInfo, GameSummary, MotionPreference, WindowMode } from '@shared/types'
+import type { AppInfo } from '@shared/contracts/app'
+import type { GameSummary } from '@shared/contracts/games'
+import type { MotionPreference, WindowMode } from '@shared/contracts/settings'
 import { sourceLabel } from '@shared/format'
 import { useLauncherStore } from '@/store/launcher'
 import { uiAccent } from '@/lib/accent'
