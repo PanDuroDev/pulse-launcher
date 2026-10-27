@@ -9,6 +9,7 @@ import type {
   LaunchResult,
   GameControlResult,
   AddManualResult,
+  RemoveManualResult,
   DirectoryListing,
   PickerKind,
   PickerRoots,
