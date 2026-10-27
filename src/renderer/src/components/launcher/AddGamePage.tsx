@@ -21,7 +21,7 @@ import type {
   GameSummary,
   PickerEntry,
   PickerLocation,
-} from '@shared/types'
+} from '@shared/contracts/games'
 import { uiAccent } from '@/lib/accent'
 import { cn } from 'cn'
 import { Spinner } from '@/components/ui/spinner'
