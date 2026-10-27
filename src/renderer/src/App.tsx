@@ -21,6 +21,7 @@ import { useGameDetailsActions } from '@/hooks/use-game-details-actions'
 import { useGameDetailsNavigation } from '@/hooks/use-game-details-navigation'
 import { useGameAddedFocus } from '@/hooks/use-game-added-focus'
 import { useSearchNavigation } from '@/hooks/use-search-navigation'
+import { useAddGameNavigation } from '@/hooks/use-add-game-navigation'
 import { useSecondaryPageNavigation } from '@/hooks/use-secondary-page-navigation'
 import { actionForGame, forceRemainingMs } from '@/lib/game-actions'
 import { useAutoHideCursor } from '@/hooks/use-clock'
@@ -92,6 +93,18 @@ export default function App() {
     librarySort: settings.librarySort,
     detailsOpen,
     detailsSnapshot,
+  })
+
+  const { handleAddGame, closeAddGame } = useAddGameNavigation({
+    addMode,
+    detailsOpen,
+    gamesEmpty: games.length === 0,
+    initialFocusKey,
+    lastFocusKey,
+    setAddMode,
+    setAddOpen,
+    setPowerOpen,
+    setSettingsOpen,
   })
 
   const {
@@ -199,13 +212,6 @@ export default function App() {
     status,
   })
 
-  const handleAddGame = useCallback(() => {
-    setPowerOpen(false)
-    setSettingsOpen(false)
-    setAddMode('game')
-    setAddOpen(true)
-  }, [])
-
   const handleSelect = useCallback(
     (game: GameSummary, focusKey: string) => {
       lastFocusKey.current = focusKey
@@ -239,34 +245,6 @@ export default function App() {
     setSettingsOpen,
     settingsOpen,
   })
-
-  const closeAddGame = useCallback(() => {
-    const returningToDetails = addMode !== 'game' && detailsOpen
-    setAddOpen(false)
-    window.setTimeout(() => {
-      if (returningToDetails) {
-        const key = addMode === 'image' ? 'details-art' : 'details-path'
-        if (doesFocusableExist(key)) {
-          void setFocus(key)
-          return
-        }
-        if (doesFocusableExist('details-back')) {
-          void setFocus('details-back')
-          return
-        }
-      }
-      if (doesFocusableExist('tool-add')) {
-        void setFocus('tool-add')
-        return
-      }
-      const target = lastFocusKey.current ?? initialFocusKey
-      if (target && doesFocusableExist(target)) {
-        void setFocus(target)
-      } else if (games.length === 0 && doesFocusableExist('empty-add')) {
-        void setFocus('empty-add')
-      }
-    }, 80)
-  }, [addMode, detailsOpen, games.length, initialFocusKey])
 
   const handleGameAdded = useGameAddedFocus({
     addOpen,
