@@ -25,6 +25,8 @@ const BrowseSchema = z
   })
   .strict()
 
+const RemoveManualSchema = z.object({ gameId: z.string().min(1).max(200) })
+
 const UpdateManualSchema = z
   .object({
     gameId: z.string().min(1).max(200),
@@ -84,6 +86,15 @@ export function registerLibraryIpc({
         executable: parsed.path,
       })
       return result
+    },
+  )
+
+  ipcMain.handle(
+    IPC.settingsRemoveManual,
+    async (event, payload: unknown) => {
+      assertTrustedSender(event)
+      const parsed = RemoveManualSchema.parse(payload)
+      return catalog.removeManualGame(parsed.gameId)
     },
   )
 
