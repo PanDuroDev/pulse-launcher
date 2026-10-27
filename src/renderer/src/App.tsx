@@ -32,9 +32,8 @@ import { useMusicEngine } from '@/hooks/use-music-engine'
 import { useMusicStore } from '@/store/music'
 import { markMoodFor } from '@/lib/mark-mood'
 import { Backdrop } from '@/components/launcher/Backdrop'
+import { LibraryHome } from '@/components/launcher/LibraryHome'
 import { TopBar } from '@/components/launcher/TopBar'
-import { Hero } from '@/components/launcher/Hero'
-import { GameRow, SortControl } from '@/components/launcher/GameRow'
 import { SearchPage } from '@/components/launcher/SearchPage'
 import { MusicPage } from '@/components/launcher/MusicPage'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
@@ -517,45 +516,24 @@ export default function App() {
               onAddGame={handleAddGame}
             />
           ) : (
-            <>
-              <Hero
-                game={selected}
-                pending={Boolean(pendingLaunch && selected && pendingLaunch.id === selected.id)}
-                reducedMotion={settings.motion === 'reduced'}
-                action={selectedAction}
-                forceRemainingMs={selectedForceRemaining}
-                onLaunch={(game) => void handleLaunch(game)}
-                onFocus={(game) => void handleFocusGame(game)}
-                onClose={(game) => void handleCloseGame(game)}
-                onForceQuit={(game) => void handleForceQuit(game)}
-                onCancelForce={handleCancelForceQuit}
-                onToggleFavorite={(game) => void handleToggleFavorite(game)}
-                onDetails={openDetails}
-              />
-              <div
-                data-library-scroll=""
-                className="no-scrollbar relative max-h-[54vh] shrink-0 scroll-py-4 overflow-y-auto pb-24"
-              >
-                {rows.map((row, index) => (
-                  <GameRow
-                    key={row.id}
-                    rowId={row.id}
-                    title={row.title}
-                    games={row.games}
-                    onSelect={handleSelect}
-                    onLaunch={(game) => void handleLaunch(game)}
-                    upTarget={index === 0 ? 'hero-primary' : undefined}
-                    action={
-                      row.id === 'all' ? (
-                        <SortControl
-                          sort={settings.librarySort}
-                          onPress={handleCycleSort}
-                        />
-                      ) : undefined
-                    }
-                  />
-                ))}
-              </div>
+            <LibraryHome
+              game={selected}
+              pending={Boolean(pendingLaunch && selected && pendingLaunch.id === selected.id)}
+              reducedMotion={settings.motion === 'reduced'}
+              action={selectedAction}
+              forceQuitRemainingMs={selectedForceRemaining}
+              rows={rows}
+              librarySort={settings.librarySort}
+              onLaunch={(game) => void handleLaunch(game)}
+              onFocus={(game) => void handleFocusGame(game)}
+              onClose={(game) => void handleCloseGame(game)}
+              onForceQuit={(game) => void handleForceQuit(game)}
+              onCancelForce={handleCancelForceQuit}
+              onToggleFavorite={(game) => void handleToggleFavorite(game)}
+              onDetails={openDetails}
+              onSelect={handleSelect}
+              onCycleSort={handleCycleSort}
+            />
             </>
           )}
         </div>
