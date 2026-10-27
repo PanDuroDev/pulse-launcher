@@ -2,7 +2,6 @@ import {
   app,
   BrowserWindow,
   globalShortcut,
-  ipcMain,
   Menu,
   powerSaveBlocker,
   session,
@@ -10,7 +9,6 @@ import {
 } from 'electron'
 import { writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { z } from 'zod'
 import { IPC } from '@shared/ipc'
 import type {
   AppInfo,
