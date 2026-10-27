@@ -68,7 +68,7 @@ export function useLauncherKeyboardShortcuts({
           target?.tagName === 'TEXTAREA' ||
           target?.tagName === 'SELECT' ||
           target?.isContentEditable
-  
+
         if (event.key === 'Escape') {
           if (powerOpen) {
             event.preventDefault()
@@ -104,7 +104,7 @@ export function useLauncherKeyboardShortcuts({
           void window.launcher.app.hide()
           return
         }
-  
+
         if (
           typing ||
           settingsOpen ||
@@ -116,19 +116,19 @@ export function useLauncherKeyboardShortcuts({
         ) {
           return
         }
-  
+
         if ((event.ctrlKey || event.metaKey) && (event.key === 'f' || event.key === 'F')) {
           event.preventDefault()
           openSearch()
           return
         }
-  
+
         if (event.key === '/') {
           event.preventDefault()
           openSearch()
           return
         }
-  
+
         if (event.key === 'Tab') {
           event.preventDefault()
           cycleFocus(
@@ -144,31 +144,31 @@ export function useLauncherKeyboardShortcuts({
           )
           return
         }
-  
+
         if (event.key === 's' || event.key === 'S') {
           event.preventDefault()
           openSettings()
           return
         }
-  
+
         if (event.key === 'm' || event.key === 'M') {
           event.preventDefault()
           openMusic()
           return
         }
-  
+
         if (event.key === 'p' || event.key === 'P') {
           event.preventDefault()
           openPower()
           return
         }
-  
+
         if (event.key === 'r' || event.key === 'R') {
           event.preventDefault()
           void handleRefresh()
           return
         }
-  
+
         if (
           (event.key === 'i' || event.key === 'I') &&
           !event.ctrlKey &&
@@ -179,7 +179,7 @@ export function useLauncherKeyboardShortcuts({
           if (selected) openDetails(selected)
           return
         }
-  
+
         if (
           (event.key === 'f' || event.key === 'F') &&
           !event.ctrlKey &&
@@ -190,7 +190,7 @@ export function useLauncherKeyboardShortcuts({
           if (selected) void handleToggleFavorite(selected)
           return
         }
-  
+
         if (
           (event.key === 'o' || event.key === 'O') &&
           !event.ctrlKey &&
@@ -201,7 +201,7 @@ export function useLauncherKeyboardShortcuts({
           handleCycleSort()
         }
       }
-  
+
       window.addEventListener('keydown', onKeyDown)
       return () => window.removeEventListener('keydown', onKeyDown)
     }, [
