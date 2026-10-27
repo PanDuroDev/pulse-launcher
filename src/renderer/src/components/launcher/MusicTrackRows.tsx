@@ -4,6 +4,8 @@ import { useFocusable } from '@noriginmedia/norigin-spatial-navigation-react'
 import type { MusicOnlineTrack, MusicProvider, MusicTrack, MusicYouTubeTrack } from '@shared/types'
 import { formatDuration, trackSource } from '@/lib/music-queue'
 import type { MusicSourceFilter } from '@/lib/music-queue'
+
+type SourceFilter = MusicSourceFilter
 import { uiAccent } from '@/lib/accent'
 import { cn } from 'cn'
 
