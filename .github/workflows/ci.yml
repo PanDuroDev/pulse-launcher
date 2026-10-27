@@ -6,13 +6,14 @@ on:
     tags: ['v*']
   pull_request:
 
+permissions:
+  contents: read
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  # Every push and pull request must pass the same four gates used locally:
-  # tests, typecheck, lint (4 known warnings / 0 errors), and a full build.
   verify:
     name: Verify
     runs-on: windows-latest
@@ -24,54 +25,126 @@ jobs:
           node-version: 22
           cache: npm
 
-      - run: npm ci
+      - run: npm ci --no-audit --no-fund
       - run: npm run typecheck
       - run: npm run lint
       - run: npm test
       - run: npm run build
 
-  # A version tag is the only thing that produces an installer. It re-runs the
-  # gates first, then `npm run dist` ends with `verify-installer.mjs`, so a
-  # build that somehow produced an older package fails here instead of shipping.
+  # Only version tags publish an installer. The raw .exe is attached directly
+  # to GitHub Releases; workflow artifacts are also available for 30 days.
   release:
-    name: Installer
+    name: Build and publish Windows installer
     needs: verify
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: windows-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
           cache: npm
 
-      - run: npm ci
+      - name: Cache Electron
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~\AppData\Local\electron\Cache
+            ~\AppData\Local\electron-builder\Cache
+          key: ${{ runner.os }}-electron-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-electron-
 
-      # Signing is off until a code-signing certificate exists; the decision is
-      # documented in docs/audit/01-release-and-packaging.md §3. Adding the two
-      # repository secrets below is the whole switch: electron-builder picks them
-      # up and flips the fuses before signing.
-      - name: Build installer
+      - run: npm ci --no-audit --no-fund
+
+      - name: Build and verify installer
         run: npm run dist
         env:
           CSC_LINK: ${{ secrets.CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
 
-      - name: SHA-256
+      - name: Validate release files and write SHA-256 checksums
         shell: pwsh
         run: |
-          Get-ChildItem release -Filter 'Pulse-Launcher-*-x64.exe' |
-            ForEach-Object { Get-FileHash $_.FullName -Algorithm SHA256 } |
-            Format-List
+          $ErrorActionPreference = 'Stop'
+          $exe = @(Get-ChildItem release -File -Filter 'Pulse-Launcher-*-x64.exe')
+          $blockmap = @(Get-ChildItem release -File -Filter 'Pulse-Launcher-*-x64.exe.blockmap')
+          $latest = Join-Path $PWD 'release/latest.yml'
 
-      # The blockmap and latest.yml are what an auto-update feed would consume,
-      # so they ship alongside the installer from day one.
-      - uses: actions/upload-artifact@v4
+          if ($exe.Count -ne 1) {
+            throw "Expected exactly one x64 installer, found $($exe.Count)."
+          }
+          if ($blockmap.Count -ne 1) {
+            throw "Expected exactly one installer blockmap, found $($blockmap.Count)."
+          }
+          if (-not (Test-Path -LiteralPath $latest -PathType Leaf)) {
+            throw 'release/latest.yml is missing.'
+          }
+
+          $files = @($exe[0], $blockmap[0], (Get-Item -LiteralPath $latest))
+          $lines = foreach ($file in $files) {
+            $hash = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$hash  $($file.Name)"
+          }
+          $lines | Set-Content -LiteralPath 'release/SHA256SUMS.txt' -Encoding ascii
+          $lines
+
+          $hash = (Get-FileHash -LiteralPath $exe[0].FullName -Algorithm SHA256).Hash
+          "### Windows installer" >> $env:GITHUB_STEP_SUMMARY
+          "" >> $env:GITHUB_STEP_SUMMARY
+          "File: $($exe[0].Name)" >> $env:GITHUB_STEP_SUMMARY
+          "Size: $([math]::Round($exe[0].Length / 1MB, 1)) MB ($($exe[0].Length) bytes)" >> $env:GITHUB_STEP_SUMMARY
+          "SHA-256: $hash" >> $env:GITHUB_STEP_SUMMARY
+
+      # Upload the .exe as a raw artifact, not a ZIP containing the .exe.
+      - name: Upload raw installer artifact
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: pulse-launcher-${{ github.ref_name }}
+          path: release/Pulse-Launcher-*-x64.exe
+          archive: false
           if-no-files-found: error
+          overwrite: true
+          retention-days: 30
+
+      - name: Upload release metadata artifact
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: pulse-launcher-${{ github.ref_name }}-metadata
           path: |
-            release/Pulse-Launcher-*-x64.exe
             release/Pulse-Launcher-*-x64.exe.blockmap
             release/latest.yml
+            release/SHA256SUMS.txt
+          if-no-files-found: error
+          overwrite: true
+          retention-days: 30
+
+      # Workflow artifacts alone do not appear on the Releases page.
+      - name: Publish GitHub Release assets
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tag = $env:GITHUB_REF_NAME
+          $exe = @(Get-ChildItem release -File -Filter 'Pulse-Launcher-*-x64.exe')
+          $blockmap = @(Get-ChildItem release -File -Filter 'Pulse-Launcher-*-x64.exe.blockmap')
+          $assets = @(
+            $exe[0].FullName
+            $blockmap[0].FullName
+            (Join-Path $PWD 'release/latest.yml')
+            (Join-Path $PWD 'release/SHA256SUMS.txt')
+          )
+
+          gh release view $tag --json tagName *> $null
+          if ($LASTEXITCODE -eq 0) {
+            gh release upload $tag $assets --clobber
+          } else {
+            gh release create $tag $assets --verify-tag --generate-notes --title "Pulse Launcher $tag"
+          }
+          if ($LASTEXITCODE -ne 0) {
+            throw "Failed to publish release assets for tag $tag."
+          }
