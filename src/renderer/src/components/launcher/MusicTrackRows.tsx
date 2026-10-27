@@ -12,7 +12,7 @@ const YOUTUBE_WATCH_KEY = 'music-youtube-watch'
 const trackKey = (trackId: string): string => `music-track-${trackId}`
 const youtubeLinkKey = (videoId: string): string => `music-youtube-link-${videoId}`
 
-const PROVIDER_LABELS: Record<MusicProvider, string> = {
+export const PROVIDER_LABELS: Record<MusicProvider, string> = {
   itunes: 'iTunes',
   deezer: 'Deezer',
   audius: 'Audius',
@@ -21,7 +21,7 @@ const PROVIDER_LABELS: Record<MusicProvider, string> = {
   youtube: 'YouTube',
 }
 
-const SOURCE_LABELS: Record<SourceFilter, string> = {
+export const SOURCE_LABELS: Record<SourceFilter, string> = {
   all: 'All',
   library: 'Library',
   online: 'Online',
