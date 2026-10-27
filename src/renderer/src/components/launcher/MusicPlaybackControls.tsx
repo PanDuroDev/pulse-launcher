@@ -1,6 +1,5 @@
 import { VolumeFilled, VolumeMuteFilled } from '@mingcute/react/core-filled'
 import { useFocusable } from '@noriginmedia/norigin-spatial-navigation-react'
-import type { MusicOverlayState } from '@shared/types'
 import { formatDuration, progressRatio } from '@/lib/music-queue'
 import { uiAccent } from '@/lib/accent'
 import { musicEngine } from '@/lib/music-engine'
@@ -11,7 +10,7 @@ const VOLUME_KEY = 'music-volume'
 const MUTE_KEY = 'music-mute'
 const SEEK_KEY = 'music-seek'
 
-function SeekBar({ positionMs, durationMs }: { positionMs: number; durationMs: number }) {
+export function SeekBar({ positionMs, durationMs }: { positionMs: number; durationMs: number }) {
   const ratio = progressRatio(positionMs, durationMs)
   const { ref, focused } = useFocusable<Record<string, never>, HTMLDivElement>({
     focusKey: SEEK_KEY,
@@ -65,7 +64,7 @@ function SeekBar({ positionMs, durationMs }: { positionMs: number; durationMs: n
   )
 }
 
-function OverlaySwitch({
+export function OverlaySwitch({
   enabled,
   disabled,
   onToggle,
@@ -118,7 +117,7 @@ function OverlaySwitch({
   )
 }
 
-function VolumeControl({ volume, muted }: { volume: number; muted: boolean }) {
+export function VolumeControl({ volume, muted }: { volume: number; muted: boolean }) {
   const { ref, focused } = useFocusable<Record<string, never>, HTMLDivElement>({
     focusKey: VOLUME_KEY,
     accessibilityLabel: `Volume ${Math.round(volume * 100)} percent`,
