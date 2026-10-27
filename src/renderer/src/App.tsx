@@ -9,32 +9,21 @@ import {
 import { toast } from 'sonner'
 import type {
   GameSummary,
-  LibrarySort,
-  RunningGameInfo,
   UpdateManualGameInput,
 } from '@shared/types'
-import { sourceLabel } from '@shared/format'
-import { favoriteGames, nextLibrarySort, recentlyPlayed, sortGames } from '@shared/library'
-import { runAssurance } from '@shared/run-state'
 import { FORCE_QUIT_GRACE_MS } from '@shared/game-control'
 import { useLauncherStore } from '@/store/launcher'
-import {
-  IDLE_GAME_ACTION,
-  type GameActionState,
-  actionForGame,
-  cancelForceQuit,
-  completeGameAction,
-  failGameAction,
-  forceRemainingMs,
-  promptForceQuit,
-  startGameAction,
-} from '@/lib/game-actions'
 import { useGamepad } from '@/hooks/use-gamepad'
+import { useLibraryView } from '@/hooks/use-library-view'
+import { useLauncherInitialization } from '@/hooks/use-launcher-initialization'
+import { useGameActionController } from '@/hooks/use-game-action-controller'
+import { useGameLaunchController } from '@/hooks/use-game-launch-controller'
+import { useLibraryActions } from '@/hooks/use-library-actions'
+import { actionForGame, forceRemainingMs } from '@/lib/game-actions'
 import { useAutoHideCursor } from '@/hooks/use-clock'
 import { useUISounds } from '@/hooks/use-ui-sounds'
 import { useMusicEngine } from '@/hooks/use-music-engine'
 import { useMusicStore } from '@/store/music'
-import { announceAttention } from '@/lib/attention'
 import { markMoodFor } from '@/lib/mark-mood'
 import { playUI } from '@/lib/ui-sfx'
 import { Backdrop } from '@/components/launcher/Backdrop'
@@ -59,19 +48,6 @@ import { BootScreen } from '@/components/launcher/BootScreen'
 import { bootPhaseFor } from '@/lib/boot'
 import { Toaster } from '@/components/ui/sonner'
 
-interface Row {
-  id: string
-  title: string
-  games: GameSummary[]
-}
-
-const LAUNCH_DETECT_TIMEOUT_MS = 60_000
-
-interface PendingLaunch {
-  id: string
-  name: string
-}
-
 export default function App() {
   const games = useLauncherStore((state) => state.games)
   const settings = useLauncherStore((state) => state.settings)
@@ -81,14 +57,8 @@ export default function App() {
   const refreshing = useLauncherStore((state) => state.refreshing)
   const staleSources = useLauncherStore((state) => state.staleSources)
   const scanProgress = useLauncherStore((state) => state.scanProgress)
-  const initialize = useLauncherStore((state) => state.initialize)
   const refresh = useLauncherStore((state) => state.refresh)
   const select = useLauncherStore((state) => state.select)
-  const receiveGames = useLauncherStore((state) => state.receiveGames)
-  const receiveRunning = useLauncherStore((state) => state.receiveRunning)
-  const receiveScanProgress = useLauncherStore((state) => state.receiveScanProgress)
-  const receiveStaleSources = useLauncherStore((state) => state.receiveStaleSources)
-  const setSettings = useLauncherStore((state) => state.setSettings)
   const updateSettings = useLauncherStore((state) => state.updateSettings)
 
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -103,192 +73,58 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('')
   const [powerOpen, setPowerOpen] = useState(false)
   const [musicOpen, setMusicOpen] = useState(false)
-  const [pendingLaunch, setPendingLaunch] = useState<PendingLaunch | null>(null)
-  const [gameAction, setGameAction] = useState<GameActionState>(IDLE_GAME_ACTION)
-  const [actionClock, setActionClock] = useState(0)
   const [demo, setDemo] = useState(false)
   const [bootDone, setBootDone] = useState(false)
   /** True once the landed mark has had a beat to settle and the library can follow. */
   const [revealed, setRevealed] = useState(false)
   const lastFocusKey = useRef<string | null>(null)
-  const pendingLaunchRef = useRef<PendingLaunch | null>(null)
-  const launchResetTimer = useRef<number | null>(null)
   const initialFocusDone = useRef(false)
   const emptyFocusDone = useRef(false)
   const pendingFocusGame = useRef<string | null>(null)
   const searchReturnFocus = useRef<string | null>(null)
   const detailsReturnFocus = useRef<string | null>(null)
 
-  const runningGames = useMemo(
-    () =>
-      [...games]
-        .filter((game) => game.running)
-        .sort((left, right) => left.name.localeCompare(right.name)),
-    [games],
-  )
+  const {
+    rows,
+    selected,
+    detailsGame,
+    initialFocusKey,
+  } = useLibraryView({
+    games,
+    selectedId,
+    librarySort: settings.librarySort,
+    detailsOpen,
+    detailsSnapshot,
+  })
 
-  const continueGames = useMemo(() => recentlyPlayed(games), [games])
-  const favoriteList = useMemo(() => favoriteGames(games), [games])
-  const sortedGames = useMemo(
-    () => sortGames(games, settings.librarySort),
-    [games, settings.librarySort],
-  )
-
-  const rows = useMemo<Row[]>(() => {
-    const next: Row[] = []
-    // Live games come first: Up from Running Now reaches the hero, not another
-    // game's card, and a running session is the most immediate thing to act on.
-    if (runningGames.length > 0) {
-      next.push({ id: 'running', title: 'Running Now', games: runningGames })
-    }
-    if (continueGames.length > 0) {
-      next.push({ id: 'continue', title: 'Continue Playing', games: continueGames })
-    }
-    if (favoriteList.length > 0) {
-      next.push({ id: 'favorites', title: 'Favorites', games: favoriteList })
-    }
-    next.push({ id: 'all', title: 'All Games', games: sortedGames })
-
-    const sources = new Set(games.map((game) => game.source))
-    if (sources.size > 1) {
-      const steam = sortedGames.filter((game) => game.source === 'steam')
-      const epic = sortedGames.filter((game) => game.source === 'epic')
-      const local = sortedGames.filter(
-        (game) => game.source === 'manual' || game.source === 'start-menu',
-      )
-      if (steam.length > 0) next.push({ id: 'steam', title: 'Steam', games: steam })
-      if (epic.length > 0) next.push({ id: 'epic', title: 'Epic Games', games: epic })
-      if (local.length > 0) {
-        next.push({ id: 'local', title: 'Local & Desktop', games: local })
-      }
-    }
-    return next
-  }, [continueGames, favoriteList, games, runningGames, sortedGames])
-
-  const selected = useMemo(
-    () => games.find((game) => game.id === selectedId) ?? games[0],
-    [games, selectedId],
-  )
-
-  // The page follows catalog updates by id. The snapshot keeps it rendering
-  // while a save that changed the id is still propagating through the store.
-  const detailsGame = useMemo(() => {
-    if (!detailsOpen) return null
-    const wanted = detailsSnapshot?.id
-    if (!wanted) return null
-    return games.find((game) => game.id === wanted) ?? detailsSnapshot
-  }, [detailsOpen, detailsSnapshot, games])
-
-  const initialFocusKey = useMemo(() => {
-    if (games.length === 0) return null
-    const row = rows.find((candidate) =>
-      candidate.games.some((game) => game.id === selected?.id),
-    )
-    const target = selected && row ? { row, game: selected } : {
-      row: rows[0],
-      game: rows[0]?.games[0],
-    }
-    if (!target.row || !target.game) return null
-    return `${target.row.id}-${target.game.id}`
-  }, [games.length, rows, selected])
-
-  const updatePendingLaunch = useCallback((value: PendingLaunch | null) => {
-    pendingLaunchRef.current = value
-    setPendingLaunch(value)
-  }, [])
-
-  const clearDetectTimer = useCallback(() => {
-    if (launchResetTimer.current === null) return
-    window.clearTimeout(launchResetTimer.current)
-    launchResetTimer.current = null
-  }, [])
-
-  // Close/force state belongs to a verified process, so it is dropped as soon
-  // as that game is no longer reported as running (the process exited).
-  const clearFinishedGameAction = useCallback((infos: RunningGameInfo[]) => {
-    const running = new Set(infos.map((info) => info.gameId))
-    setGameAction((current) =>
-      current.kind !== 'idle' && !running.has(current.gameId)
-        ? IDLE_GAME_ACTION
-        : current,
-    )
-  }, [])
-
-  useEffect(() => {
-    void initialize()
-    const offGames = window.launcher.catalog.onChanged(receiveGames)
-    const offRunning = window.launcher.catalog.onRunningChanged((infos) => {
-      receiveRunning(infos)
-      clearFinishedGameAction(infos)
-    })
-    const offProgress = window.launcher.catalog.onScanProgress(receiveScanProgress)
-    const offStale = window.launcher.catalog.onStaleChanged(receiveStaleSources)
-    const offSettings = window.launcher.settings.onChanged(setSettings)
-    void window.launcher.app
-      .info()
-      .then((info) => setDemo(info.demo))
-      .catch(() => undefined)
-    return () => {
-      offGames()
-      offRunning()
-      offProgress()
-      offStale()
-      offSettings()
-    }
-  }, [
+  const {
+    gameAction,
+    actionClock,
     clearFinishedGameAction,
-    initialize,
-    receiveGames,
-    receiveRunning,
-    receiveScanProgress,
-    receiveStaleSources,
-    setSettings,
-  ])
+    handleFocusGame,
+    handleCloseGame,
+    handleForceQuit,
+    handleCancelForceQuit,
+  } = useGameActionController()
+  const { pendingLaunch, handleLaunch } = useGameLaunchController({
+    games,
+    demo,
+    onFocusGame: handleFocusGame,
+  })
 
-  const initializeMusic = useMusicStore((state) => state.initialize)
+  const { handleRefresh, handleToggleFavorite, handleCycleSort } = useLibraryActions({
+    refresh,
+    updateSettings,
+    librarySort: settings.librarySort,
+  })
+
+  useLauncherInitialization({
+    clearFinishedGameAction,
+    onDemoLoaded: setDemo,
+  })
+
   const musicTracks = useMusicStore((state) => state.tracks)
-  useEffect(() => {
-    void initializeMusic()
-  }, [initializeMusic])
   useMusicEngine(musicTracks, bootDone)
-
-  useEffect(() => {
-    return () => {
-      if (launchResetTimer.current !== null) {
-        window.clearTimeout(launchResetTimer.current)
-      }
-    }
-  }, [])
-
-  // A launch request is only upgraded to "running" when the catalog reports the
-  // process, whether that arrives through the watcher event or a refresh.
-  useEffect(() => {
-    const pending = pendingLaunchRef.current
-    if (!pending) return
-    const runningGame = games.find((game) => game.id === pending.id && game.running)
-    if (!runningGame) return
-
-    clearDetectTimer()
-    updatePendingLaunch(null)
-    toast.info(
-      runAssurance(runningGame.runState) === 'confirmed'
-        ? `${pending.name} is running.`
-        : `${pending.name} appears to be running.`,
-    )
-  }, [games, clearDetectTimer, updatePendingLaunch])
-
-  // Force quit unlocks after the grace period the main process enforces, so the
-  // countdown follows the same clock and the button appears on time.
-  useEffect(() => {
-    if (gameAction.kind !== 'close-requested') return
-    const remaining = forceRemainingMs(gameAction, actionClock)
-    if (remaining <= 0) return
-    const timer = window.setTimeout(
-      () => setActionClock(Date.now()),
-      Math.min(1_000, remaining + 20),
-    )
-    return () => window.clearTimeout(timer)
-  }, [gameAction, actionClock])
 
   useAutoHideCursor(settings.hideCursorAfterMs)
   useUISounds(settings.uiSounds)
@@ -414,175 +250,12 @@ export default function App() {
     return () => window.removeEventListener('focus', onWindowFocus)
   }, [bootDone, initialFocusKey])
 
-  const handleRefresh = useCallback(async () => {
-    const result = await refresh()
-    if (!result) {
-      playUI('error')
-      toast.error('Could not refresh the library.')
-      return
-    }
-    toast.success(`Library refreshed · ${result.games.length} games`)
-    for (const scanError of result.errors) {
-      const suffix = result.staleSources.includes(scanError.source)
-        ? ' Showing the last known library.'
-        : ''
-      toast.error(`${sourceLabel(scanError.source)}: ${scanError.message}${suffix}`)
-    }
-  }, [refresh])
-
   const handleAddGame = useCallback(() => {
     setPowerOpen(false)
     setSettingsOpen(false)
     setAddMode('game')
     setAddOpen(true)
   }, [])
-
-  const handleFocusGame = useCallback(async (game: GameSummary) => {
-    setGameAction((current) => startGameAction(current, game.id, 'focus'))
-    try {
-      const result = await window.launcher.game.focus(game.id)
-      setGameAction((current) => completeGameAction(current, result, Date.now()))
-      if (!result.ok) {
-        playUI('error')
-        toast.error(result.error ?? 'Could not bring the game to the front.')
-      }
-    } catch (error) {
-      setGameAction((current) => failGameAction(current))
-      playUI('error')
-      toast.error(error instanceof Error ? error.message : 'Could not reach the game.')
-    }
-  }, [])
-
-  const handleCloseGame = useCallback(async (game: GameSummary) => {
-    setGameAction((current) => startGameAction(current, game.id, 'close'))
-    try {
-      const result = await window.launcher.game.close(game.id)
-      const finishedAt = Date.now()
-      setActionClock(finishedAt)
-      setGameAction((current) => completeGameAction(current, result, finishedAt))
-      if (!result.ok) {
-        playUI('error')
-        toast.error(result.error ?? 'Could not close the game.')
-        return
-      }
-      playUI('close')
-      toast.success(`Close requested · ${game.name}`, {
-        description: 'Force quit appears if the game does not exit on its own.',
-      })
-    } catch (error) {
-      setGameAction((current) => failGameAction(current))
-      playUI('error')
-      toast.error(error instanceof Error ? error.message : 'Could not close the game.')
-    }
-  }, [])
-
-  const handleForceQuit = useCallback(
-    async (game: GameSummary) => {
-      const now = Date.now()
-      setActionClock(now)
-      const current = actionForGame(gameAction, game.id)
-
-      if (current.kind === 'close-requested') {
-        const remaining = forceRemainingMs(current, now)
-        if (remaining > 0) {
-          toast.info(
-            `Force quit unlocks in ${Math.ceil(remaining / 1000)}s.`,
-            { description: 'Give the game a chance to close first.' },
-          )
-          return
-        }
-        setGameAction(promptForceQuit(current, game.id, now))
-        return
-      }
-
-      if (current.kind !== 'force-confirming') return
-
-      setGameAction((state) => startGameAction(state, game.id, 'force-close'))
-      try {
-        const result = await window.launcher.game.forceClose(game.id, true)
-        const finishedAt = Date.now()
-        setActionClock(finishedAt)
-        setGameAction((state) => completeGameAction(state, result, finishedAt))
-        if (!result.ok) {
-          playUI('error')
-          toast.error(result.error ?? 'Force quit failed.')
-          return
-        }
-        playUI('delete')
-        toast.success(`Force quit · ${game.name}`)
-      } catch (error) {
-        setGameAction((state) => failGameAction(state))
-        playUI('error')
-        toast.error(error instanceof Error ? error.message : 'Force quit failed.')
-      }
-    },
-    [gameAction],
-  )
-
-  const handleCancelForceQuit = useCallback(() => {
-    setGameAction((current) => cancelForceQuit(current))
-  }, [])
-
-  const handleLaunch = useCallback(
-    async (game: GameSummary) => {
-      if (game.running) {
-        // Enter/long-press on a running game now does something useful instead
-        // of reporting that nothing can be done.
-        if (runAssurance(game.runState) === 'confirmed') {
-          void handleFocusGame(game)
-        } else {
-          toast.info(`${game.name} appears to be running.`, {
-            description:
-              'The launcher could not identify a single game process, so it cannot target it.',
-          })
-        }
-        return
-      }
-      if (pendingLaunchRef.current?.id === game.id) return
-      announceAttention('launch')
-      updatePendingLaunch({ id: game.id, name: game.name })
-      try {
-        const result = await window.launcher.launch(game.id)
-        if (!result.ok) {
-          playUI('error')
-          toast.error(result.error ?? 'Could not launch this game.')
-          updatePendingLaunch(null)
-          return
-        }
-
-        // The request was accepted: the process watcher takes it from here.
-        playUI('start')
-        if (demo) {
-          updatePendingLaunch(null)
-          toast.success(`Demo mode · ${game.name} would launch`)
-          return
-        }
-
-        // The platform accepted the request. The game is only "running" once
-        // the process watcher reports it, so this state stays pending until
-        // then (or until the detection timeout).
-        toast.success(`Launch requested · ${game.name}`, {
-          description: 'Waiting for the game process to appear.',
-        })
-        clearDetectTimer()
-        launchResetTimer.current = window.setTimeout(() => {
-          launchResetTimer.current = null
-          const pending = pendingLaunchRef.current
-          if (!pending || pending.id !== game.id) return
-          updatePendingLaunch(null)
-          toast.info(`${game.name} was not detected as running`, {
-            description:
-              'It may still be starting. Check the taskbar before trying again.',
-          })
-        }, LAUNCH_DETECT_TIMEOUT_MS)
-      } catch (launchError) {
-        playUI('error')
-        toast.error(launchError instanceof Error ? launchError.message : 'Launch failed.')
-        updatePendingLaunch(null)
-      }
-    },
-    [clearDetectTimer, demo, handleFocusGame, updatePendingLaunch],
-  )
 
   const handleSelect = useCallback(
     (game: GameSummary, focusKey: string) => {
@@ -591,38 +264,6 @@ export default function App() {
     },
     [select],
   )
-
-  const handleToggleFavorite = useCallback(
-    async (game: GameSummary) => {
-      try {
-        const result = await window.launcher.catalog.toggleFavorite(game.id)
-        if (!result.ok) {
-          playUI('error')
-          toast.error(result.error ?? 'Could not update favorites.')
-          return
-        }
-        playUI(result.favorite ? 'select' : 'deselect')
-        toast.success(
-          result.favorite
-            ? `${game.name} added to favorites`
-            : `${game.name} removed from favorites`,
-        )
-      } catch (error) {
-        playUI('error')
-        toast.error(error instanceof Error ? error.message : 'Could not update favorites.')
-      }
-    },
-    [],
-  )
-
-  const handleCycleSort = useCallback(() => {
-    const next: LibrarySort = nextLibrarySort(settings.librarySort)
-    playUI('select')
-    updateSettings({ librarySort: next }).catch((error: unknown) => {
-      playUI('error')
-      toast.error(error instanceof Error ? error.message : 'Could not save the sort order.')
-    })
-  }, [settings.librarySort, updateSettings])
 
   const openSearch = useCallback(() => {
     if (searchOpen || settingsOpen || addOpen || powerOpen) return

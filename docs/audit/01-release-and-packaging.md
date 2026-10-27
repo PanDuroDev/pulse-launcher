@@ -89,8 +89,8 @@ jobs:
   verify:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -101,7 +101,8 @@ jobs:
       - run: npm run build
 ```
 
-أضف `npm run dist` على `tag` فقط، مع رفع المُثبّت كـ artifact.
+أضف `npm run dist` على `tag` فقط، مع رفع المُثبّت كـ artifact خام `.exe`
+(`archive: false`) بدل ZIP، وإنشاء GitHub Release بالأصول.
 
 ---
 
@@ -314,7 +315,10 @@ yt-dlp وFFmpeg" أو "تنزيلهما عند أول استخدام"). إن ع�
 4. `npm run build` — ينجح.
 5. `npm run dist` — ينتهي بـ `scripts/verify-installer.mjs`، فيفشل البناء إذا كان
    `app.asar` أقدم من `out/`. **لا يمكن نشر مثبّت قديم بعد اليوم.**
-6. على وسم `v*` فقط: CI يبني المثبّت ويرفعه مع `.blockmap` و`latest.yml`.
+6. على وسم `v*` فقط: CI يبني المثبّت ويرفعه كـ artifact خام `.exe` (بلا ZIP)
+   مع `.blockmap` و`latest.yml` و`SHA256SUMS.txt`، وينشئ GitHub Release بأصوله
+   الأربعة. وعلى كل تحديث PR ودفع إلى `main` يرفع `windows-build.yml` المثبّت
+   نفسه كـ artifact خام للاختبار.
 
 ### يدوي — قبل الضغط على «نشر»
 

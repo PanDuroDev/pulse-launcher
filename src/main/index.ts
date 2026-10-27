@@ -1,45 +1,19 @@
 import {
   app,
   BrowserWindow,
-  dialog,
   globalShortcut,
-  ipcMain,
   Menu,
   powerSaveBlocker,
   session,
-  shell,
   Tray,
 } from 'electron'
 import { writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { z } from 'zod'
 import { IPC } from '@shared/ipc'
 import type {
-  AddManualResult,
   AppInfo,
-  ArtKind,
-  DirectoryListing,
-  FavoriteResult,
-  GameControlResult,
-  GameSource,
-  GameSummary,
-  LaunchResult,
-  MusicCommand,
-  MusicLibrarySnapshot,
-  MusicOnlineSearchResult,
-  MusicOverlayAction,
-  MusicOverlaySettings,
   MusicOverlayState,
-  MusicYouTubeResolveResult,
-  MusicYouTubeSearchResult,
-  MusicYouTubeStatus,
-  PickerRoots,
   ScanProgress,
-  ScanResult,
-  SelectionResult,
-  Settings,
-  SettingsUpdate,
-  UpdateManualResult,
   WindowMode,
 } from '@shared/types'
 import { DEFAULT_SETTINGS } from '@shared/types'
@@ -52,27 +26,22 @@ import {
 import { installAppProtocol, registerAppScheme } from './protocol'
 import { AppStore } from './store'
 import { CatalogService } from './catalog'
-import {
-  driveLocations,
-  isBrowsablePath,
-  listDirectory,
-  listDrives,
-  resolvePlaces,
-} from './library-browser'
 import type { PlaceCandidate } from './library-browser'
 import { GameProcessWatcher } from './process-watcher'
-import { launchGame } from './launch'
-import { GameControlService, terminateProcess } from './game-control'
-import { runWindowAction } from './game-window'
 import { markHiddenForGame, nextAutoReturn, NO_AUTO_RETURN } from './auto-return'
 import type { AutoReturnState } from './auto-return'
 import type { GameRunMatch } from './game-processes'
 import { MusicLibraryService } from './music/library'
+import { registerMusicIpc } from './ipc/music'
+import { registerLibraryIpc } from './ipc/library'
+import { registerSettingsIpc } from './ipc/settings'
+import { registerCatalogIpc } from './ipc/catalog'
+import { registerAppIpc } from './ipc/app'
+import { registerSelectionIpc } from './ipc/selection'
 import { MusicOverlay } from './music/overlay'
 import { MusicConfigStore } from './music/config'
 import { MusicOnlineService } from './music/online/service'
 import { MusicYouTubeService } from './music/youtube/service'
-import { youtubeWatchUrl } from './music/youtube/parse'
 import {
   applyWindowMode,
   resolveWindowMode,
@@ -105,148 +74,6 @@ let windowMode: WindowMode = DEFAULT_SETTINGS.windowMode
 let autoReturn: AutoReturnState = NO_AUTO_RETURN
 let restoreShortcutRegistered = false
 let captureScheduled = false
-
-const SettingsUpdateSchema = z
-  .object({
-    showStartMenuApps: z.boolean().optional(),
-    steamGridDbApiKey: z.string().max(200).optional(),
-    hideCursorAfterMs: z.number().int().min(500).max(60_000).optional(),
-    motion: z.enum(['system', 'reduced', 'full']).optional(),
-    windowMode: z.enum(['windowed', 'fullscreen', 'kiosk']).optional(),
-    returnAfterGame: z.boolean().optional(),
-    librarySort: z.enum(['recent', 'title', 'added']).optional(),
-    uiSounds: z.boolean().optional(),
-  })
-  .strict()
-
-const ArtworkRequestSchema = z.object({
-  gameId: z.string().min(1).max(200),
-  kind: z.enum(['cover', 'hero', 'icon', 'logo']),
-})
-
-const GameIdSchema = z.object({
-  gameId: z.string().min(1).max(200),
-})
-
-const RemoveManualSchema = z.object({
-  gameId: z.string().min(1).max(200),
-})
-
-const SelectionSchema = z.object({
-  gameId: z.string().min(1).max(200).nullable(),
-})
-
-const ForceCloseSchema = z.object({
-  gameId: z.string().min(1).max(200),
-  confirm: z.boolean(),
-})
-
-const BrowseSchema = z
-  .object({
-    path: z.string().min(1).max(1024),
-    kind: z.enum(['game', 'image']).optional(),
-  })
-  .strict()
-
-const UpdateManualSchema = z
-  .object({
-    gameId: z.string().min(1).max(200),
-    name: z.string().max(200).optional(),
-    executable: z.string().min(1).max(1024).optional(),
-    artwork: z.string().min(1).max(1024).nullable().optional(),
-  })
-  .strict()
-
-const MusicFolderSchema = z
-  .object({ path: z.string().min(1).max(1024) })
-  .strict()
-
-const MusicOverlayUpdateSchema = z
-  .object({
-    enabled: z.boolean().optional(),
-    alwaysOnTop: z.boolean().optional(),
-    position: z
-      .enum([
-        'top-left',
-        'top-center',
-        'top-right',
-        'bottom-left',
-        'bottom-center',
-        'bottom-right',
-      ])
-      .optional(),
-    shortcut: z.string().max(64).optional(),
-  })
-  .strict()
-
-const OnlineSearchSchema = z
-  .object({
-    query: z.string().trim().min(2).max(120),
-  })
-  .strict()
-
-/**
- * Renderer crash reports are untrusted input: the renderer could be compromised,
- * so the strings are capped and the surface is a closed set before they reach
- * the log file.
- */
-const RendererErrorSchema = z
-  .object({
-    surface: z.enum(['launcher', 'overlay']),
-    message: z.string().max(2_000),
-    stack: z.string().max(20_000),
-    componentStack: z.string().max(20_000),
-  })
-  .strict()
-
-const YouTubeSearchSchema = z
-  .object({
-    query: z.string().trim().min(2).max(120),
-  })
-  .strict()
-
-const YouTubeVideoSchema = z
-  .object({
-    videoId: z.string().regex(/^[A-Za-z0-9_-]{11}$/),
-  })
-  .strict()
-
-const YouTubeUpdateSchema = z
-  .object({
-    apiKey: z.string().max(200).optional(),
-    ytDlpPath: z.string().max(1024).optional(),
-    ffmpegPath: z.string().max(1024).optional(),
-    cacheLimitMb: z.number().int().min(100).max(20_000).optional(),
-  })
-  .strict()
-
-const MusicOverlayStateSchema = z
-  .object({
-    status: z.enum(['idle', 'loading', 'playing', 'paused', 'error']),
-    track: z
-      .object({
-        id: z.string().max(200),
-        title: z.string().max(400),
-        artist: z.string().max(400),
-        album: z.string().max(400),
-        artworkUrl: z.string().max(2048).nullable(),
-        provider: z
-          .enum(['itunes', 'deezer', 'audius', 'openverse', 'archive', 'youtube'])
-          .optional(),
-        publisher: z.string().max(200).optional(),
-        streamKind: z.enum(['preview', 'full']).optional(),
-        license: z.string().max(200).nullable().optional(),
-      })
-      .strict()
-      .nullable(),
-    positionMs: z.number().min(0).max(86_400_000),
-    durationMs: z.number().min(0).max(86_400_000),
-    volume: z.number().min(0).max(1),
-    muted: z.boolean(),
-    repeat: z.enum(['off', 'all', 'one']),
-    shuffle: z.boolean(),
-  })
-  .strict()
 
 function knownPath(name: 'home' | 'desktop' | 'documents' | 'downloads'): string | undefined {
   try {
@@ -581,441 +408,55 @@ function appInfo(): AppInfo {
   }
 }
 
+/** Wires each IPC domain to the main-process services and trusted-sender policies. */
 function registerIpc(): void {
-  const gameControl = new GameControlService({
-    getRunningMatch: (gameId) => catalog.getRunningMatch(gameId),
-    runWindowAction,
-    terminateProcess,
+  registerCatalogIpc({
+    assertTrustedSender,
+    catalog,
+    hideForGame,
   })
 
-  ipcMain.handle(IPC.catalogList, (event): GameSummary[] => {
-    assertTrustedSender(event)
-    return catalog.list()
+  registerSettingsIpc({
+    assertTrustedSender,
+    store,
+    catalog,
+    send,
+    setWindowMode,
   })
 
-  ipcMain.handle(IPC.catalogStaleSources, (event): GameSource[] => {
-    assertTrustedSender(event)
-    return catalog.getStaleSources()
+  registerLibraryIpc({
+    assertTrustedSender,
+    catalog,
+    placeCandidates,
   })
 
-  ipcMain.handle(IPC.catalogRefresh, async (event): Promise<ScanResult> => {
-    assertTrustedSender(event)
-    return catalog.refresh()
+  registerSelectionIpc({
+    assertTrustedSender,
+    store,
   })
 
-  ipcMain.handle(
-    IPC.catalogArtwork,
-    async (event, payload: unknown) => {
-      assertTrustedSender(event)
-      const parsed = ArtworkRequestSchema.parse(payload)
-      return catalog.artworkFor(parsed.gameId, parsed.kind as ArtKind)
+  registerAppIpc({
+    assertTrustedSender,
+    assertMusicSender,
+    appInfo,
+    hideWindow,
+    quitApp,
+    logsPath: () => getAppPaths().logs,
+  })
+
+  registerMusicIpc({
+    assertMusicSender,
+    getMainWindow: () => mainWindow,
+    music,
+    musicOnline,
+    musicYouTube,
+    musicConfig,
+    getMusicOverlay: () => musicOverlay,
+    getOverlayState: () => overlayState,
+    setOverlayState: (state) => {
+      overlayState = state
     },
-  )
-
-  ipcMain.handle(
-    IPC.catalogToggleFavorite,
-    async (event, payload: unknown): Promise<FavoriteResult> => {
-      assertTrustedSender(event)
-      const parsed = GameIdSchema.parse(payload)
-      const result = await catalog.toggleFavorite(parsed.gameId)
-      log.info('[catalog] toggle favorite', {
-        gameId: parsed.gameId,
-        ok: result.ok,
-        favorite: result.favorite,
-      })
-      return result
-    },
-  )
-
-  ipcMain.handle(IPC.launchGame, async (event, payload: unknown): Promise<LaunchResult> => {
-    assertTrustedSender(event)
-    const parsed = GameIdSchema.parse(payload)
-    const game = catalog.getCachedGame(parsed.gameId)
-    if (!game) return { ok: false, error: 'Game not found.' }
-
-    if (catalog.demo) {
-      return { ok: true }
-    }
-
-    const result = await launchGame(game)
-    if (result.ok) {
-      await catalog.markLaunched(game.id)
-      setTimeout(() => hideForGame(game.id), 900)
-    }
-    return result
-  })
-
-  ipcMain.handle(
-    IPC.gameFocus,
-    async (event, payload: unknown): Promise<GameControlResult> => {
-      assertTrustedSender(event)
-      const parsed = GameIdSchema.parse(payload)
-      const result = await gameControl.focus(parsed.gameId)
-      log.info('[game] focus', { gameId: parsed.gameId, ...result })
-      return result
-    },
-  )
-
-  ipcMain.handle(
-    IPC.gameClose,
-    async (event, payload: unknown): Promise<GameControlResult> => {
-      assertTrustedSender(event)
-      const parsed = GameIdSchema.parse(payload)
-      const result = await gameControl.close(parsed.gameId)
-      log.info('[game] close', { gameId: parsed.gameId, ...result })
-      return result
-    },
-  )
-
-  ipcMain.handle(
-    IPC.gameForceClose,
-    async (event, payload: unknown): Promise<GameControlResult> => {
-      assertTrustedSender(event)
-      const parsed = ForceCloseSchema.parse(payload)
-      const result = await gameControl.forceClose(parsed.gameId, parsed.confirm)
-      log.warn('[game] force quit', {
-        gameId: parsed.gameId,
-        confirm: parsed.confirm,
-        ...result,
-      })
-      return result
-    },
-  )
-
-  ipcMain.handle(IPC.settingsGet, (event): Settings => {
-    assertTrustedSender(event)
-    return store.getSettings()
-  })
-
-  ipcMain.handle(
-    IPC.settingsUpdate,
-    async (event, payload: unknown): Promise<Settings> => {
-      assertTrustedSender(event)
-      const update = SettingsUpdateSchema.parse(payload) as SettingsUpdate
-      log.info('[settings] update', {
-        ...update,
-        steamGridDbApiKey:
-          update.steamGridDbApiKey === undefined ? undefined : '[redacted]',
-      })
-      const before = store.getSettings()
-      const next = await store.updateSettings(update)
-      send(IPC.settingsChanged, next)
-      if (before.showStartMenuApps !== next.showStartMenuApps) {
-        void catalog.refresh().catch((error) => log.error('[settings] rescan failed', error))
-      }
-      if (before.windowMode !== next.windowMode) {
-        // Applied after this handler resolves so the renderer receives the
-        // updated settings before a mode change can recreate its window.
-        setTimeout(() => setWindowMode(next.windowMode), 0)
-      }
-      return next
-    },
-  )
-
-  ipcMain.handle(IPC.libraryRoots, async (event): Promise<PickerRoots> => {
-    assertTrustedSender(event)
-    const [places, drives] = await Promise.all([
-      resolvePlaces(placeCandidates()),
-      listDrives(),
-    ])
-    return { places: [...places, ...driveLocations(drives)] }
-  })
-
-  ipcMain.handle(
-    IPC.libraryList,
-    async (event, payload: unknown): Promise<DirectoryListing> => {
-      assertTrustedSender(event)
-      const parsed = BrowseSchema.parse(payload)
-      const listing = await listDirectory(parsed.path, parsed.kind ?? 'game')
-      log.info('[library] browse', {
-        ok: listing.ok,
-        path: listing.path,
-        entries: listing.entries?.length,
-      })
-      return listing
-    },
-  )
-
-  ipcMain.handle(
-    IPC.libraryAdd,
-    async (event, payload: unknown): Promise<AddManualResult> => {
-      assertTrustedSender(event)
-      const parsed = BrowseSchema.parse(payload)
-      if (!isBrowsablePath(parsed.path)) {
-        return { ok: false, error: 'Choose a game file on a local drive.' }
-      }
-      const result = await catalog.addManualGame(parsed.path)
-      log.info('[library] add manual game', {
-        ok: result.ok,
-        name: result.game?.name,
-        executable: parsed.path,
-      })
-      return result
-    },
-  )
-
-  ipcMain.handle(
-    IPC.libraryUpdate,
-    async (event, payload: unknown): Promise<UpdateManualResult> => {
-      assertTrustedSender(event)
-      const parsed = UpdateManualSchema.parse(payload)
-      if (parsed.executable !== undefined && !isBrowsablePath(parsed.executable)) {
-        return { ok: false, error: 'Choose a game file on a local drive.' }
-      }
-      if (typeof parsed.artwork === 'string' && !isBrowsablePath(parsed.artwork)) {
-        return { ok: false, error: 'Choose an image on a local drive.' }
-      }
-      const result = await catalog.updateManualGame({
-        gameId: parsed.gameId,
-        name: parsed.name,
-        executable: parsed.executable,
-        artwork: parsed.artwork,
-      })
-      log.info('[library] update manual game', {
-        ok: result.ok,
-        gameId: parsed.gameId,
-        previousId: result.previousId,
-        error: result.error,
-      })
-      return result
-    },
-  )
-
-  ipcMain.handle(
-    IPC.settingsRemoveManual,
-    async (event, payload: unknown) => {
-      assertTrustedSender(event)
-      const parsed = RemoveManualSchema.parse(payload)
-      return catalog.removeManualGame(parsed.gameId)
-    },
-  )
-
-  ipcMain.handle(IPC.selectionGet, (event): string | null => {
-    assertTrustedSender(event)
-    return store.getLastSelectedId()
-  })
-
-  ipcMain.handle(
-    IPC.selectionSet,
-    async (event, payload: unknown): Promise<SelectionResult> => {
-      assertTrustedSender(event)
-      const parsed = SelectionSchema.parse(payload)
-      return store.setLastSelectedId(parsed.gameId)
-    },
-  )
-
-  ipcMain.handle(IPC.appInfo, (event): AppInfo => {
-    assertTrustedSender(event)
-    return appInfo()
-  })
-
-  ipcMain.handle(IPC.appHide, (event): void => {
-    assertTrustedSender(event)
-    hideWindow()
-  })
-
-  ipcMain.handle(IPC.appQuit, (event): void => {
-    assertTrustedSender(event)
-    quitApp()
-  })
-
-  ipcMain.handle(IPC.appOpenLogs, async (event): Promise<void> => {
-    assertTrustedSender(event)
-    const errorMessage = await shell.openPath(getAppPaths().logs)
-    if (errorMessage) log.warn('[logs] could not open logs', errorMessage)
-  })
-
-  /**
-   * The renderer has no file access, so a crash there would vanish once the
-   * ErrorBoundary replaces the page. Forwarding it here is the only way the
-   * failure survives in `logs/main.log` for a later diagnosis.
-   */
-  ipcMain.on(IPC.appRendererError, (event, payload: unknown) => {
-    // Both the launcher and the overlay can crash, and both load `app://`.
-    assertMusicSender(event)
-    const parsed = RendererErrorSchema.safeParse(payload)
-    if (!parsed.success) return
-    const { surface, message, stack, componentStack } = parsed.data
-    const senderUrl = event.senderFrame?.url ?? 'unknown'
-    log.error(
-      `[renderer] ${surface} crashed: ${message}\n` +
-        `url: ${senderUrl}\n` +
-        `stack: ${stack || '(none)'}\n` +
-        `componentStack: ${componentStack || '(none)'}`,
-    )
-  })
-
-  ipcMain.handle(IPC.musicList, (event): MusicLibrarySnapshot => {
-    assertMusicSender(event)
-    return music.snapshot
-  })
-
-  ipcMain.handle(
-    IPC.musicOnlineSearch,
-    async (event, payload: unknown): Promise<MusicOnlineSearchResult> => {
-      assertMusicSender(event)
-      const { query } = OnlineSearchSchema.parse(payload)
-      return musicOnline.search(query)
-    },
-  )
-
-  ipcMain.handle(
-    IPC.musicYouTubeSearch,
-    async (event, payload: unknown): Promise<MusicYouTubeSearchResult> => {
-      assertMusicSender(event)
-      const { query } = YouTubeSearchSchema.parse(payload)
-      return musicYouTube.search(query)
-    },
-  )
-
-  ipcMain.handle(
-    IPC.musicYouTubeResolve,
-    async (event, payload: unknown): Promise<MusicYouTubeResolveResult> => {
-      assertMusicSender(event)
-      const { videoId } = YouTubeVideoSchema.parse(payload)
-      return musicYouTube.resolve(videoId)
-    },
-  )
-
-  ipcMain.handle(IPC.musicYouTubeCancel, async (event, payload: unknown): Promise<boolean> => {
-    assertMusicSender(event)
-    const { videoId } = YouTubeVideoSchema.parse(payload)
-    return musicYouTube.cancel(videoId)
-  })
-
-  ipcMain.handle(
-    IPC.musicYouTubeRemove,
-    async (event, payload: unknown): Promise<MusicYouTubeStatus> => {
-      assertMusicSender(event)
-      const { videoId } = YouTubeVideoSchema.parse(payload)
-      return musicYouTube.removeCached(videoId)
-    },
-  )
-
-  ipcMain.handle(IPC.musicYouTubeClear, async (event): Promise<MusicYouTubeStatus> => {
-    assertMusicSender(event)
-    return musicYouTube.clearCache()
-  })
-
-  ipcMain.handle(IPC.musicYouTubeStatus, async (event): Promise<MusicYouTubeStatus> => {
-    assertMusicSender(event)
-    return musicYouTube.status()
-  })
-
-  ipcMain.handle(
-    IPC.musicYouTubeUpdate,
-    async (event, payload: unknown): Promise<MusicYouTubeStatus> => {
-      assertMusicSender(event)
-      return musicYouTube.updateSettings(YouTubeUpdateSchema.parse(payload))
-    },
-  )
-
-  ipcMain.handle(IPC.musicYouTubeOpen, async (event, payload: unknown): Promise<void> => {
-    assertMusicSender(event)
-    const { videoId } = YouTubeVideoSchema.parse(payload)
-    await shell.openExternal(youtubeWatchUrl(videoId))
-  })
-
-  ipcMain.handle(IPC.musicRescan, async (event): Promise<MusicLibrarySnapshot> => {
-    assertMusicSender(event)
-    return music.rescan()
-  })
-
-  ipcMain.handle(IPC.musicCancelScan, (event): MusicLibrarySnapshot => {
-    assertMusicSender(event)
-    return music.cancelScan()
-  })
-
-  ipcMain.handle(IPC.musicAddFolder, async (event): Promise<MusicLibrarySnapshot> => {
-    assertMusicSender(event)
-    const window = mainWindow
-    const result = window
-      ? await dialog.showOpenDialog(window, {
-          title: 'Add a music folder',
-          buttonLabel: 'Add folder',
-          properties: ['openDirectory', 'multiSelections'],
-        })
-      : await dialog.showOpenDialog({
-          title: 'Add a music folder',
-          buttonLabel: 'Add folder',
-          properties: ['openDirectory', 'multiSelections'],
-        })
-
-    if (result.canceled || result.filePaths.length === 0) return music.snapshot
-    let snapshot = music.snapshot
-    for (const folder of result.filePaths) {
-      snapshot = await music.addFolder(folder)
-    }
-    return snapshot
-  })
-
-  ipcMain.handle(
-    IPC.musicRemoveFolder,
-    async (event, payload: unknown): Promise<MusicLibrarySnapshot> => {
-      assertMusicSender(event)
-      const parsed = MusicFolderSchema.parse(payload)
-      return music.removeFolder(parsed.path)
-    },
-  )
-
-  ipcMain.handle(IPC.musicOverlayGet, (event): MusicOverlaySettings => {
-    assertMusicSender(event)
-    return musicConfig.get()
-  })
-
-  ipcMain.handle(
-    IPC.musicOverlayUpdate,
-    async (event, payload: unknown): Promise<MusicOverlaySettings> => {
-      assertMusicSender(event)
-      const parsed = MusicOverlayUpdateSchema.parse(payload)
-      const updated = await musicConfig.update(parsed)
-      await musicOverlay?.applySettings(updated)
-      return updated
-    },
-  )
-
-  ipcMain.handle(IPC.musicOverlayToggle, async (event): Promise<boolean> => {
-    assertMusicSender(event)
-    if (!musicOverlay) return false
-    return musicOverlay.toggle()
-  })
-
-  ipcMain.handle(IPC.musicOverlayStateGet, (event): MusicOverlayState | null => {
-    assertMusicSender(event)
-    return overlayState
-  })
-
-  ipcMain.on(IPC.musicOverlayState, (event, payload: unknown) => {
-    assertMusicSender(event)
-    const parsed = MusicOverlayStateSchema.safeParse(payload)
-    if (!parsed.success) {
-      log.warn('music: rejected overlay state', parsed.error.issues[0]?.message)
-      return
-    }
-    overlayState = parsed.data
-    musicOverlay?.updateState(parsed.data)
-  })
-
-  ipcMain.on(IPC.musicOverlayAction, (event, payload: unknown) => {
-    assertMusicSender(event)
-    const action = payload as MusicOverlayAction | undefined
-    if (!action || typeof action !== 'object' || typeof action.type !== 'string') return
-
-    if (action.type === 'close') {
-      musicOverlay?.dismiss()
-      return
-    }
-    if (action.type === 'focus') {
-      musicOverlay?.focusMainWindow()
-      return
-    }
-    if (action.type === 'seek') {
-      const positionMs = Number(action.positionMs)
-      if (!Number.isFinite(positionMs) || positionMs < 0) return
-      send(IPC.musicOverlayCommand, { type: 'seek', positionMs } satisfies MusicCommand)
-      return
-    }
-    send(IPC.musicOverlayCommand, { type: action.type } satisfies MusicCommand)
+    send,
   })
 }
 

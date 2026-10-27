@@ -581,7 +581,7 @@
   - **أُنجز:** `.github/workflows/ci.yml` بمهمتين: `Verify` على كل push وPR إلى
     `main` (setup-node 22 مع كاش npm، `npm ci`، ثم الأربع بوابات: typecheck،
     lint، test، build)، و`Installer` عند دفع وسم `v*` يبني بـ `npm run dist`
-    ويرفع المثبّت مع `.blockmap` و`latest.yml` عبر `softprops/action-gh-release`،
+    ويرفع المثبّت مع `.blockmap` و`latest.yml` كـ artifact،
     مع تعليق يشرح أن التوقيع يلزمه `CSC_LINK`/`CSC_KEY_PASSWORD`. **تحقّق حيّ:**
     أول push شغّل مهمة `Verify` فنجحت في 1m21s (الأربع بوابات على
     `windows-latest`)، لكن مهمة `Installer` فشلت: electron-builder يعتبر بناء وسم
@@ -589,6 +589,13 @@
     «GitHub Personal Access Token is not set». الإصلاح: `pack` و`dist` صارا
     يمرّران `--publish never`، فبقي رفع الـ artifacts خطوة صريحة في الـ workflow
     ولا ينشر electron-builder شيئاً من تلقاء نفسه.
+  - **تحديث (2026-10-27):** GitHub يغلّف كل artifact في ZIP افتراضياً. صار
+    الـ workflowان يستخدمان `actions/upload-artifact@v7` مع `archive: false`
+    لرفع المثبّت `.exe` خاماً (اسم الـ artifact هو اسم الملف)، وأُضيف
+    `SHA256SUMS.txt` وملخص في صفحة التشغيل وكاش Electron/NSIS. مهمة `Installer`
+    تُنشئ الآن GitHub Release حقيقياً على الوسم بأصوله: exe و`.blockmap`
+    و`latest.yml` و`SHA256SUMS.txt`. كما صار `windows-build.yml` يعمل مرة واحدة
+    لكل تحديث PR وعلى دفع `main` فقط، ويشغّل lint قبل الاختبارات.
 
 - [x] **8.3 — ترقيم الإصدار وملاحظات النشر** (01 §1)
   - `CHANGELOG.md` بصيغة Keep a Changelog، ووسم `v0.1.0` على أول إصدار.
@@ -638,7 +645,7 @@
 
 - [x] `npm run verify:release` يفشل عندما يكون المثبّت أقدم من `out/`.
 - [x] كل push يمرّ عبر CI على Windows قبل الدمج.
-- [x] وسم `v*` ينتج مثبّتاً مرفوعاً كـ artifact مع `latest.yml`.
+- [x] وسم `v*` ينتج مثبّتاً `.exe` خاماً (بلا ZIP) مع `latest.yml` و`SHA256SUMS.txt` وGitHub Release.
 - [x] `CHANGELOG.md` يوثّق `0.1.0`، والوسم موجود على الـ commit الصحيح.
 - [x] لا يذكر الكود ولا الواجهة مصدر أدوات غير موجود في الحزمة.
 
