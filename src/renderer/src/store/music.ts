@@ -18,7 +18,7 @@ interface MusicState {
   /** Null until the first `initialize()` resolves; the page hides the overlay controls until then. */
   overlay: MusicOverlaySettings | null
   initialize: () => Promise<void>
-  addFolder: () => Promise<void>
+  addFolders: (paths: string[]) => Promise<void>
   rescan: () => Promise<void>
   cancelScan: () => Promise<void>
   removeFolder: (folder: string) => Promise<void>
@@ -68,8 +68,8 @@ export const useMusicStore = create<MusicState>()((set) => {
       }
     },
 
-    addFolder: async () => {
-      const snapshot = await window.launcher.music.addFolder()
+    addFolders: async (paths) => {
+      const snapshot = await window.launcher.music.addFolders(paths)
       receive(snapshot)
     },
 

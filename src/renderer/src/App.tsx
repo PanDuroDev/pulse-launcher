@@ -93,7 +93,7 @@ export default function App() {
 
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
-  const [addMode, setAddMode] = useState<'game' | 'path' | 'image'>('game')
+  const [addMode, setAddMode] = useState<'game' | 'path' | 'image' | 'folder'>('game')
   const [detailsOpen, setDetailsOpen] = useState(false)
   const [detailsSnapshot, setDetailsSnapshot] = useState<GameSummary | null>(null)
   const [manualDraft, setManualDraft] = useState<GameDetailsDraft | null>(null)
@@ -246,6 +246,7 @@ export default function App() {
   ])
 
   const initializeMusic = useMusicStore((state) => state.initialize)
+  const addMusicFolders = useMusicStore((state) => state.addFolders)
   const musicTracks = useMusicStore((state) => state.tracks)
   useEffect(() => {
     void initializeMusic()
@@ -730,8 +731,18 @@ export default function App() {
 
   const closeAddGame = useCallback(() => {
     const returningToDetails = addMode !== 'game' && detailsOpen
+    const returningToMusic = addMode === 'folder'
     setAddOpen(false)
     window.setTimeout(() => {
+      if (returningToMusic) {
+        const key = doesFocusableExist('music-add-folder')
+          ? 'music-add-folder'
+          : 'music-add-folder-empty'
+        if (doesFocusableExist(key)) {
+          void setFocus(key)
+          return
+        }
+      }
       if (returningToDetails) {
         const key = addMode === 'image' ? 'details-art' : 'details-path'
         if (doesFocusableExist(key)) {
@@ -879,6 +890,20 @@ export default function App() {
       else if (doesFocusableExist('details-back')) void setFocus('details-back')
     }, 100)
   }, [])
+
+  /** Music's "Add folder" opens the in-app picker; the native dialog is gone. */
+  const openMusicFolderPicker = useCallback(() => {
+    setAddMode('folder')
+    setAddOpen(true)
+  }, [])
+
+  const handlePickedFolders = useCallback(
+    (paths: string[]) => {
+      closeAddGame()
+      void addMusicFolders(paths)
+    },
+    [addMusicFolders, closeAddGame],
+  )
 
   // The draft starts from the stored game; it is created when the page opens
   // and updated by the editor, so no effect has to mirror it from the catalog.
@@ -1281,7 +1306,9 @@ export default function App() {
                     ? 'Cover art'
                     : addMode === 'path'
                       ? 'Game file'
-                      : 'Add game'
+                      : addMode === 'folder'
+                        ? 'Music folders'
+                        : 'Add game'
                   : detailsOpen
                     ? 'Game details'
                     : musicOpen
@@ -1330,12 +1357,16 @@ export default function App() {
           ) : addOpen ? (
             <ErrorBoundary
               surface="launcher"
-              onBack={{ label: 'Back to library', onClick: closeAddGame }}
+              onBack={{
+                label: addMode === 'folder' ? 'Back to music' : 'Back to library',
+                onClick: closeAddGame,
+              }}
             >
               <AddGamePage
                 mode={addMode}
                 onBack={closeAddGame}
                 onAdded={addMode === 'game' ? handleGameAdded : undefined}
+                onPickedFolders={addMode === 'folder' ? handlePickedFolders : undefined}
                 onPicked={
                   addMode === 'image'
                     ? handlePickedArtwork
@@ -1383,7 +1414,7 @@ export default function App() {
               surface="launcher"
               onBack={{ label: 'Back to library', onClick: closeMusic }}
             >
-              <MusicPage onBack={closeMusic} />
+              <MusicPage onBack={closeMusic} onAddFolders={openMusicFolderPicker} />
             </ErrorBoundary>
           ) : settingsOpen ? (
             <ErrorBoundary

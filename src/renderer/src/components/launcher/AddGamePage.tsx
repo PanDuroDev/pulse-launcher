@@ -35,9 +35,11 @@ interface AddGamePageProps {
    * chosen executable (used when editing a manual game); `image` browses
    * images and hands back the chosen file (custom cover art).
    */
-  mode?: 'game' | 'path' | 'image'
+  mode?: 'game' | 'path' | 'image' | 'folder'
   /** Called with the chosen file path in `path` and `image` mode. */
   onPicked?: (path: string) => void
+  /** Called with every folder added to the list in `folder` mode. */
+  onPickedFolders?: (paths: string[]) => void
 }
 
 const FOCUS = {
@@ -165,7 +167,7 @@ interface EntryRowProps {
   entry: PickerEntry
   index: number
   selected: boolean
-  kind: 'game' | 'image'
+  kind: 'game' | 'image' | 'folder'
   onOpen: (entry: PickerEntry) => void
   onChoose: (entry: PickerEntry) => void
   onArrowPress: (direction: string) => boolean
@@ -268,12 +270,15 @@ export function AddGamePage({
   onAdded,
   mode = 'game',
   onPicked,
+  onPickedFolders,
 }: AddGamePageProps) {
   const imageMode = mode === 'image'
+  const folderMode = mode === 'folder'
   const pickOnly = mode !== 'game'
   const [places, setPlaces] = useState<PickerLocation[]>([])
   const [listing, setListing] = useState<DirectoryListing | null>(null)
   const [selected, setSelected] = useState<PickerEntry | null>(null)
+  const [picked, setPicked] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [adding, setAdding] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -305,7 +310,7 @@ export function AddGamePage({
       try {
         const result = await window.launcher.library.list(
           target,
-          imageMode ? 'image' : 'game',
+          imageMode ? 'image' : folderMode ? 'folder' : 'game',
         )
         if (request !== requestRef.current) return
         if (!result.ok) {
@@ -327,7 +332,7 @@ export function AddGamePage({
         if (request === requestRef.current) setLoading(false)
       }
     },
-    [focusFirstEntry, imageMode],
+    [focusFirstEntry, imageMode, folderMode],
   )
 
   // Places and drives come from main; the first real place is the start path.
@@ -530,6 +535,7 @@ export function AddGamePage({
 
   const fileCount = entries.filter((entry) => entry.kind === 'file').length
   const folderCount = entries.length - fileCount
+  const canPickFolder = folderMode && currentPath !== null
 
   return (
     <main className="relative z-10 flex min-h-0 flex-1 flex-col">
@@ -539,7 +545,7 @@ export function AddGamePage({
             ref={backRef}
             type="button"
             tabIndex={-1}
-            aria-label={pickOnly ? 'Back to game details' : 'Back to library'}
+            aria-label={folderMode ? 'Back to music' : pickOnly ? 'Back to game details' : 'Back to library'}
             data-focus-key={FOCUS.back}
             onClick={onBack}
             className={cn(
@@ -551,7 +557,7 @@ export function AddGamePage({
             style={backFocused ? { boxShadow: `0 0 0 2px ${uiAccent(0.45)}` } : undefined}
           >
             <ArrowLeftFilled className="size-4" />
-            {pickOnly ? 'Details' : 'Library'}
+            {folderMode ? 'Music' : pickOnly ? 'Details' : 'Library'}
           </button>
           <div className="min-w-0">
             <h1 className="text-[1.05rem] font-semibold tracking-tight text-white/95">
@@ -559,20 +565,24 @@ export function AddGamePage({
                 ? 'Choose cover art'
                 : mode === 'path'
                   ? 'Choose the game file'
-                  : 'Add a local game'}
+                  : folderMode
+                    ? 'Add music folders'
+                    : 'Add a local game'}
             </h1>
             <p className="mt-0.5 text-[0.7rem] text-white/60">
               {imageMode
                 ? 'Browse for a PNG, JPEG, WebP, or AVIF image to use as the cover.'
                 : mode === 'path'
                   ? 'Browse for the .exe or .lnk this entry should launch.'
-                  : 'Browse for a game .exe or a .lnk shortcut, then add it to your library.'}
+                  : folderMode
+                    ? 'Open a folder of music, add it, then open the next one.'
+                    : 'Browse for a game .exe or a .lnk shortcut, then add it to your library.'}
             </p>
           </div>
           <p className="ml-auto hidden text-right text-[0.62rem] leading-relaxed text-white/55 md:block">
-            Enter opens or selects
+            Enter opens a folder
             <br />
-            {pickOnly ? 'Esc returns to game details' : 'Esc returns to the library'}
+            {folderMode ? 'Esc returns to music' : pickOnly ? 'Esc returns to game details' : 'Esc returns to the library'}
           </p>
         </div>
       </div>
@@ -643,7 +653,8 @@ export function AddGamePage({
               ) : null}
             </div>
             <span className="hidden shrink-0 text-[0.62rem] text-white/40 sm:inline">
-              {folderCount} folders · {fileCount} {imageMode ? 'images' : 'games'}
+              {folderCount} folders
+              {folderMode ? '' : ` · ${fileCount} ${imageMode ? 'images' : 'games'}`}
             </span>
           </div>
 
@@ -674,12 +685,18 @@ export function AddGamePage({
               <div className="grid place-items-center gap-2 px-4 py-12 text-center">
                 <FolderOpenFilled className="size-8 text-white/25" />
                 <p className="text-[0.8rem] font-medium text-white/75">
-                  {imageMode ? 'No folders or images here' : 'No folders or game files here'}
+                  {folderMode
+                    ? 'No folders here'
+                    : imageMode
+                      ? 'No folders or images here'
+                      : 'No folders or game files here'}
                 </p>
                 <p className="max-w-[22rem] text-[0.68rem] leading-relaxed text-white/45">
-                  {imageMode
-                    ? 'Pulse shows folders plus PNG, JPEG, WebP and AVIF images. Use Up one level or pick another place.'
-                    : 'Pulse shows folders plus .exe and .lnk files. Use Up one level or pick another place.'}
+                  {folderMode
+                    ? 'Pulse shows folders only. Use Up one level or pick another place.'
+                    : imageMode
+                      ? 'Pulse shows folders plus PNG, JPEG, WebP and AVIF images. Use Up one level or pick another place.'
+                      : 'Pulse shows folders plus .exe and .lnk files. Use Up one level or pick another place.'}
                 </p>
               </div>
             ) : (
@@ -689,7 +706,7 @@ export function AddGamePage({
                     key={entry.path}
                     entry={entry}
                     index={index}
-                    kind={imageMode ? 'image' : 'game'}
+                    kind={imageMode ? 'image' : folderMode ? 'folder' : 'game'}
                     selected={selected?.path === entry.path}
                     onOpen={openEntry}
                     onChoose={chooseFile}
@@ -706,7 +723,46 @@ export function AddGamePage({
           </div>
 
           <div className="border-t border-white/10 px-3 py-2.5">
-            {selected ? (
+            {folderMode ? (
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[0.78rem] font-medium text-white/90">
+                    {currentPath ?? 'No folder open'}
+                  </p>
+                  <p className="truncate text-[0.62rem] text-white/45">
+                    {picked.length === 0
+                      ? 'Add this folder, or open a subfolder first.'
+                      : `${picked.length} folder${picked.length === 1 ? '' : 's'} ready to add`}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <PageAction
+                    focusKey={FOCUS.cancel}
+                    label="Add the open folder to the list"
+                    onPress={() => {
+                      if (!currentPath) return
+                      setPicked((current) =>
+                        current.includes(currentPath) ? current : [...current, currentPath],
+                      )
+                    }}
+                    onArrowPress={cancelArrows}
+                    disabled={!canPickFolder || picked.includes(currentPath)}
+                  >
+                    Add this folder
+                  </PageAction>
+                  <PageAction
+                    focusKey={FOCUS.confirm}
+                    label={`Add ${picked.length} folders to the music library`}
+                    onPress={() => onPickedFolders?.(picked)}
+                    onArrowPress={confirmArrows}
+                    disabled={picked.length === 0}
+                    primary
+                  >
+                    {picked.length === 0 ? 'Done' : `Done (${picked.length})`}
+                  </PageAction>
+                </div>
+              </div>
+            ) : selected ? (
               <div className="flex flex-wrap items-center gap-3">
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[0.78rem] font-medium text-white/90">
@@ -759,9 +815,11 @@ export function AddGamePage({
               <p className="px-1 text-[0.64rem] text-white/45">
                 {loading
                   ? 'Reading this folder…'
-                  : imageMode
-                    ? 'Select an image, or open a folder to keep looking.'
-                    : 'Select a game file, or open a folder to keep looking.'}
+                  : folderMode
+                    ? 'Open a folder of music, then use Add this folder.'
+                    : imageMode
+                      ? 'Select an image, or open a folder to keep looking.'
+                      : 'Select a game file, or open a folder to keep looking.'}
               </p>
             )}
           </div>
