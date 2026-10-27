@@ -31,14 +31,9 @@ import { useUISounds } from '@/hooks/use-ui-sounds'
 import { useMusicEngine } from '@/hooks/use-music-engine'
 import { useMusicStore } from '@/store/music'
 import { markMoodFor } from '@/lib/mark-mood'
-import { Backdrop } from '@/components/launcher/Backdrop'
 import { LauncherPageContent } from '@/components/launcher/LauncherPageContent'
-import { TopBar } from '@/components/launcher/TopBar'
-import { HintBar } from '@/components/launcher/HintBar'
-import { PowerMenu } from '@/components/launcher/PowerMenu'
+import { LauncherFrame } from '@/components/launcher/LauncherFrame'
 import type { GameDetailsDraft } from '@/components/launcher/GameDetailsPage'
-import { BootScreen } from '@/components/launcher/BootScreen'
-import { Toaster } from '@/components/ui/sonner'
 
 export default function App() {
   const games = useLauncherStore((state) => state.games)
@@ -353,157 +348,105 @@ export default function App() {
     : 0
 
   return (
-    <div
-      className="relative h-screen w-screen overflow-hidden text-white"
-      data-motion={settings.motion}
+    <LauncherFrame
+      motion={settings.motion}
+      selected={selected}
+      revealed={revealed}
+      bootDone={bootDone}
+      demo={demo}
+      title={
+        searchOpen
+          ? 'Search'
+          : addOpen
+            ? addMode === 'image'
+              ? 'Cover art'
+              : addMode === 'path'
+                ? 'Game file'
+                : 'Add game'
+            : detailsOpen
+              ? 'Game details'
+              : musicOpen
+                ? 'Music'
+                : settingsOpen
+                  ? 'Settings'
+                  : 'Library'
+      }
+      markMood={markMood}
+      showTools={!settingsOpen && !addOpen && !searchOpen && !detailsOpen && !musicOpen}
+      refreshing={refreshing}
+      scanProgress={scanProgress}
+      staleSources={staleSources}
+      onRefresh={() => void handleRefresh()}
+      onAddGame={handleAddGame}
+      onOpenMusic={openMusic}
+      onOpenSettings={openSettings}
+      onOpenPower={openPower}
+      showHintBar={!(settingsOpen || addOpen || searchOpen || powerOpen || detailsOpen || musicOpen)}
+      gameCount={games.length}
+      powerOpen={powerOpen}
+      onClosePower={closePower}
+      onHide={() => void window.launcher.app.hide()}
+      onQuit={() => void window.launcher.app.quit()}
+      bootPhase={bootPhase}
+      error={error}
+      onBootDone={finishBoot}
     >
-      {/* The wallpaper belongs to the library, not the splash: it arrives with the
-          content, once the mark has landed. */}
-      <div
-        aria-hidden={!revealed}
-        className={`transition-opacity duration-700 ease-out ${
-          revealed ? 'opacity-100' : 'opacity-0'
-        }`}
-      >
-        <Backdrop game={selected} reducedMotion={settings.motion === 'reduced'} />
-      </div>
-
-      <div className="relative z-10 flex h-full flex-col">
-        {/* Chrome first, and early: the splash ball flies into the mark, so the
-            header has to be there — dimmed to nothing until the ball lands. */}
-        <div
-          className={`transition-opacity duration-200 ease-out ${
-            bootDone ? 'opacity-100' : 'opacity-0'
-          }`}
-        >
-          <TopBar
-            demo={demo}
-            title={
-              searchOpen
-                ? 'Search'
-                : addOpen
-                  ? addMode === 'image'
-                    ? 'Cover art'
-                    : addMode === 'path'
-                      ? 'Game file'
-                      : 'Add game'
-                  : detailsOpen
-                    ? 'Game details'
-                    : musicOpen
-                      ? 'Music'
-                      : settingsOpen
-                        ? 'Settings'
-                        : 'Library'
-            }
-            reducedMotion={settings.motion === 'reduced'}
-            // The header appears on the frame the ball lands, and the mark with
-            // it: the crossing ends exactly on that box.
-            markVisible={bootDone}
-            markMood={markMood}
-            showTools={!settingsOpen && !addOpen && !searchOpen && !detailsOpen && !musicOpen}
-            refreshing={refreshing}
-            scanProgress={scanProgress}
-            staleSources={staleSources}
-            onRefresh={() => void handleRefresh()}
-            onAddGame={handleAddGame}
-            onOpenMusic={openMusic}
-            onOpenSettings={openSettings}
-            onOpenPower={openPower}
-          />
-        </div>
-
-        {/* Everything else waits for the landing, then rises into place. */}
-        <div
-          className={`flex min-h-0 flex-1 flex-col transition-opacity duration-500 ease-out ${
-            revealed ? 'opacity-100' : 'opacity-0'
-          }`}
-        >
-          <LauncherPageContent
-            page={{
-              searchOpen,
-              searchQuery,
-              addOpen,
-              addMode,
-              detailsGame,
-              musicOpen,
-              settingsOpen,
-              showLoading,
-              showEmpty,
-              showError,
-              error,
-              status,
-              refreshing,
-              manualDraft,
-              detailsSaving,
-              detailsRemoving,
-            }}
-            library={{
-              games,
-              selected,
-              rows,
-              settings,
-              pendingLaunch,
-              selectedAction,
-              selectedForceRemaining,
-            }}
-            actions={{
-              closeSearch,
-              closeAddGame,
-              handleSelect,
-              handleLaunch,
-              handleGameAdded,
-              handlePickedArtwork,
-              handlePickedPath,
-              setSearchQuery,
-              setManualDraft,
-              handleSaveDetails,
-              handleRemoveDetails,
-              closeDetails,
-              openDetails,
-              handleToggleFavorite,
-              openDetailsPicker,
-              closeMusic,
-              closeSettings,
-              handleAddFromSettings,
-              handleRefresh,
-              handleAddGame,
-              handleFocusGame,
-              handleCloseGame,
-              handleForceQuit,
-              handleCancelForceQuit,
-              handleCycleSort,
-            }}
-          />
-        </div>
-
-        {settingsOpen || addOpen || searchOpen || powerOpen || detailsOpen || musicOpen ? null : (
-          <div
-            className={`transition-opacity duration-500 ease-out ${
-              revealed ? 'opacity-100' : 'opacity-0'
-            }`}
-          >
-            <HintBar gameCount={games.length} />
-          </div>
-        )}
-      </div>
-
-      {powerOpen ? (
-        <PowerMenu
-          onClose={closePower}
-          onHide={() => void window.launcher.app.hide()}
-          onQuit={() => void window.launcher.app.quit()}
-        />
-      ) : null}
-      <Toaster position="bottom-right" richColors closeButton />
-      {bootDone ? null : (
-        <BootScreen
-          phase={bootPhase}
-          gameCount={games.length}
-          error={error}
-          reducedMotion={settings.motion === 'reduced'}
-          onDone={finishBoot}
-        />
-      )}
-    </div>
+      <LauncherPageContent
+        page={{
+          searchOpen,
+          searchQuery,
+          addOpen,
+          addMode,
+          detailsGame,
+          musicOpen,
+          settingsOpen,
+          showLoading,
+          showEmpty,
+          showError,
+          error,
+          status,
+          refreshing,
+          manualDraft,
+          detailsSaving,
+          detailsRemoving,
+        }}
+        library={{
+          games,
+          selected,
+          rows,
+          settings,
+          pendingLaunch,
+          selectedAction,
+          selectedForceRemaining,
+        }}
+        actions={{
+          closeSearch,
+          closeAddGame,
+          handleSelect,
+          handleLaunch,
+          handleGameAdded,
+          handlePickedArtwork,
+          handlePickedPath,
+          setSearchQuery,
+          setManualDraft,
+          handleSaveDetails,
+          handleRemoveDetails,
+          closeDetails,
+          openDetails,
+          handleToggleFavorite,
+          openDetailsPicker,
+          closeMusic,
+          closeSettings,
+          handleAddFromSettings,
+          handleRefresh,
+          handleAddGame,
+          handleFocusGame,
+          handleCloseGame,
+          handleForceQuit,
+          handleCancelForceQuit,
+          handleCycleSort,
+        }}
+      />
+    </LauncherFrame>
   )
 }
