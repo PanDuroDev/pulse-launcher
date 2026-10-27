@@ -6,7 +6,6 @@ import {
   resume,
   setFocus,
 } from '@noriginmedia/norigin-spatial-navigation-core'
-import { toast } from 'sonner'
 import type { GameSummary } from '@shared/contracts/games'
 import { FORCE_QUIT_GRACE_MS } from '@shared/game-control'
 import { useLauncherStore } from '@/store/launcher'
@@ -19,6 +18,7 @@ import { useLauncherKeyboardShortcuts } from '@/hooks/use-launcher-keyboard-shor
 import { useLauncherGamepad } from '@/hooks/use-launcher-gamepad'
 import { useLauncherFocusManagement } from '@/hooks/use-launcher-focus-management'
 import { useGameDetailsActions } from '@/hooks/use-game-details-actions'
+import { useGameAddedFocus } from '@/hooks/use-game-added-focus'
 import { actionForGame, forceRemainingMs } from '@/lib/game-actions'
 import { useAutoHideCursor } from '@/hooks/use-clock'
 import { useUISounds } from '@/hooks/use-ui-sounds'
@@ -77,7 +77,6 @@ export default function App() {
   /** True once the landed mark has had a beat to settle and the library can follow. */
   const [revealed, setRevealed] = useState(false)
   const lastFocusKey = useRef<string | null>(null)
-  const pendingFocusGame = useRef<string | null>(null)
   const searchReturnFocus = useRef<string | null>(null)
   const detailsReturnFocus = useRef<string | null>(null)
 
@@ -346,41 +345,13 @@ export default function App() {
     }, 80)
   }, [addMode, detailsOpen, games.length, initialFocusKey])
 
-  /** The picker added a game: close the page, select it, focus its card. */
-  const handleGameAdded = useCallback(
-    (game: GameSummary) => {
-      pendingFocusGame.current = game.id
-      setAddOpen(false)
-      select(game.id)
-      playUI('success')
-      toast.success(`${game.name} added to your library`)
-      // The new game arrives through the catalog change event; if it somehow
-      // does not, focus still lands somewhere usable.
-      window.setTimeout(() => {
-        if (pendingFocusGame.current !== game.id) return
-        pendingFocusGame.current = null
-        if (doesFocusableExist('tool-add')) void setFocus('tool-add')
-      }, 1200)
-    },
-    [select],
-  )
-
-  // Focus the card of a game that was just added, after the catalog event
-  // has rendered it. The effect is the reliable path; the timeout above is
-  // only a fallback.
-  useEffect(() => {
-    const gameId = pendingFocusGame.current
-    if (!gameId || addOpen) return
-    const row = rows.find((candidate) =>
-      candidate.games.some((game) => game.id === gameId),
-    )
-    if (!row) return
-    const focusKey = `${row.id}-${gameId}`
-    if (!doesFocusableExist(focusKey)) return
-    pendingFocusGame.current = null
-    lastFocusKey.current = focusKey
-    void setFocus(focusKey)
-  }, [addOpen, rows])
+  const handleGameAdded = useGameAddedFocus({
+    addOpen,
+    lastFocusKey,
+    rows,
+    select,
+    setAddOpen,
+  })
 
   /** Open the full page for the focused game, remembering where focus was. */
   const openDetails = useCallback(
