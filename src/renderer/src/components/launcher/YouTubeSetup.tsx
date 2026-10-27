@@ -1,6 +1,6 @@
 import { CheckFilled, Refresh2Filled, YoutubeFilled } from '@mingcute/react/core-filled'
 import { useFocusable } from '@noriginmedia/norigin-spatial-navigation-react'
-import type { MusicYouTubeStatus } from '@shared/types'
+import type { MusicYouTubeStatus } from '@shared/contracts/music'
 import { uiAccent } from '@/lib/accent'
 import { cn } from 'cn'
 import { Tool } from '@/components/launcher/MusicControls'
