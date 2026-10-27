@@ -582,8 +582,13 @@
     `main` (setup-node 22 مع كاش npm، `npm ci`، ثم الأربع بوابات: typecheck،
     lint، test، build)، و`Installer` عند دفع وسم `v*` يبني بـ `npm run dist`
     ويرفع المثبّت مع `.blockmap` و`latest.yml` عبر `softprops/action-gh-release`،
-    مع تعليق يشرح أن التوقيع يلزمه `CSC_LINK`/`CSC_KEY_PASSWORD`. **لم يُلاحَظ
-    نجاحه بعد** لأنه لا يعمل إلا على GitHub — يحتاج أول push.
+    مع تعليق يشرح أن التوقيع يلزمه `CSC_LINK`/`CSC_KEY_PASSWORD`. **تحقّق حيّ:**
+    أول push شغّل مهمة `Verify` فنجحت في 1m21s (الأربع بوابات على
+    `windows-latest`)، لكن مهمة `Installer` فشلت: electron-builder يعتبر بناء وسم
+    `v0.1.0` أمراً بالنشر التلقائي على GitHub فيتوقف بـ
+    «GitHub Personal Access Token is not set». الإصلاح: `pack` و`dist` صارا
+    يمرّران `--publish never`، فبقي رفع الـ artifacts خطوة صريحة في الـ workflow
+    ولا ينشر electron-builder شيئاً من تلقاء نفسه.
 
 - [x] **8.3 — ترقيم الإصدار وملاحظات النشر** (01 §1)
   - `CHANGELOG.md` بصيغة Keep a Changelog، ووسم `v0.1.0` على أول إصدار.

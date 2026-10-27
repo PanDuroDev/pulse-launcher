@@ -21,6 +21,14 @@ packaged `app.asar` is older than `out/`.
 - `docs/audit/PHASES.md` Phase 8 «الإصدار نفسه» so publishing has its own tracked
   work instead of living in Phase 0.
 
+### Fixed
+
+- `npm run dist` no longer lets electron-builder publish implicitly when it builds
+  on a git tag. electron-builder treats a tag as "publish to GitHub" and aborted
+  the first CI release run with `GitHub Personal Access Token is not set`; `pack`
+  and `dist` now pass `--publish never`, so uploading artefacts stays an explicit
+  workflow step.
+
 ### Changed
 
 - YouTube tools are no longer looked up inside the app resources: the
