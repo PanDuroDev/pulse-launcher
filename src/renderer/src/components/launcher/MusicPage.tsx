@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowLeftFilled,
-  CheckFilled,
   ExternalLinkFilled,
   FolderOpenFilled,
   MiniplayerFilled,
