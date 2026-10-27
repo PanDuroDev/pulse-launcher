@@ -18,6 +18,7 @@ import { useLauncherKeyboardShortcuts } from '@/hooks/use-launcher-keyboard-shor
 import { useLauncherGamepad } from '@/hooks/use-launcher-gamepad'
 import { useLauncherFocusManagement } from '@/hooks/use-launcher-focus-management'
 import { useGameDetailsActions } from '@/hooks/use-game-details-actions'
+import { useGameDetailsNavigation } from '@/hooks/use-game-details-navigation'
 import { useGameAddedFocus } from '@/hooks/use-game-added-focus'
 import { useSearchNavigation } from '@/hooks/use-search-navigation'
 import { useSecondaryPageNavigation } from '@/hooks/use-secondary-page-navigation'
@@ -79,7 +80,6 @@ export default function App() {
   /** True once the landed mark has had a beat to settle and the library can follow. */
   const [revealed, setRevealed] = useState(false)
   const lastFocusKey = useRef<string | null>(null)
-  const detailsReturnFocus = useRef<string | null>(null)
 
   const {
     rows,
@@ -276,93 +276,24 @@ export default function App() {
     setAddOpen,
   })
 
-  /** Open the full page for the focused game, remembering where focus was. */
-  const openDetails = useCallback(
-    (game: GameSummary) => {
-      const current = getCurrentFocusKey()
-      if (current && !current.startsWith('details-')) {
-        detailsReturnFocus.current = current
-      }
-      setPowerOpen(false)
-      setDetailsSnapshot(game)
-      setManualDraft(
-        game.source === 'manual'
-          ? {
-              gameId: game.id,
-              name: game.name,
-              executable: game.executable ?? '',
-              artwork: undefined,
-            }
-          : null,
-      )
-      select(game.id)
-      setDetailsOpen(true)
-      window.setTimeout(() => {
-        if (doesFocusableExist('details-back')) void setFocus('details-back')
-      }, 90)
-    },
-    [select],
-  )
-
-  const closeDetails = useCallback(() => {
-    // A text field owns the keyboard while it is being edited: the first
-    // Escape/Back leaves the field instead of closing the page.
-    const active = document.activeElement
-    if (
-      active instanceof HTMLElement &&
-      (active.tagName === 'INPUT' ||
-        active.tagName === 'TEXTAREA' ||
-        active.isContentEditable)
-    ) {
-      active.blur()
-      return
-    }
-    setDetailsOpen(false)
-    setDetailsSnapshot(null)
-    setManualDraft(null)
-    window.setTimeout(() => {
-      const preferred = detailsReturnFocus.current
-      if (preferred && doesFocusableExist(preferred)) {
-        void setFocus(preferred)
-        return
-      }
-      const fallback = lastFocusKey.current ?? initialFocusKey
-      if (fallback && doesFocusableExist(fallback)) {
-        void setFocus(fallback)
-        return
-      }
-      if (doesFocusableExist('tool-add')) void setFocus('tool-add')
-    }, 90)
-  }, [initialFocusKey])
-
-  // The picker replaces the details page while it is open; the draft lives here
-  // so a typed name survives a trip to the file browser.
-  const openDetailsPicker = useCallback((mode: 'path' | 'image') => {
-    setAddMode(mode)
-    setAddOpen(true)
-  }, [])
-
-  const handlePickedPath = useCallback((next: string) => {
-    setManualDraft((current) =>
-      current ? { ...current, executable: next } : current,
-    )
-    setAddOpen(false)
-    window.setTimeout(() => {
-      if (doesFocusableExist('details-path')) void setFocus('details-path')
-      else if (doesFocusableExist('details-back')) void setFocus('details-back')
-    }, 100)
-  }, [])
-
-  const handlePickedArtwork = useCallback((next: string) => {
-    setManualDraft((current) =>
-      current ? { ...current, artwork: next } : current,
-    )
-    setAddOpen(false)
-    window.setTimeout(() => {
-      if (doesFocusableExist('details-art')) void setFocus('details-art')
-      else if (doesFocusableExist('details-back')) void setFocus('details-back')
-    }, 100)
-  }, [])
+  const {
+    detailsReturnFocus,
+    openDetails,
+    closeDetails,
+    openDetailsPicker,
+    handlePickedPath,
+    handlePickedArtwork,
+  } = useGameDetailsNavigation({
+    initialFocusKey,
+    lastFocusKey,
+    select,
+    setAddMode,
+    setAddOpen,
+    setDetailsOpen,
+    setDetailsSnapshot,
+    setManualDraft,
+    setPowerOpen,
+  })
 
   // The draft starts from the stored game; it is created when the page opens
   // and updated by the editor, so no effect has to mirror it from the catalog.
