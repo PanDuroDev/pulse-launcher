@@ -10,6 +10,7 @@ import type { GameSummary } from '@shared/contracts/games'
 import { FORCE_QUIT_GRACE_MS } from '@shared/game-control'
 import { useLauncherStore } from '@/store/launcher'
 import { useLibraryView } from '@/hooks/use-library-view'
+import { useLauncherBootSequence } from '@/hooks/use-launcher-boot-sequence'
 import { useLauncherInitialization } from '@/hooks/use-launcher-initialization'
 import { useGameActionController } from '@/hooks/use-game-action-controller'
 import { useGameLaunchController } from '@/hooks/use-game-launch-controller'
@@ -48,7 +49,6 @@ import {
 import { EmptyLibrary } from '@/components/launcher/EmptyLibrary'
 import { LibraryLoading } from '@/components/launcher/LibraryLoading'
 import { BootScreen } from '@/components/launcher/BootScreen'
-import { bootPhaseFor } from '@/lib/boot'
 import { Toaster } from '@/components/ui/sonner'
 
 export default function App() {
@@ -77,10 +77,10 @@ export default function App() {
   const [powerOpen, setPowerOpen] = useState(false)
   const [musicOpen, setMusicOpen] = useState(false)
   const [demo, setDemo] = useState(false)
-  const [bootDone, setBootDone] = useState(false)
   /** True once the landed mark has had a beat to settle and the library can follow. */
-  const [revealed, setRevealed] = useState(false)
   const lastFocusKey = useRef<string | null>(null)
+
+  const { bootDone, finishBoot, revealed, bootPhase } = useLauncherBootSequence(status)
 
   const {
     rows,
@@ -139,9 +139,6 @@ export default function App() {
   useAutoHideCursor(settings.hideCursorAfterMs)
   useUISounds(settings.uiSounds)
 
-  const bootPhase = bootPhaseFor(status)
-  const finishBoot = useCallback(() => setBootDone(true), [])
-
   // The header mark is the launcher's face. Everything it needs is already
   // decided here, so the mapping stays a pure function of the library's state.
   const markMood = useMemo(
@@ -157,15 +154,6 @@ export default function App() {
       }),
     [pendingLaunch, refreshing, selected, status],
   )
-
-  // The ball lands on the header mark, which is drawn on that same frame; the
-  // library then rises in behind it. Two beats, not one, so the eye follows the
-  // mark instead of a cross-fade.
-  useEffect(() => {
-    if (!bootDone) return
-    const timer = window.setTimeout(() => setRevealed(true), 180)
-    return () => window.clearTimeout(timer)
-  }, [bootDone])
 
   // Spatial navigation also listens to the arrow keys. Freeze it while the
   // overlay is up, then hand the library back on the same tick the fade ends.
