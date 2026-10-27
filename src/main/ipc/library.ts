@@ -42,6 +42,7 @@ interface LibraryIpcDependencies {
   placeCandidates: () => PlaceCandidate[]
 }
 
+/** Registers library browsing and manual-game management IPC handlers. */
 export function registerLibraryIpc({
   assertTrustedSender,
   catalog,
