@@ -127,7 +127,7 @@ export class ErrorBoundary extends Component<Props, State> {
    `./tools`: مسار الكاش، مسار الاستخراج، تدهور API، دمج النتائج.
 2. **`music/library.ts`** — اختبر `scanFolder` على شجرة مجلدات مؤقتة حقيقية
    (`mkdtemp`): الحدود (عمق، عدد، حجم)، تجاهل الامتدادات، التخزين المؤقت.
-3. **`youtube/tools.ts`** — اختبر ترتيب الاكتشاف (configured → bundled → path)
+3. **`youtube/tools.ts`** — اختبر ترتيب الاكتشاف (configured → user bin → path)
    ورسائل الخطأ، مع `stat`/`runCommand` مُموَّهة.
 4. **`lib/music-engine.ts`** — يحتاج بيئة DOM. إما `happy-dom` (إضافة اعتمادية
    اختبار) أو استخرج منطق الطابور إلى دوال نقية في `music-queue.ts` (الموجود

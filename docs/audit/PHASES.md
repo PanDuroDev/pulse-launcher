@@ -314,7 +314,7 @@
 
 - [ ] **3.1 — اختبار `youtube/tools.ts`** (05 §2)
   - `detectYtDlp`/`detectFfmpeg` مع `fs.stat` و`runCommand` مُموَّهين.
-  - ترتيب الأولوية: configured → bundled → user bin → PATH → مسارات FFmpeg الإضافية.
+  - ترتيب الأولوية: configured → user bin (`music/bin/`) → PATH → مسارات FFmpeg الإضافية.
   - حالة "ملف موجود لكنه لا يعمل" (symlink مكسور — وهو الخطأ الحقيقي الذي حدث).
 
 - [ ] **3.2 — اختبار `youtube/command.ts`**
@@ -596,11 +596,22 @@
     إصدار عام واسع.
   - **محجوب:** لا شهادة على جهاز البناء.
 
-- [ ] **8.6 — قرار أدوات الحزمة `resources/bin`** (01 §5)
+- [x] **8.6 — قرار أدوات الحزمة `resources/bin`** (01 §5)
   - إما حذف فرع `source: 'bundled'` الميت من `youtube/tools.ts`، أو شحن
     `yt-dlp.exe` و`ffmpeg.exe` فعلياً في `resources/bin`.
   - **لماذا:** الكود يدعم مساراً غير موجود في الحزمة، فيوهم القارئ بقدرة غير
     متاحة.
+  - **أُنجز (القرار: الحذف، لا الشحن).** `resources/bin/` لا يوجد ولا يُنسخ في
+    الحزمة، فحُذف الفرع الميت من `src/main/music/youtube/tools.ts` مع استيراد
+    `resolveResourcePath` الذي لم يبقَ له مستخدم، وحُذف العضو `'bundled'` من
+    `MusicYouTubeToolSource` في `src/shared/types.ts`، وحُذف سطر `Bundled` من
+    `YOUTUBE_TOOL_SOURCES` في `MusicPage.tsx`.
+  - **سبب عدم الشحن:** yt-dlp يتقادم بسرعة عند تغيّر يوتيوب، فالتنزيل التلقائي
+    إلى `music/bin/` هو المصدر الصحيح؛ وFFmpeg حجمه ~150 MB وله التزامات ترخيص
+    خاصة، فشحنه قرار حجم/ترخيص لم يُتخذ الآن.
+  - نتيجة الترتيب بعد الحذف: yt-dlp = configured → `music/bin/` → PATH،
+    وFFmpeg = configured → `music/bin/` → PATH → مسارات WinGet/Chocolatey/Scoop.
+    واختفت من الواجهة تسمية مصدر لا يمكن أن تظهر أبداً.
 
 ### يعتمد على
 
@@ -613,6 +624,7 @@
 - [ ] كل push يمرّ عبر CI على Windows قبل الدمج.
 - [ ] وسم `v*` ينتج مثبّتاً مرفوعاً كـ artifact مع `latest.yml`.
 - [ ] `CHANGELOG.md` يوثّق `0.1.0`، والوسم موجود على الـ commit الصحيح.
+- [x] لا يذكر الكود ولا الواجهة مصدر أدوات غير موجود في الحزمة.
 
 ---
 

@@ -147,8 +147,8 @@ path, and an optional FFmpeg path in `music/youtube.json`. The key is masked in
 the panel, only sent to `googleapis.com`, and redacted from errors and logs.
 
 Pulse auto-downloads the official yt-dlp executable to `music/bin/yt-dlp.exe`
-from its GitHub release when no working copy is found on the configured path,
-inside the app resources, or on `PATH`. **FFmpeg is required for MP3** and is not
+from its GitHub release when no working copy is found on the configured path, in
+`music/bin/`, or on `PATH`. **FFmpeg is required for MP3** and is not
 downloaded automatically: install it (for example with
 `winget install Gyan.FFmpeg`) or point Setup at `ffmpeg.exe`. Setup shows both
 tools, their versions and source, and the current cache size.

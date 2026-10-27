@@ -21,6 +21,13 @@ packaged `app.asar` is older than `out/`.
 - `docs/audit/PHASES.md` Phase 8 «الإصدار نفسه» so publishing has its own tracked
   work instead of living in Phase 0.
 
+### Changed
+
+- YouTube tools are no longer looked up inside the app resources: the
+  `source: 'bundled'` branch was removed because `resources/bin/` is never
+  shipped. yt-dlp still auto-downloads into `music/bin/`, FFmpeg is still detected
+  from the configured path, `PATH`, and the usual package-manager locations.
+
 ## [0.1.0] - 2026-10-27
 
 First packaged build. Windows 10/11 x64, NSIS installer, unsigned.
