@@ -162,8 +162,7 @@
   --page-gutter: clamp(1.5rem, 4vw, 4rem);
   --page-max: 1600px;
   --duration-focus: 120ms;
-  --duration-panel: 200ms;
-}
+  --duration-panel: 200ms;}
 ```
 
 ويُبنى مكوّن واحد `PageFrame` يملك:
