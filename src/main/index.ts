@@ -408,6 +408,7 @@ function appInfo(): AppInfo {
   }
 }
 
+/** Wires each IPC domain to the main-process services and trusted-sender policies. */
 function registerIpc(): void {
   registerCatalogIpc({
     assertTrustedSender,
