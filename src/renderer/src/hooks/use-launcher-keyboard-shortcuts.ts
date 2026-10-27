@@ -219,6 +219,7 @@ export function useLauncherKeyboardShortcuts({
     handleRefresh,
     handleToggleFavorite,
     initialFocusKey,
+    lastFocusKey,
     musicOpen,
     openDetails,
     openMusic,

@@ -14,7 +14,7 @@ interface LibraryRow {
 
 interface UseGameAddedFocusOptions {
   addOpen: boolean
-  lastFocusKey: { current: string | null }
+  rememberFocusKey: (focusKey: string) => void
   rows: LibraryRow[]
   select: (gameId: string) => void
   setAddOpen: (open: boolean) => void
@@ -23,7 +23,7 @@ interface UseGameAddedFocusOptions {
 /** Selects a newly added game and moves focus to its card when it appears. */
 export function useGameAddedFocus({
   addOpen,
-  lastFocusKey,
+  rememberFocusKey,
   rows,
   select,
   setAddOpen,
@@ -60,9 +60,9 @@ export function useGameAddedFocus({
     const focusKey = `${row.id}-${gameId}`
     if (!doesFocusableExist(focusKey)) return
     pendingFocusGame.current = null
-    lastFocusKey.current = focusKey
+    rememberFocusKey(focusKey)
     void setFocus(focusKey)
-  }, [addOpen, lastFocusKey, rows])
+  }, [addOpen, rememberFocusKey, rows]
 
   return handleGameAdded
 }

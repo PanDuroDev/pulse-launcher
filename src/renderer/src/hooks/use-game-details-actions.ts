@@ -12,7 +12,7 @@ import { toast } from 'sonner'
 
 interface UseGameDetailsActionsOptions {
   detailsRemoving: boolean
-  detailsReturnFocus: { current: string | null }
+  clearDetailsReturnFocus: () => void
   detailsSaving: boolean
   manualDraft: GameDetailsDraft | null
   select: (gameId: string) => void
@@ -26,8 +26,8 @@ interface UseGameDetailsActionsOptions {
 
 /** Owns persistence actions for the currently edited manual game. */
 export function useGameDetailsActions({
+  clearDetailsReturnFocus,
   detailsRemoving,
-  detailsReturnFocus,
   detailsSaving,
   manualDraft,
   select,
@@ -67,7 +67,7 @@ export function useGameDetailsActions({
       const previousId = result.previousId ?? result.game.id
       invalidateArtwork(previousId)
       invalidateArtwork(result.game.id)
-      detailsReturnFocus.current = null
+      clearDetailsReturnFocus()
       select(result.game.id)
       setDetailsSnapshot(result.game)
       setManualDraft({
@@ -85,7 +85,7 @@ export function useGameDetailsActions({
       setDetailsSaving(false)
     }
   }, [
-    detailsReturnFocus,
+    clearDetailsReturnFocus,
     detailsSaving,
     manualDraft,
     select,

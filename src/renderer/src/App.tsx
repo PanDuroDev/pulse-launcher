@@ -64,6 +64,10 @@ export default function App() {
   /** True once the landed mark has had a beat to settle and the library can follow. */
   const lastFocusKey = useRef<string | null>(null)
 
+  const rememberFocusKey = useCallback((focusKey: string) => {
+    lastFocusKey.current = focusKey
+  }, [])
+
   const { bootDone, finishBoot, revealed, bootPhase } = useLauncherBootSequence(status)
 
   const {
@@ -166,10 +170,10 @@ export default function App() {
 
   const handleSelect = useCallback(
     (game: GameSummary, focusKey: string) => {
-      lastFocusKey.current = focusKey
+      rememberFocusKey(focusKey)
       select(game.id)
     },
-    [select],
+    [rememberFocusKey, select],
   )
 
   const { openSearch, closeSearch } = useSearchNavigation({
@@ -200,14 +204,14 @@ export default function App() {
 
   const handleGameAdded = useGameAddedFocus({
     addOpen,
-    lastFocusKey,
+    rememberFocusKey,
     rows,
     select,
     setAddOpen,
   })
 
   const {
-    detailsReturnFocus,
+    clearDetailsReturnFocus,
     openDetails,
     closeDetails,
     openDetailsPicker,
@@ -229,8 +233,8 @@ export default function App() {
   // and updated by the editor, so no effect has to mirror it from the catalog.
 
   const { handleSaveDetails, handleRemoveDetails } = useGameDetailsActions({
+    clearDetailsReturnFocus,
     detailsRemoving,
-    detailsReturnFocus,
     detailsSaving,
     manualDraft,
     select,

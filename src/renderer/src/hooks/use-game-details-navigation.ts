@@ -36,6 +36,10 @@ export function useGameDetailsNavigation({
 }: UseGameDetailsNavigationOptions) {
   const detailsReturnFocus = useRef<string | null>(null)
 
+  const clearDetailsReturnFocus = useCallback(() => {
+    detailsReturnFocus.current = null
+  }, [])
+
   const openDetails = useCallback(
     (game: GameSummary) => {
       const current = getCurrentFocusKey()
@@ -140,7 +144,7 @@ export function useGameDetailsNavigation({
   )
 
   return {
-    detailsReturnFocus,
+    clearDetailsReturnFocus,
     openDetails,
     closeDetails,
     openDetailsPicker,
