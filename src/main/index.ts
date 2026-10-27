@@ -1,7 +1,6 @@
 import {
   app,
   BrowserWindow,
-  dialog,
   globalShortcut,
   ipcMain,
   Menu,
@@ -10,7 +9,7 @@ import {
   shell,
   Tray,
 } from 'electron'
-import { writeFile } from 'node:fs/promises'
+import { writeFile, stat } from 'node:fs/promises'
 import path from 'node:path'
 import { z } from 'zod'
 import { IPC } from '@shared/ipc'
@@ -144,7 +143,7 @@ const ForceCloseSchema = z.object({
 const BrowseSchema = z
   .object({
     path: z.string().min(1).max(1024),
-    kind: z.enum(['game', 'image']).optional(),
+    kind: z.enum(['game', 'image', 'folder']).optional(),
   })
   .strict()
 
@@ -159,6 +158,10 @@ const UpdateManualSchema = z
 
 const MusicFolderSchema = z
   .object({ path: z.string().min(1).max(1024) })
+  .strict()
+
+const MusicFoldersSchema = z
+  .object({ paths: z.array(z.string().min(1).max(1024)).min(1).max(32) })
   .strict()
 
 const MusicOverlayUpdateSchema = z
@@ -926,28 +929,24 @@ function registerIpc(): void {
     return music.cancelScan()
   })
 
-  ipcMain.handle(IPC.musicAddFolder, async (event): Promise<MusicLibrarySnapshot> => {
-    assertMusicSender(event)
-    const window = mainWindow
-    const result = window
-      ? await dialog.showOpenDialog(window, {
-          title: 'Add a music folder',
-          buttonLabel: 'Add folder',
-          properties: ['openDirectory', 'multiSelections'],
-        })
-      : await dialog.showOpenDialog({
-          title: 'Add a music folder',
-          buttonLabel: 'Add folder',
-          properties: ['openDirectory', 'multiSelections'],
-        })
-
-    if (result.canceled || result.filePaths.length === 0) return music.snapshot
-    let snapshot = music.snapshot
-    for (const folder of result.filePaths) {
-      snapshot = await music.addFolder(folder)
-    }
-    return snapshot
-  })
+  ipcMain.handle(
+    IPC.musicAddFolders,
+    async (event, payload: unknown): Promise<MusicLibrarySnapshot> => {
+      assertMusicSender(event)
+      const parsed = MusicFoldersSchema.parse(payload)
+      let snapshot = music.snapshot
+      for (const folder of parsed.paths) {
+        if (!isBrowsablePath(folder)) continue
+        try {
+          if (!(await stat(folder)).isDirectory()) continue
+        } catch {
+          continue
+        }
+        snapshot = await music.addFolder(folder)
+      }
+      return snapshot
+    },
+  )
 
   ipcMain.handle(
     IPC.musicRemoveFolder,

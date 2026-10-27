@@ -101,7 +101,8 @@ const api: LauncherApi = {
     list: () => ipcRenderer.invoke(IPC.musicList) as Promise<MusicLibrarySnapshot>,
     rescan: () => ipcRenderer.invoke(IPC.musicRescan) as Promise<MusicLibrarySnapshot>,
     cancelScan: () => ipcRenderer.invoke(IPC.musicCancelScan) as Promise<MusicLibrarySnapshot>,
-    addFolder: () => ipcRenderer.invoke(IPC.musicAddFolder) as Promise<MusicLibrarySnapshot>,
+    addFolders: (paths: string[]) =>
+      ipcRenderer.invoke(IPC.musicAddFolders, { paths }) as Promise<MusicLibrarySnapshot>,
     removeFolder: (folder: string) =>
       ipcRenderer.invoke(IPC.musicRemoveFolder, { folder }) as Promise<MusicLibrarySnapshot>,
     onChanged: (listener: (snapshot: MusicLibrarySnapshot) => void) =>

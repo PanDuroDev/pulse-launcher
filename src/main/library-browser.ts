@@ -118,6 +118,8 @@ export async function listDirectory(
       continue
     }
     if (!dirent.isFile()) continue
+    // Folder mode only wants directories — picking a music folder never needs files.
+    if (kind === 'folder') continue
     const extension = path.extname(dirent.name).toLowerCase()
     const allowed = kind === 'image' ? IMAGE_EXTENSIONS : GAME_EXTENSIONS
     if (!allowed.has(extension)) continue

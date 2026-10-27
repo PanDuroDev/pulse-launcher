@@ -98,6 +98,17 @@ describe('listDirectory', () => {
     ])
   })
 
+  it('lists only folders when the picker is choosing a music folder', async () => {
+    const listing = await listDirectory(root, 'folder')
+
+    expect(listing.ok).toBe(true)
+    expect(listing.entries?.map((entry) => entry.name)).toEqual([
+      'another folder',
+      'Game Folder',
+    ])
+    expect(listing.entries?.every((entry) => entry.kind === 'directory')).toBe(true)
+  })
+
   it('skips hidden and system-looking folders', async () => {
     const listing = await listDirectory(root)
     const names = listing.entries?.map((entry) => entry.name) ?? []

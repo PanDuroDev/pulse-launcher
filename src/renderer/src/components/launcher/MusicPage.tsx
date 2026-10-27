@@ -133,6 +133,8 @@ function providerSummary(statuses: MusicOnlineProviderStatus[]): string {
 
 interface MusicPageProps {
   onBack: () => void
+  /** Opens the in-app picker in folder mode; music folders are added there. */
+  onAddFolders: () => void
 }
 
 interface ToolProps {
@@ -350,7 +352,7 @@ function SeekBar({ positionMs, durationMs }: { positionMs: number; durationMs: n
   )
 }
 
-export function MusicPage({ onBack }: MusicPageProps) {
+export function MusicPage({ onBack, onAddFolders }: MusicPageProps) {
   const tracks = useMusicStore((state) => state.tracks)
   const folders = useMusicStore((state) => state.folders)
   const scanning = useMusicStore((state) => state.scanning)
@@ -358,7 +360,6 @@ export function MusicPage({ onBack }: MusicPageProps) {
   const scanError = useMusicStore((state) => state.scanError)
   const loading = useMusicStore((state) => state.loading)
   const overlay = useMusicStore((state) => state.overlay)
-  const addFolder = useMusicStore((state) => state.addFolder)
   const rescan = useMusicStore((state) => state.rescan)
   const cancelScan = useMusicStore((state) => state.cancelScan)
   const updateOverlay = useMusicStore((state) => state.updateOverlay)
@@ -873,7 +874,7 @@ export function MusicPage({ onBack }: MusicPageProps) {
                 focusKey={ADD_KEY}
                 label="Add folder"
                 icon={<FolderOpenFilled className="size-4" />}
-                onClick={() => void addFolder()}
+                onClick={onAddFolders}
               />
               <Tool
                 focusKey={RESCAN_KEY}
@@ -1088,7 +1089,7 @@ export function MusicPage({ onBack }: MusicPageProps) {
                       focusKey="music-add-folder-empty"
                       label="Add folder"
                       icon={<FolderOpenFilled className="size-4" />}
-                      onClick={() => void addFolder()}
+                      onClick={onAddFolders}
                     />
                   </div>
                 </div>

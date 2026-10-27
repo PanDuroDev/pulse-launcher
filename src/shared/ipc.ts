@@ -30,7 +30,7 @@ export const IPC = {
   musicList: 'music:list',
   musicRescan: 'music:rescan',
   musicCancelScan: 'music:cancel-scan',
-  musicAddFolder: 'music:add-folder',
+  musicAddFolders: 'music:add-folders',
   musicRemoveFolder: 'music:remove-folder',
   musicChanged: 'music:changed',
   musicOnlineSearch: 'music:online-search',

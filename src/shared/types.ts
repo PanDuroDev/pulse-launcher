@@ -171,7 +171,7 @@ export interface PickerLocation {
 }
 
 /** What the in-app picker is currently looking for. */
-export type PickerKind = 'game' | 'image'
+export type PickerKind = 'game' | 'image' | 'folder'
 
 /** One row in the picker: a subfolder or a launchable/selectable file. */
 export interface PickerEntry {
@@ -579,7 +579,7 @@ export interface LauncherApi {
     get: () => Promise<string | null>
     set: (gameId: string | null) => Promise<SelectionResult>
   }
-  /** In-app browsing for local .exe/.lnk files and image files. No native dialog. */
+  /** In-app browsing for local .exe/.lnk files, image files and music folders. */
   library: {
     roots: () => Promise<PickerRoots>
     list: (directory: string, kind?: PickerKind) => Promise<DirectoryListing>
@@ -593,8 +593,8 @@ export interface LauncherApi {
     rescan: () => Promise<MusicLibrarySnapshot>
     /** Stops a scan in progress; the partial index is kept. */
     cancelScan: () => Promise<MusicLibrarySnapshot>
-    /** Opens the native folder picker and scans every chosen folder. */
-    addFolder: () => Promise<MusicLibrarySnapshot>
+    /** Adds music folders chosen in the app picker and scans them. */
+    addFolders: (paths: string[]) => Promise<MusicLibrarySnapshot>
     removeFolder: (folder: string) => Promise<MusicLibrarySnapshot>
     onChanged: (listener: (snapshot: MusicLibrarySnapshot) => void) => () => void
     /** Searches the legal online catalogs and returns the merged ranking. */
