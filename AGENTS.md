@@ -1,10 +1,10 @@
-# AGENTS.md â€” Pulse Launcher
+# AGENTS.md — Pulse Launcher
 
 Instructions for any coding agent (or human) working in this repository.
 
 This file describes **what is actually here**: real files, real line counts, real
 exports, real IPC channels, real versions. If a statement here disagrees with the
-code, the code wins â€” and this file should be corrected in the same change.
+code, the code wins — and this file should be corrected in the same change.
 
 `PLAN.md` holds the product plan and acceptance criteria (Arabic).
 `README.md` is the user/developer documentation (English).
@@ -17,11 +17,12 @@ Pulse Launcher is a PS5-style **fullscreen game launcher for Windows**. It
 aggregates games from Steam, Epic Games, Start Menu shortcuts, and manually added
 executables into one cinematic, controller-friendly library.
 
-**Requirements** â€” Windows 10/11, Node.js â‰¥ 22.12 (`engines`), npm.
+**Requirements** — Windows 10/11, Node.js ≥ 22.12 (`engines`), npm.
 
-**Language** â€” the user writes in Arabic; reply in Arabic. Code, comments, and
-docs are in English. The vendored Bloub engine keeps its original **French**
-comments: leave them as they are.
+**Language** — the user writes in Arabic; reply in Arabic. Code, comments, and
+docs are in English, with three deliberate exceptions: `docs/audit/`,
+`docs/design/`, and the PR conversation stay Arabic. The vendored Bloub engine
+keeps its original **French** comments: leave them as they are.
 
 ### 1.1 Installed versions (verified in `node_modules`)
 
@@ -74,12 +75,12 @@ resolve-library-id({ libraryName: "Electron", query: "..." })
 query-docs({ libraryId: "/websites/electron-vite", query: "..." })
 ```
 
-The version table in Â§1.1 and the notes below were checked against
+The version table in §1.1 and the notes below were checked against
 `node_modules` and Context7 on 2026-10-26. Re-check a claim before repeating it
 as fact; if Context7 and this file disagree, Context7 wins for the library and
 the code wins for the project.
 
-Resolved IDs used so far. Copy the exact string â€” `query-docs` rejects anything
+Resolved IDs used so far. Copy the exact string — `query-docs` rejects anything
 that is not in this form, and a wrong guess fails loudly with "Library not found".
 
 | Library | Context7 ID | Note |
@@ -96,14 +97,14 @@ that is not in this form, and a wrong guess fails loudly with "Library not found
 | Vitest | `/vitest-dev/vitest` | |
 | MingCute icons | `/mingcute-design/mingcute-icons` | Medium reputation; for exact export names read `node_modules/@mingcute/react/core-filled` |
 
-Do not use `/websites/electron` or `/base-ui/react` â€” both resolve to nothing.
+Do not use `/websites/electron` or `/base-ui/react` — both resolve to nothing.
 `resolve-library-id` first if a new package shows up.
 
 Facts confirmed this way and worth remembering:
 
-- **electron-vite â‰¥ 5 deprecates `externalizeDepsPlugin`**; `build.externalizeDeps`
+- **electron-vite ≥ 5 deprecates `externalizeDepsPlugin`**; `build.externalizeDeps`
   is on by default and the plugin can be deleted. This repo still imports the
-  plugin (`electron.vite.config.ts` lines 4, 12, 21) â€” it works, but it is legacy.
+  plugin (`electron.vite.config.ts` lines 4, 12, 21) — it works, but it is legacy.
   If you touch that config, migrating is a one-line-per-target change, not a
   rewrite.
 - electron-vite output defaults are `out/main`, `out/preload`, `out/renderer`
@@ -111,7 +112,7 @@ Facts confirmed this way and worth remembering:
   to `src/renderer`.
 - Norigin: `navigateByDirection(direction, focusDetails?)` is **async**;
   `pause()` stops all key handling while preserving focus, `resume()` restores it.
-  `useFocusable()` returns `{ ref, focusKey, focusSelf, hasFocusedChild, â€¦ }`, and
+  `useFocusable()` returns `{ ref, focusKey, focusSelf, hasFocusedChild, … }`, and
   `focusSelf()` is memoised so it is safe in a dependency array. This repo splits
   the imports: hooks come from `@noriginmedia/norigin-spatial-navigation-react`
   (`useFocusable`), while `init`, `pause`, `resume`, `setFocus`,
@@ -119,14 +120,14 @@ Facts confirmed this way and worth remembering:
   `...-core`. The docs show both packages exporting them; keep the existing split
   so the renderer does not pull the React wrapper into main-process code.
 - Zustand 5: `create<T>()(...)`; select one slice per call
-  (`useLauncherStore(s => s.games)`) â€” never select the whole store object, and
+  (`useLauncherStore(s => s.games)`) — never select the whole store object, and
   use `useShallow` if you must return an object literal.
 - Zod 4: `z.object({...}).strict()` still rejects unknown keys, and
   `z.strictObject` survives `.pick()`/`.omit()`.
 - Motion: `useReducedMotion()` from `motion/react`; `AnimatePresence` needs a
   stable `key` for the `exit` animation to run.
 - Vitest: `restoreMocks: true` restores every `vi.spyOn` before each test, so a
-  spy never leaks between tests â€” but it also means a spy set in `beforeAll`
+  spy never leaks between tests — but it also means a spy set in `beforeAll`
   does not survive into the tests.
 
 ---
@@ -137,7 +138,7 @@ These are not preferences. Breaking them silently is the most common way to
 regress this project.
 
 1. **There is no git repository.** Nothing is committed; every edit is live.
-   Never `git checkout` / `git restore` / `git clean` to "undo" â€” inspect the file
+   Never `git checkout` / `git restore` / `git clean` to "undo" — inspect the file
    and edit it. Treat unfamiliar code you did not write as someone's work: read
    it first, then change the smallest thing that satisfies the request.
 2. **The reference clones are read-only.** `ps5-launcher-inspection-codex/`,
@@ -146,7 +147,7 @@ regress this project.
    them, never build from them, never copy a whole file out of them without
    reading the current version first.
 3. **One accent colour.** The chrome uses `--pulse-accent: 210 55% 72%` (calm
-   desaturated blue) through `lib/accent.ts` â†’ `uiAccent(alpha)` /
+   desaturated blue) through `lib/accent.ts` → `uiAccent(alpha)` /
    `accentAlpha()`. Artwork supplies colour variety. Do not add a second accent,
    do not re-tint the chrome per game, do not add decorative coloured glows.
 4. **Lint baseline is 4 warnings, 0 errors.** The four are known and accepted:
@@ -160,7 +161,7 @@ regress this project.
    `src/renderer/src/lib/` and tested there. React components are verified
    visually, not with a DOM test library.
 6. **Ask before scope creep.** The user often asks for one narrow change
-   ("remove the glow behind the logo â€” nothing else"). Deliver exactly that, then
+   ("remove the glow behind the logo — nothing else"). Deliver exactly that, then
    report what else you noticed without doing it.
 7. **No remote URLs in the renderer.** Artwork reaches the UI through the main
    process and the `app://launcher/...` protocol. `will-navigate`,
@@ -176,7 +177,7 @@ regress this project.
 | `morph` on a state whose first frame is mid-animation | the state plays **backwards** from its end (this is what broke `comet`) | set `morph: 0` and start the motion at `t = 0` |
 | assuming `lookTarget` should point right | the upstream pose looks left because Bloub's settings panel is on the right | use `brandLook` for the mark; leave `lookTarget` alone |
 | `document.visibilityState` after `Page.reload` | reads `hidden`, so screenshots are stale/blank | `Page.bringToFront` first |
-| checking the music overlay with `document.visibilityState` | Chromium keeps reporting `visible` after the window is hidden | run `D:\Temp\User\opencode\overlay-state.ps1` (finds the 392Ã—96 Win32 window) |
+| checking the music overlay with `document.visibilityState` | Chromium keeps reporting `visible` after the window is hidden | run `D:\Temp\User\opencode\overlay-state.ps1` (finds the 392×96 Win32 window) |
 | screenshotting a minimised window | CSS transitions and the RAF loop freeze | restore the window (`restore-launcher.ps1`) before measuring |
 | adding an icon from `lucide-react` | not a dependency; `components.json` lies about it | import from `@mingcute/react` |
 | a new setting with only two of the three places | it silently resets on restart | `Settings`, `DEFAULT_SETTINGS`, `SettingsFieldsSchema` |
@@ -195,7 +196,7 @@ Root: `.gitignore`, `.oxlintrc.json`, `AGENTS.md`, `components.json`,
 `tsconfig.app.json`, `tsconfig.node.json`, `vitest.config.mts`, plus generated
 `out/` and `release/` and the two read-only reference clones.
 
-`docs/` holds written reviews, not code â€” currently `design-review.md` (Arabic,
+`docs/` holds written reviews, not code — currently `design-review.md` (Arabic,
 read-only design audit; it describes problems, it does not fix them). The Bloub
 reference plate (`states.png`) lives in the upstream clone under
 `D:\Temp\User\opencode\bloub-original\docs\`.
@@ -208,7 +209,7 @@ src/
     persisted-state.ts      239  Zod schemas, SETTINGS/CATALOG schema versions, migrations
     artwork.ts              366  ArtworkService: Steam CDN, Epic, SteamGridDB, fallback
     game-control.ts         206  GameControlService: focus/close/force-close + grace
-    game-processes.ts       179  Windows process sampling â†’ running matches
+    game-processes.ts       179  Windows process sampling → running matches
     process-watcher.ts      149  GameProcessWatcher polling loop (survives hiding)
     library-browser.ts      178  directory listing for the in-app file picker
     launch.ts               102  launchGame(): steam://, com.epicgames://, exe, lnk
@@ -240,8 +241,8 @@ src/
     http-body.ts             31  readBodyWithLimit
     logger.ts                 5  electron-log setup (`export { log }`)
   preload/
-    index.ts                122  contextBridge â†’ window.launcher (typed by LauncherApi)
-  shared/                     imported by BOTH processes â€” must stay pure
+    index.ts                122  contextBridge → window.launcher (typed by LauncherApi)
+  shared/                     imported by BOTH processes — must stay pure
     types.ts                448  every cross-process type + DEFAULT_SETTINGS
     ipc.ts                   42  39 channel names, `IPC` const + `IpcChannel`
     library.ts              105  sorts, filterGames, sortGames, recents, favorites
@@ -261,24 +262,24 @@ src/
       hooks/
         use-artwork.ts       69  useArtwork(gameId, kind) + invalidateArtwork
         use-clock.ts         31  useClock(intervalMs), useAutoHideCursor(ms)
-        use-gamepad.ts       65  polling loop â†’ onConfirm/onBack/onMenu + navigateByDirection
+        use-gamepad.ts       65  polling loop → onConfirm/onBack/onMenu + navigateByDirection
         use-in-view.ts       28  useInView<T>(options)
-        use-music-engine.ts  68  library/overlay â‡„ engine bridge (publish state, apply commands)
-        use-ui-sounds.ts     95  delegated pointer/key listeners â†’ playUI
+        use-music-engine.ts  68  library/overlay ↔ engine bridge (publish state, apply commands)
+        use-ui-sounds.ts     95  delegated pointer/key listeners → playUI
       lib/                     pure logic + ALL renderer tests
         game-actions.ts     110  GameActionState machine for launch/focus/close/force-quit
-        mark-mood.ts         89  markMoodFor(): launcher state â†’ Bloub state+expression
+        mark-mood.ts         89  markMoodFor(): launcher state → Bloub state+expression
         music-engine.ts     240  singleton HTMLAudioElement: queue, volume, repeat, shuffle
         music-queue.ts       68  pure queue/filter/progress helpers (+18 tests)
         boot.ts              68  BootPhase, timings, per-phase Bloub montages, still frames
         ui-sfx.ts            76  uisfx player: unlockUISounds, playUI, applyUISoundEnabled
         attention.ts         40  hover/focus/launch bus for the header mark
-        flight.ts            36  measureFlight(): splash box â†’ header mark box
+        flight.ts            36  measureFlight(): splash box → header mark box
         accent.ts            22  DEFAULT_ACCENT, uiAccent, accentAlpha, initialsFor
         motion.ts             8  prefersReducedMotion()
         utils.ts              1  `export { cn } from "cn"`
       components/
-        bloub/                   vendored MIT engine â€” see Â§7.4
+        bloub/                   vendored MIT engine — see §7.4
           bot/                   15-state, 16-expression, 8-shape, 13-colour catalogue
           react/BloubBot.tsx  468  React client (forwardRef handle: seek/rendAt/sample/svg)
           gaze.ts             180  lookTarget (upstream, looks LEFT) + brandLook (ours)
@@ -335,9 +336,9 @@ except `SettingsPage` (which owns its form state) and the music surfaces
 | `GameDetailsPage` | `game, pending, action, draft, saving, removing, onDraftChange, onSave, onRemove, onBack, onLaunch, onToggleFavorite, onPickExecutable, onPickArtwork` (+ `GameDetailsDraft`) |
 | `AddGamePage` | `onBack, onAdded?, mode?: 'game'\|'path'\|'image', onPicked?` |
 | `SearchPage` | `games, query, onQueryChange, onBack, onSelect, onLaunch` |
-| `SettingsPage` | `onBack, onAddGame` â€” reads the store |
-| `MusicPage` | `onBack` â€” reads the music store and engine |
-| `MusicOverlay` | â€” (receives playback over IPC) |
+| `SettingsPage` | `onBack, onAddGame` — reads the store |
+| `MusicPage` | `onBack` — reads the music store and engine |
+| `MusicOverlay` | — (receives playback over IPC) |
 | `PowerMenu` | `onClose, onHide, onQuit` |
 | `EmptyLibrary` | `error, onRefresh, onAddGame` |
 | `LibraryLoading` | `scanning` |
@@ -352,14 +353,14 @@ Focus keys are string constants, never derived from array indices:
 - settings: `settings-back|refresh|add|shortcuts|api-key|key-toggle|key-save|cursor|return|sounds|logs`,
   plus `settings-remove-<gameId>`, `settings-motion-<value>`, `settings-window-<value>`;
 - add page: `add-back|up|confirm|cancel`, `add-place-<id>`, `add-entry-<index>`;
-- details: `details-back|primary|favorite|â€¦`;
+- details: `details-back|primary|favorite|…`;
 - search: `search-input`, `search-back`, `search-result-<gameId>`;
 - music: `music-back|filter|add-folder|rescan|overlay-preview|overlay-switch|play|previous|next|repeat|shuffle|volume|seek`,
   plus `music-track-<trackId>`;
 - rows/cards: `row-<rowId>` for a row container and **`<rowId>-<gameId>`** for a card
   (built in `App.tsx`, e.g. `continue-cyberpunk-2077`); the sort pill is `sort-all`.
 
-A card is selected on **focus** (`onFocus` â†’ `onSelect`), so moving the ring with
+A card is selected on **focus** (`onFocus` → `onSelect`), so moving the ring with
 the arrows updates the hero and the header mark without a click.
 
 ### 3.2 Where to change what
@@ -370,14 +371,14 @@ the arrows updates the hero and the header mark without a click.
 | library ordering, recents, favourites | `shared/library.ts` (pure, tested) |
 | the header mark's face or reactions | `lib/mark-mood.ts` (mood) and `lib/attention.ts` (reactions), then `BrandMark.tsx` |
 | boot timing, montage, still frames | `lib/boot.ts` only; `BootScreen.tsx` reads it |
-| the splash â†’ header hand-off | `lib/flight.ts` (measurement) + `BootScreen.tsx` (the flying square) + `App.tsx` (`bootDone` / `revealed`) |
+| the splash → header hand-off | `lib/flight.ts` (measurement) + `BootScreen.tsx` (the flying square) + `App.tsx` (`bootDone` / `revealed`) |
 | a keyboard shortcut | `App.tsx` `onKeyDown`, and `HintBar.tsx` to advertise it |
 | gamepad mapping | `hooks/use-gamepad.ts` |
 | the music library scan, tags, covers | `main/music/library.ts` |
 | the music queue and playback prefs | `lib/music-queue.ts` + `lib/music-engine.ts` |
 | the overlay window, shortcut, position | `main/music/overlay.ts` + `main/music/config.ts` |
 | the music page or overlay card | `components/launcher/MusicPage.tsx` / `MusicOverlay.tsx` |
-| a settings row | `SettingsPage.tsx` + the three settings places in Â§7.9 |
+| a settings row | `SettingsPage.tsx` + the three settings places in §7.9 |
 | scan behaviour, cache age, per-source timeout | `main/catalog/index.ts` |
 | how a game is launched | `main/launch.ts` |
 | how "running" is detected | `main/game-processes.ts` + `main/process-watcher.ts` |
@@ -395,9 +396,9 @@ npm run dev            # Vite + Electron with hot reload (renderer on :5173)
 npm start              # build, then run the production preview
 npm run typecheck      # tsc -p tsconfig.node.json AND -p tsconfig.app.json
 npm run lint           # oxlint src
-npm test               # vitest run (36 files / 367 tests)
+npm test               # vitest run (37 files / 379 tests)
 npm run test:watch     # vitest watch
-npm run build          # typecheck + electron-vite build â†’ out/
+npm run build          # typecheck + electron-vite build → out/
 npm run pack           # build + unpacked app in release/win-unpacked
 npm run dist           # build + NSIS installer in release/
 npm run icon           # regenerate build/icon.ico from scripts/generate-icon.ps1
@@ -408,41 +409,41 @@ If the Electron binary is missing after install:
 
 ### 4.1 Toolchain configs, as they are
 
-- `.oxlintrc.json` â€” plugins `["react", "typescript", "oxc"]`;
+- `.oxlintrc.json` — plugins `["react", "typescript", "oxc"]`;
   `react/rules-of-hooks: error`; `react/only-export-components: warn` with
   `allowConstantExport: true`.
-- `tsconfig.node.json` â€” target/lib ES2023, `types: ["node"]`, `module: esnext`,
+- `tsconfig.node.json` — target/lib ES2023, `types: ["node"]`, `module: esnext`,
   `moduleResolution: bundler`, `verbatimModuleSyntax`, `erasableSyntaxOnly`,
   `strict` + `noUnusedLocals` + `noUnusedParameters` +
   `noUncheckedIndexedAccess` + `noFallthroughCasesInSwitch`; includes
   `electron.vite.config.ts`, `vitest.config.mts`, `src/main`, `src/preload`,
   `src/shared`.
-- `tsconfig.app.json` â€” same strict flags plus `lib: ES2023 + DOM`,
+- `tsconfig.app.json` — same strict flags plus `lib: ES2023 + DOM`,
   `types: ["vite/client"]`; includes `src/renderer/src`, `src/shared`.
-- `tsconfig.json` â€” `files: []` + project references; solution file only.
-- `vitest.config.mts` â€” aliases `@shared`, `@main`, `@`; node environment;
+- `tsconfig.json` — `files: []` + project references; solution file only.
+- `vitest.config.mts` — aliases `@shared`, `@main`, `@`; node environment;
   `restoreMocks: true`.
-- `electron.vite.config.ts` â€” three targets. `main` and `preload` use
+- `electron.vite.config.ts` — three targets. `main` and `preload` use
   `externalizeDepsPlugin()` and the `@shared` (+ `@main` for main) aliases;
-  `renderer` has `root: src/renderer`, aliases `@shared` and `@` â†’
+  `renderer` has `root: src/renderer`, aliases `@shared` and `@` →
   `src/renderer/src`, plugins `react()` + `tailwindcss()`, dev port **5173**
   with `strictPort`, input `src/renderer/index.html`.
-- `electron-builder.yml` â€” see Â§11.
+- `electron-builder.yml` — see §11.
 
 ---
 
 ## 5. Definition of done
 
-Every change â€” a one-line CSS tweak included â€” closes with:
+Every change — a one-line CSS tweak included — closes with:
 
 ```powershell
-npm test          # must stay green (currently 367 tests / 36 files)
+npm test          # must stay green (currently 379 tests / 37 files)
 npm run typecheck # must be silent
 npm run lint      # must stay at 4 warnings / 0 errors
 npm run build     # must succeed
 ```
 
-Visible UI changes also get a **visual check on the real app** (Â§12), because the
+Visible UI changes also get a **visual check on the real app** (§12), because the
 test suite cannot see layout, timing, or motion.
 
 Ship an installer only when the user asks, or when a feature is finished:
@@ -453,7 +454,7 @@ Get-FileHash release\Pulse-Launcher-0.1.0-x64.exe -Algorithm SHA256
 ```
 
 Report size, SHA-256, and whether the packaged build was smoke-tested. Then stop
-every Electron process you started (Â§13).
+every Electron process you started (§13).
 
 ---
 
@@ -463,8 +464,8 @@ every Electron process you started (Â§13).
   `noUnusedParameters`, `noUncheckedIndexedAccess`, `verbatimModuleSyntax`,
   `erasableSyntaxOnly`. Indexed access needs `!` or a guard; type-only imports
   must use `import type`; no enums/namespaces (`erasableSyntaxOnly`).
-- **Aliases**: `@/*` â†’ `src/renderer/src/*`, `@shared/*` â†’ `src/shared/*`,
-  `@main/*` â†’ `src/main/*` (main only).
+- **Aliases**: `@/*` → `src/renderer/src/*`, `@shared/*` → `src/shared/*`,
+  `@main/*` → `src/main/*` (main only).
 - **`src/shared` must stay free of `electron`, `node:*`, and DOM APIs.** It is
   bundled into both processes and must stay pure data + pure functions.
 - **Comments explain why, never what.** House style (inherited from the engine)
@@ -499,52 +500,52 @@ dev origin, and only the launcher or music-overlay `webContents`).
 
 Adding an IPC call touches **four** places:
 
-1. `shared/ipc.ts` â€” channel name in `IPC`.
-2. `shared/types.ts` â€” payload/response types in `LauncherApi`.
-3. `preload/index.ts` â€” the thin `ipcRenderer.invoke` / `subscribe` wrapper.
-4. `main/index.ts` â€” `ipcMain.handle` (or a `send` in `catalog.setListeners`) plus
+1. `shared/ipc.ts` — channel name in `IPC`.
+2. `shared/types.ts` — payload/response types in `LauncherApi`.
+3. `preload/index.ts` — the thin `ipcRenderer.invoke` / `subscribe` wrapper.
+4. `main/index.ts` — `ipcMain.handle` (or a `send` in `catalog.setListeners`) plus
    a Zod schema.
 
 ### 7.2 The 39 channels
 
-| Channel (`IPC.*`) | String | Direction | Payload â†’ Response |
+| Channel (`IPC.*`) | String | Direction | Payload → Response |
 | --- | --- | --- | --- |
-| `catalogList` | `catalog:list` | invoke | â€” â†’ `GameSummary[]` |
-| `catalogRefresh` | `catalog:refresh` | invoke | â€” â†’ `ScanResult` |
-| `catalogArtwork` | `catalog:artwork` | invoke | `{gameId, kind}` â†’ `ArtworkResult` |
-| `catalogToggleFavorite` | `catalog:toggle-favorite` | invoke | `{gameId}` â†’ `FavoriteResult` |
-| `catalogStaleSources` | `catalog:stale-sources` | invoke | â€” â†’ `GameSource[]` |
+| `catalogList` | `catalog:list` | invoke | — → `GameSummary[]` |
+| `catalogRefresh` | `catalog:refresh` | invoke | — → `ScanResult` |
+| `catalogArtwork` | `catalog:artwork` | invoke | `{gameId, kind}` → `ArtworkResult` |
+| `catalogToggleFavorite` | `catalog:toggle-favorite` | invoke | `{gameId}` → `FavoriteResult` |
+| `catalogStaleSources` | `catalog:stale-sources` | invoke | — → `GameSource[]` |
 | `catalogChanged` | `catalog:changed` | push | `GameSummary[]` |
 | `catalogRunningChanged` | `catalog:running-changed` | push | `RunningGameInfo[]` |
 | `catalogScanProgress` | `catalog:scan-progress` | push | `ScanProgress` |
 | `catalogStaleChanged` | `catalog:stale-changed` | push | `GameSource[]` |
-| `launchGame` | `launch:game` | invoke | `{gameId}` â†’ `LaunchResult` |
-| `gameFocus` | `game:focus` | invoke | `{gameId}` â†’ `GameControlResult` |
-| `gameClose` | `game:close` | invoke | `{gameId}` â†’ `GameControlResult` |
-| `gameForceClose` | `game:force-close` | invoke | `{gameId, confirm}` â†’ `GameControlResult` |
-| `settingsGet` | `settings:get` | invoke | â€” â†’ `Settings` |
-| `settingsUpdate` | `settings:update` | invoke | `SettingsUpdate` â†’ `Settings` |
-| `settingsRemoveManual` | `settings:remove-manual` | invoke | `{gameId}` â†’ `RemoveManualResult` |
+| `launchGame` | `launch:game` | invoke | `{gameId}` → `LaunchResult` |
+| `gameFocus` | `game:focus` | invoke | `{gameId}` → `GameControlResult` |
+| `gameClose` | `game:close` | invoke | `{gameId}` → `GameControlResult` |
+| `gameForceClose` | `game:force-close` | invoke | `{gameId, confirm}` → `GameControlResult` |
+| `settingsGet` | `settings:get` | invoke | — → `Settings` |
+| `settingsUpdate` | `settings:update` | invoke | `SettingsUpdate` → `Settings` |
+| `settingsRemoveManual` | `settings:remove-manual` | invoke | `{gameId}` → `RemoveManualResult` |
 | `settingsChanged` | `settings:changed` | push | `Settings` |
-| `libraryRoots` | `library:roots` | invoke | â€” â†’ `PickerRoots` |
-| `libraryList` | `library:list` | invoke | `{path, kind}` â†’ `DirectoryListing` |
-| `libraryAdd` | `library:add` | invoke | `{path}` â†’ `AddManualResult` |
-| `libraryUpdate` | `library:update` | invoke | `UpdateManualGameInput` â†’ `UpdateManualResult` |
-| `selectionGet` | `selection:get` | invoke | â€” â†’ `string \| null` |
-| `selectionSet` | `selection:set` | invoke | `{gameId}` â†’ `SelectionResult` |
-| `appInfo` | `app:info` | invoke | â€” â†’ `AppInfo` |
-| `appHide` | `app:hide` | invoke | â€” â†’ `void` |
-| `appQuit` | `app:quit` | invoke | â€” â†’ `void` |
-| `appOpenLogs` | `app:open-logs` | invoke | â€” â†’ `void` |
-| `musicList` | `music:list` | invoke | â€” â†’ `MusicLibrarySnapshot` |
-| `musicRescan` | `music:rescan` | invoke | â€” â†’ `MusicLibrarySnapshot` |
-| `musicAddFolder` | `music:add-folder` | invoke | â€” â†’ `MusicLibrarySnapshot` |
-| `musicRemoveFolder` | `music:remove-folder` | invoke | `{folder}` â†’ `MusicLibrarySnapshot` |
+| `libraryRoots` | `library:roots` | invoke | — → `PickerRoots` |
+| `libraryList` | `library:list` | invoke | `{path, kind}` → `DirectoryListing` |
+| `libraryAdd` | `library:add` | invoke | `{path}` → `AddManualResult` |
+| `libraryUpdate` | `library:update` | invoke | `UpdateManualGameInput` → `UpdateManualResult` |
+| `selectionGet` | `selection:get` | invoke | — → `string \| null` |
+| `selectionSet` | `selection:set` | invoke | `{gameId}` → `SelectionResult` |
+| `appInfo` | `app:info` | invoke | — → `AppInfo` |
+| `appHide` | `app:hide` | invoke | — → `void` |
+| `appQuit` | `app:quit` | invoke | — → `void` |
+| `appOpenLogs` | `app:open-logs` | invoke | — → `void` |
+| `musicList` | `music:list` | invoke | — → `MusicLibrarySnapshot` |
+| `musicRescan` | `music:rescan` | invoke | — → `MusicLibrarySnapshot` |
+| `musicAddFolder` | `music:add-folder` | invoke | — → `MusicLibrarySnapshot` |
+| `musicRemoveFolder` | `music:remove-folder` | invoke | `{folder}` → `MusicLibrarySnapshot` |
 | `musicChanged` | `music:changed` | push | `MusicLibrarySnapshot` |
-| `musicOverlayGet` | `music:overlay-get` | invoke | â€” â†’ `MusicOverlaySettings` |
-| `musicOverlayUpdate` | `music:overlay-update` | invoke | `Partial<MusicOverlaySettings>` â†’ `MusicOverlaySettings` |
-| `musicOverlayToggle` | `music:overlay-toggle` | invoke | â€” â†’ `boolean` |
-| `musicOverlayStateGet` | `music:overlay-state-get` | invoke | â€” â†’ `MusicOverlayState \| null` |
+| `musicOverlayGet` | `music:overlay-get` | invoke | — → `MusicOverlaySettings` |
+| `musicOverlayUpdate` | `music:overlay-update` | invoke | `Partial<MusicOverlaySettings>` → `MusicOverlaySettings` |
+| `musicOverlayToggle` | `music:overlay-toggle` | invoke | — → `boolean` |
+| `musicOverlayStateGet` | `music:overlay-state-get` | invoke | — → `MusicOverlayState \| null` |
 | `musicOverlayState` | `music:overlay-state` | both | `MusicOverlayState` |
 | `musicOverlayCommand` | `music:overlay-command` | push | `MusicCommand` |
 | `musicOverlayAction` | `music:overlay-action` | push | `MusicOverlayAction` |
@@ -560,7 +561,7 @@ Every `on*` returns an unsubscribe function.
 
 ### 7.3 Renderer state
 
-`store/launcher.ts` â€” one Zustand store, `create<LauncherState>()`:
+`store/launcher.ts` — one Zustand store, `create<LauncherState>()`:
 
 - state: `games`, `settings`, `selectedId`, `status` (`loading | ready | error`),
   `error`, `refreshing`, `staleSources`, `scanProgress`.
@@ -569,8 +570,8 @@ Every `on*` returns an unsubscribe function.
 - `initialize()` loads settings + catalog + stale sources + stored selection in
   one `Promise.all`, then sets `ready`; an empty library triggers `refresh()`
   automatically (`refreshing: true`).
-- `pickSelection()` prefers the current selection â†’ a running game â†’ the most
-  recently played â†’ `games[0]` â†’ `null`.
+- `pickSelection()` prefers the current selection → a running game → the most
+  recently played → `games[0]` → `null`.
 - Selection writes are coalesced by `SELECTION_SAVE_DELAY_MS = 400` and flushed
   on `pagehide`, because a hidden launcher can be quit from the tray.
 - `selected` is derived in `App.tsx` (`games.find(g => g.id === selectedId) ?? games[0]`),
@@ -578,7 +579,7 @@ Every `on*` returns an unsubscribe function.
 
 `store/music.ts` is separate: library, folders, scan counters, and overlay
 settings, initialised once and kept current by `music:changed`. The audio engine
-is not a store â€” it is a module singleton read with `useSyncExternalStore`.
+is not a store — it is a module singleton read with `useSyncExternalStore`.
 
 `App.tsx` keeps only ephemeral UI state: which overlay is open
 (`settingsOpen`, `addOpen` + `addMode`, `detailsOpen`, `searchOpen` + `searchQuery`,
@@ -612,25 +613,25 @@ Catalogue counts (all in `bot/`): **15 states**, **16 expressions**, **8 shapes*
 - Shapes: `cercle galet squircle capsule triangle hexagone nuage goutte`.
 - Colours: `encre #0a0a0c, brun #8b5e3c, rouge #e8483f, orange #f08a24,
   ambre #f0b429, vert #3ecf8e, turquoise #2fbfa0, bleu #3b93f0, violet #8b5cf6,
-  rose #e152b0, gris #a3a3a3, brume #a8c6e8, creme #f1efe9`. **`brume` is ours** â€”
+  rose #e152b0, gris #a3a3a3, brume #a8c6e8, creme #f1efe9`. **`brume` is ours** —
   Pulse's tint.
 
 Rules that matter:
 
 - `bot/` is a **framework-free, pure-time engine**: `engine.sample(t)` is a pure
   function of time; external input enters through timestamped setters
-  (`setState(id, now)`, `setLook(look, now)`, `setShape`, `setExpression`) â€” never
+  (`setState(id, now)`, `setLook(look, now)`, `setShape`, `setExpression`) — never
   a variable read during `sample`. The replay/export path depends on this.
 - `react/BloubBot.tsx` is only a client (`forwardRef` handle with `seek`,
   `rendAt`, `sample`, `svg`). No engine logic there.
 - A state's `morph` blends from the previous state into that state's frame at
   `t = 0`. **If a state's first frame is already mid-animation, `morph` must be
-  `0`**, or the state plays backwards from its end â€” exactly what once broke
+  `0`**, or the state plays backwards from its end — exactly what once broke
   `comet` (it opened with its own tail). `comet` now has `morph: 0`, holds the
   whole ball for 0.2 s, collapses to the dot, throws the ribbons, then regrows
   with the eyes opening at ~2.45 s.
 - `minDurationOf(state)` (`bot/cycles.ts`) is the floor a block may not go under,
-  derived from the longest `morph` â€” shorter blocks get cut before the blend out.
+  derived from the longest `morph` — shorter blocks get cut before the blend out.
 - `POSES` maps each state to its most readable local time (thumbnails, still
   frames). `POSES.comet = 1.15`, `POSES.swirl = 0.5`.
 - `gaze.ts`: `lookTarget` is upstream and targets **left** (the original app's
@@ -642,17 +643,17 @@ Rules that matter:
 - The header mark is 64 px but the engine's viewBox reserves room for the orbit
   rings (`RAYON = 100`, `DEMI_VIEWBOX = 158`), so the ball reads ~63 % of the box.
   Enlarging the component enlarges the ball proportionally; do not shrink the
-  viewBox to "fill" it â€” rings would clip.
+  viewBox to "fill" it — rings would clip.
 
 ### 7.5 The header mark
 
 `BrandMark.tsx` + `lib/mark-mood.ts` + `lib/attention.ts`.
 
 `markMoodFor(ctx)` is a pure precedence chain:
-`error â†’ alert/triste` Â· `pending â†’ burst/excite` Â·
-`loading || refreshing â†’ thinking/attentif` Â· `running â†’ play/excite` Â·
-`no selection â†’ sleep/somnolent` Â· `favorite â†’ notify/heureux` Â·
-otherwise `signatureFor(seed)` â€” an FNV-1a hash of the game id into 8 faces, all
+`error → alert/triste` · `pending → burst/excite` ·
+`loading || refreshing → thinking/attentif` · `running → play/excite` ·
+`no selection → sleep/somnolent` · `favorite → notify/heureux` ·
+otherwise `signatureFor(seed)` — an FNV-1a hash of the game id into 8 faces, all
 of which keep the round silhouette (`idle`, `wink`, `wide`, `notify` only).
 
 Momentary reactions travel on the `attention.ts` bus:
@@ -661,7 +662,7 @@ covers, hero actions, and header tools call
 `wink`/`wide`/`burst` for `REACTION_BY_KIND[kind].hold` ms, then falls back to its
 mood. `App.tsx` also announces `'launch'` from `handleLaunch`.
 
-The mark's box carries `data-mark-slot` â€” the boot hand-off measures it
+The mark's box carries `data-mark-slot` — the boot hand-off measures it
 (`lib/flight.ts`, `MARK_SLOT`). It is always in layout during boot; only its paint
 is held back (`visible` prop), so the flight has a target without two balls on
 screen.
@@ -674,10 +675,10 @@ screen.
 - `BOOT_INTRO_MS 700` (minimum dwell before promoting the phase),
   `BOOT_READY_HOLD_MS 2400` (the whole `comet`), `BOOT_ERROR_HOLD_MS 1700`,
   `BOOT_EXIT_MS 560` (the crossing);
-- `BOOT_CYCLES` â€” `scan`: swirl 1.3 / thinking 2.6 / comet 2.4 / orbit 3.4;
+- `BOOT_CYCLES` — `scan`: swirl 1.3 / thinking 2.6 / comet 2.4 / orbit 3.4;
   `ready`: comet 2.4 / idle 2.4; `error`: alert 2.4 / exclaim 2.0. Every duration
-  is â‰¥ `minDurationOf(state)` (asserted in `lib/boot.test.ts`);
-- `BOOT_STILL_STATE` / `BOOT_STILL_AT` â€” one readable frame per phase for reduced
+  is ≥ `minDurationOf(state)` (asserted in `lib/boot.test.ts`);
+- `BOOT_STILL_STATE` / `BOOT_STILL_AT` — one readable frame per phase for reduced
   motion.
 
 `BootScreen.tsx` renders the overlay and the hand-off. When `comet` finishes the
@@ -712,7 +713,7 @@ appears when non-empty:
   `ambiguous` when several games match. `shared/run-state.ts` turns that into
   `confirmed` / `probable` for the UI.
 - `main/auto-return.ts`: Pulse hides when a launch is accepted and returns once
-  the game was seen running and every tracked game has exited â€” only when
+  the game was seen running and every tracked game has exited — only when
   `settings.returnAfterGame` is true.
 - A launch that never produces a running process is dropped after
   `LAUNCH_DETECT_TIMEOUT_MS = 60_000` (`App.tsx`), so the button does not spin
@@ -751,10 +752,10 @@ hideCursorAfterMs: 2500, motion: 'system', windowMode: 'fullscreen',
 returnAfterGame: true, librarySort: 'title', uiSounds: true }`.
 
 **A new user-visible preference needs all three**: the `Settings` interface, the
-`DEFAULT_SETTINGS` entry, and the Zod field in `SettingsFieldsSchema` â€” otherwise
+`DEFAULT_SETTINGS` entry, and the Zod field in `SettingsFieldsSchema` — otherwise
 it silently resets on restart. `SettingsUpdateSchema` in `main/index.ts` is
 `.strict()` (unknown keys are rejected) and bounds `hideCursorAfterMs` to
-500â€“60 000.
+500 – 60 000.
 
 ### 7.10 Music
 
@@ -804,8 +805,8 @@ overlay. The upstream Liner backend is not used.
   mounts once in `App`, pushes the library into the engine, publishes playback
   to the overlay, and applies `MusicCommand`s coming back.
 - `MusicPage` is `M` / `tool-music`; `MusicOverlay` is the `#/overlay` branch.
-  The overlay is a frameless, transparent, always-on-top 392Ã—96 window around a
-  376Ã—80 card, shown with `showInactive()` so it never steals focus. It loads
+  The overlay is a frameless, transparent, always-on-top 392×96 window around a
+  376×80 card, shown with `showInactive()` so it never steals focus. It loads
   `app://launcher/index.html#/overlay` (not `loadFile`, which would break the
   IPC origin check), re-asserts top every 1.5 s, and sits 24 px from the chosen
   edge.
@@ -826,7 +827,7 @@ from `INPUT`/`TEXTAREA`/`SELECT`/contentEditable. With no overlay open:
 
 | Key | Action |
 | --- | --- |
-| `Escape` | close the topmost layer: power â†’ search â†’ add â†’ details â†’ music â†’ settings â†’ else `app.hide()` |
+| `Escape` | close the topmost layer: power → search → add → details → music → settings → else `app.hide()` |
 | `Ctrl/Cmd+F`, `/` | search |
 | `M` | music page |
 | `Tab` / `Shift+Tab` | cycle the header tools + last focused card |
@@ -847,27 +848,27 @@ disabled until `bootDone`.
 
 Spatial navigation: Norigin handles arrows/Enter. `pause()` / `resume()` freeze it
 while the boot overlay is up. Every focusable needs a `useFocusable` with a
-**unique, stable** `focusKey` â€” keys derived from list indices break when the
+**unique, stable** `focusKey` — keys derived from list indices break when the
 library reorders.
 
 ---
 
 ## 9. Tests
 
-36 files / **367 tests**, all under `src/**/*.test.ts`, node environment.
+37 files / **379 tests**, all under `src/**/*.test.ts`, node environment.
 
-- `src/main/` (25): `auto-return`, `catalog/{epic,index,manual,merge,source-scan,steam,vdf}`,
+- `src/main/` (27): `auto-return`, `catalog/{epic,index,manual,merge,source-scan,steam,vdf}`,
   `epic-uri`, `fs-utils`, `game-control`, `game-processes`, `game-window`,
   `http-body`, `launch`, `library-browser`, `music/online/{providers,ranking,service}`,
-  `music/youtube/{api,parse}`, `persisted-state`, `process-watcher`, `store`,
-  `window-mode`.
+  `music/youtube/{api,cache,parse,ytdlp}`, `persisted-state`, `process-watcher`,
+  `store`, `window-mode`.
 - `src/renderer/src/lib/` (7): `attention`, `boot`, `brand-gaze`, `comet`,
   `game-actions`, `mark-mood`, `music-queue`.
 - `src/shared/` (3): `format`, `library`, `run-state`.
 
 Pattern: test the pure module, not the component. `store.test.ts` and
 `catalog/index.test.ts` are the big ones (285 / 487 lines) and use temp
-directories. `comet.test.ts` documents the backwards-playback bug â€” keep it.
+directories. `comet.test.ts` documents the backwards-playback bug — keep it.
 
 ---
 
@@ -882,13 +883,13 @@ Do not "simplify" these without discussing it first:
 - The renderer never loads remote images directly (`app://` + main-process fetch
   only).
 - `uisfx` cues are synthesised; no audio files ship, and the AudioContext opens
-  on the first real gesture â€” so **boot sounds are silent on a cold start**.
+  on the first real gesture — so **boot sounds are silent on a cold start**.
   That is intended.
 - The Bloub engine is vendored. Patching it is allowed; "cleaning it up" is not.
 - One accent, no per-game chrome tinting, no second glow colour, and the header
   mark has **no halo** (it was removed on request; only a thin hover ring and a
   click ripple remain).
-- `lookTarget` looks left on purpose (Â§7.4).
+- `lookTarget` looks left on purpose (§7.4).
 - The music overlay's close button dismisses it for the current track only; a
   new track brings it back. This is intentional, not a missed show.
 - Music has four tabs: the default **All** search over the local Library, the five
@@ -904,7 +905,7 @@ Do not "simplify" these without discussing it first:
 
 - `appId com.pulse.launcher`, `productName Pulse Launcher`, `asar: true`,
   `compression: maximum`, output `release/`, build resources `build/`.
-- `extraResources`: `resources/` â†’ `resources/` (the three PowerShell helpers are
+- `extraResources`: `resources/` → `resources/` (the three PowerShell helpers are
   read at runtime via `resolveResourcePath`).
 - Windows target: **nsis x64**, icon `build/icon.ico`,
   `executableName: PulseLauncher`, `requestedExecutionLevel: asInvoker`,
@@ -934,11 +935,11 @@ Start-Process 'D:\Projects\ps5-launcher\node_modules\electron\dist\electron.exe'
 
 Environment switches read in `main/index.ts`:
 
-- `LAUNCHER_USER_DATA` â€” isolate settings/history/artwork from the real install.
-- `LAUNCHER_WINDOWED=1` â€” normal frame (easier to screenshot than kiosk).
-- `LAUNCHER_DEMO=1` â€” demo library (`catalog/demo.ts`), no process watcher, no
+- `LAUNCHER_USER_DATA` — isolate settings/history/artwork from the real install.
+- `LAUNCHER_WINDOWED=1` — normal frame (easier to screenshot than kiosk).
+- `LAUNCHER_DEMO=1` — demo library (`catalog/demo.ts`), no process watcher, no
   real games.
-- `LAUNCHER_CAPTURE=<path>` â€” forces windowed, captures a PNG after 8 s, quits.
+- `LAUNCHER_CAPTURE=<path>` — forces windowed, captures a PNG after 8 s, quits.
 
 Drive it over CDP (`http://127.0.0.1:9222/json`). Two traps:
 
@@ -950,10 +951,10 @@ Drive it over CDP (`http://127.0.0.1:9222/json`). Two traps:
 Use `Page.captureScreenshot` with a `clip` (and `scale`) to zoom into a small
 element instead of eyeballing a full screenshot. Check both motion settings:
 default, and reduced (`data-motion="reduced"` or Windows "Animation effects" off)
-â€” the reduced branch renders a single static frame and skips the boot crossing.
+— the reduced branch renders a single static frame and skips the boot crossing.
 
 Useful existing probes in `D:\Temp\User\opencode\`: `boot-landing.mjs` (the
-splashâ†’header crossing), `boot-reveal.mjs` (reveal timing), `rail-probe.mjs`
+splash→header crossing), `boot-reveal.mjs` (reveal timing), `rail-probe.mjs`
 (progress rail), `mood-probe.mjs` (mark face per selection), `mark-check.mjs`,
 `sfx-probe.mjs` (15 audio checks), `packaged-wait.mjs` (port 9333),
 `music-qa3.mjs` / `music-action.mjs` (music page + overlay), and
