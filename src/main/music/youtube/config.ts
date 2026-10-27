@@ -1,11 +1,13 @@
 import type { MusicYouTubeSettings } from '@shared/types'
 import { backupFile, readJsonFile, writeJsonFileAtomic } from '../../fs-utils'
+import { clampCacheLimitMb, DEFAULT_CACHE_LIMIT_MB } from './cache'
 
 export const DEFAULT_YOUTUBE_SETTINGS: MusicYouTubeSettings = {
   // Search still works through yt-dlp when this is empty.
   apiKey: '',
   ytDlpPath: '',
   ffmpegPath: '',
+  cacheLimitMb: DEFAULT_CACHE_LIMIT_MB,
 }
 
 const CONFIG_VERSION = 1
@@ -28,6 +30,7 @@ function sanitize(value: unknown): MusicYouTubeSettings {
     apiKey: stringValue(candidate.apiKey, MAX_API_KEY_LENGTH),
     ytDlpPath: stringValue(candidate.ytDlpPath, MAX_PATH_LENGTH),
     ffmpegPath: stringValue(candidate.ffmpegPath, MAX_PATH_LENGTH),
+    cacheLimitMb: clampCacheLimitMb(candidate.cacheLimitMb),
   }
 }
 

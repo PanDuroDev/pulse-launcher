@@ -431,6 +431,8 @@ export interface MusicOnlineSearchResult {
   query: string
   tracks: MusicOnlineTrack[]
   providers: MusicOnlineProviderStatus[]
+  /** Set when a catalog exceeded its own deadline, e.g. "iTunes did not respond". */
+  warning: string | null
 }
 
 /** A YouTube search result before its audio has been extracted. */
@@ -458,6 +460,8 @@ export interface MusicYouTubeSettings {
   apiKey: string
   ytDlpPath: string
   ffmpegPath: string
+  /** MP3 cache ceiling in megabytes; the oldest tracks are evicted past it. */
+  cacheLimitMb: number
 }
 
 export type MusicYouTubeToolSource =
@@ -482,13 +486,25 @@ export interface MusicYouTubeStatus {
   cache: {
     tracks: number
     bytes: number
+    /** Video ids currently stored, oldest first, so the page can offer a delete. */
+    entries: MusicYouTubeCacheEntry[]
   }
+}
+
+/** One extracted MP3 as shown in the setup panel. */
+export interface MusicYouTubeCacheEntry {
+  videoId: string
+  title: string
+  artist: string
+  bytes: number
+  downloadedAt: number
 }
 
 export interface MusicYouTubeUpdate {
   apiKey?: string
   ytDlpPath?: string
   ffmpegPath?: string
+  cacheLimitMb?: number
 }
 
 export interface MusicYouTubeResolveResult {
@@ -576,6 +592,8 @@ export interface LauncherApi {
   music: {
     list: () => Promise<MusicLibrarySnapshot>
     rescan: () => Promise<MusicLibrarySnapshot>
+    /** Stops a scan in progress; the partial index is kept. */
+    cancelScan: () => Promise<MusicLibrarySnapshot>
     /** Opens the native folder picker and scans every chosen folder. */
     addFolder: () => Promise<MusicLibrarySnapshot>
     removeFolder: (folder: string) => Promise<MusicLibrarySnapshot>
@@ -589,8 +607,14 @@ export interface LauncherApi {
     youtube: {
       search: (query: string) => Promise<MusicYouTubeSearchResult>
       resolve: (videoId: string) => Promise<MusicYouTubeResolveResult>
+      /** Stops an extraction started by `resolve`; resolves once the process tree is gone. */
+      cancel: (videoId: string) => Promise<boolean>
       status: () => Promise<MusicYouTubeStatus>
       updateSettings: (update: MusicYouTubeUpdate) => Promise<MusicYouTubeStatus>
+      /** Deletes one cached MP3 and its cover. */
+      removeCached: (videoId: string) => Promise<MusicYouTubeStatus>
+      /** Deletes every extracted MP3. Settings and tools are untouched. */
+      clearCache: () => Promise<MusicYouTubeStatus>
       open: (videoId: string) => Promise<void>
     }
     overlay: {

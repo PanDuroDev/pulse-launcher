@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { isPublicHttpsUrl } from './service'
+import type { MusicOnlineProviderStatus } from '@shared/types'
+import { isPublicHttpsUrl, providerWarning } from './service'
 
 describe('online URL validation', () => {
   it('accepts public HTTPS hosts', () => {
@@ -25,5 +26,40 @@ describe('online URL validation', () => {
   it('rejects malformed URLs', () => {
     expect(isPublicHttpsUrl('not a url')).toBe(false)
     expect(isPublicHttpsUrl('')).toBe(false)
+  })
+})
+
+function status(
+  provider: MusicOnlineProviderStatus['provider'],
+  ok: boolean,
+  count = 0,
+): MusicOnlineProviderStatus {
+  return { provider, ok, count, error: ok ? null : 'The catalog timed out.' }
+}
+
+describe('providerWarning', () => {
+  it('stays silent when every catalog answered', () => {
+    expect(providerWarning([status('itunes', true, 3), status('deezer', true, 2)])).toBeNull()
+  })
+
+  it('names a single failing catalog', () => {
+    expect(providerWarning([status('itunes', false), status('deezer', true, 2)])).toBe(
+      'iTunes did not respond; showing the other catalogs.',
+    )
+  })
+
+  it('joins several failures readably', () => {
+    expect(
+      providerWarning([
+        status('itunes', false),
+        status('deezer', false),
+        status('audius', true, 4),
+      ]),
+    ).toBe('iTunes and Deezer did not respond; showing the other catalogs.')
+  })
+  it('uses the full product name for the archive catalog', () => {
+    expect(providerWarning([status('archive', false)])).toBe(
+      'Internet Archive did not respond; showing the other catalogs.',
+    )
   })
 })

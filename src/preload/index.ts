@@ -100,6 +100,7 @@ const api: LauncherApi = {
   music: {
     list: () => ipcRenderer.invoke(IPC.musicList) as Promise<MusicLibrarySnapshot>,
     rescan: () => ipcRenderer.invoke(IPC.musicRescan) as Promise<MusicLibrarySnapshot>,
+    cancelScan: () => ipcRenderer.invoke(IPC.musicCancelScan) as Promise<MusicLibrarySnapshot>,
     addFolder: () => ipcRenderer.invoke(IPC.musicAddFolder) as Promise<MusicLibrarySnapshot>,
     removeFolder: (folder: string) =>
       ipcRenderer.invoke(IPC.musicRemoveFolder, { folder }) as Promise<MusicLibrarySnapshot>,
@@ -114,9 +115,14 @@ const api: LauncherApi = {
         ipcRenderer.invoke(IPC.musicYouTubeSearch, { query }) as Promise<MusicYouTubeSearchResult>,
       resolve: (videoId: string) =>
         ipcRenderer.invoke(IPC.musicYouTubeResolve, { videoId }) as Promise<MusicYouTubeResolveResult>,
+      cancel: (videoId: string) =>
+        ipcRenderer.invoke(IPC.musicYouTubeCancel, { videoId }) as Promise<boolean>,
       status: () => ipcRenderer.invoke(IPC.musicYouTubeStatus) as Promise<MusicYouTubeStatus>,
       updateSettings: (update: MusicYouTubeUpdate) =>
         ipcRenderer.invoke(IPC.musicYouTubeUpdate, update) as Promise<MusicYouTubeStatus>,
+      removeCached: (videoId: string) =>
+        ipcRenderer.invoke(IPC.musicYouTubeRemove, { videoId }) as Promise<MusicYouTubeStatus>,
+      clearCache: () => ipcRenderer.invoke(IPC.musicYouTubeClear) as Promise<MusicYouTubeStatus>,
       open: (videoId: string) =>
         ipcRenderer.invoke(IPC.musicYouTubeOpen, { videoId }) as Promise<void>,
     },

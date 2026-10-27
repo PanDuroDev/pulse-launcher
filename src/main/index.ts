@@ -216,6 +216,7 @@ const YouTubeUpdateSchema = z
     apiKey: z.string().max(200).optional(),
     ytDlpPath: z.string().max(1024).optional(),
     ffmpegPath: z.string().max(1024).optional(),
+    cacheLimitMb: z.number().int().min(100).max(20_000).optional(),
   })
   .strict()
 
@@ -876,6 +877,26 @@ function registerIpc(): void {
     },
   )
 
+  ipcMain.handle(IPC.musicYouTubeCancel, async (event, payload: unknown): Promise<boolean> => {
+    assertMusicSender(event)
+    const { videoId } = YouTubeVideoSchema.parse(payload)
+    return musicYouTube.cancel(videoId)
+  })
+
+  ipcMain.handle(
+    IPC.musicYouTubeRemove,
+    async (event, payload: unknown): Promise<MusicYouTubeStatus> => {
+      assertMusicSender(event)
+      const { videoId } = YouTubeVideoSchema.parse(payload)
+      return musicYouTube.removeCached(videoId)
+    },
+  )
+
+  ipcMain.handle(IPC.musicYouTubeClear, async (event): Promise<MusicYouTubeStatus> => {
+    assertMusicSender(event)
+    return musicYouTube.clearCache()
+  })
+
   ipcMain.handle(IPC.musicYouTubeStatus, async (event): Promise<MusicYouTubeStatus> => {
     assertMusicSender(event)
     return musicYouTube.status()
@@ -898,6 +919,11 @@ function registerIpc(): void {
   ipcMain.handle(IPC.musicRescan, async (event): Promise<MusicLibrarySnapshot> => {
     assertMusicSender(event)
     return music.rescan()
+  })
+
+  ipcMain.handle(IPC.musicCancelScan, (event): MusicLibrarySnapshot => {
+    assertMusicSender(event)
+    return music.cancelScan()
   })
 
   ipcMain.handle(IPC.musicAddFolder, async (event): Promise<MusicLibrarySnapshot> => {

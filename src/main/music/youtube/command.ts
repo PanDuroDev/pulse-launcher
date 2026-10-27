@@ -11,7 +11,14 @@ export interface CommandResult {
   stdout: string
   stderr: string
   timedOut: boolean
+  /** True when the caller aborted instead of the command finishing or timing out. */
+  cancelled: boolean
   error: string | null
+}
+
+export interface CommandOptions {
+  /** Aborts the process tree; `resolve` still settles with `cancelled: true`. */
+  signal?: AbortSignal
 }
 
 function appendCapped(current: string, chunk: Buffer, limit: number): string {
@@ -39,12 +46,14 @@ function killTree(child: ChildProcess): void {
 
 /**
  * Runs an executable without a shell, so query text and paths can never be
- * interpreted as commands. A timeout kills the whole process tree on Windows.
+ * interpreted as commands. A timeout or an abort kills the whole process tree on
+ * Windows, which also stops the ffmpeg child yt-dlp spawns.
  */
 export function runCommand(
   file: string,
   args: string[],
   timeoutMs: number,
+  options: CommandOptions = {},
 ): Promise<CommandResult> {
   return new Promise((resolve) => {
     let child: ChildProcess
@@ -59,22 +68,44 @@ export function runCommand(
         stdout: '',
         stderr: '',
         timedOut: false,
+        cancelled: false,
         error: error instanceof Error ? error.message : 'Could not start the process.',
       })
       return
     }
 
+    const signal = options.signal
     let stdout = ''
     let stderr = ''
     let timedOut = false
+    let cancelled = signal?.aborted ?? false
     let settled = false
     let timer: NodeJS.Timeout | null = null
+
+    const cleanup = (): void => {
+      if (timer) clearTimeout(timer)
+      timer = null
+      signal?.removeEventListener('abort', onAbort)
+    }
 
     const finish = (result: CommandResult): void => {
       if (settled) return
       settled = true
-      if (timer) clearTimeout(timer)
+      cleanup()
       resolve(result)
+    }
+
+    const onAbort = (): void => {
+      if (settled) return
+      cancelled = true
+      killTree(child)
+    }
+
+    if (cancelled) {
+      // Aborted before the process could do any work.
+      killTree(child)
+    } else {
+      signal?.addEventListener('abort', onAbort, { once: true })
     }
 
     child.stdout?.on('data', (chunk: Buffer) => {
@@ -89,11 +120,12 @@ export function runCommand(
         stdout,
         stderr,
         timedOut,
+        cancelled,
         error: error.message,
       })
     })
     child.on('close', (code) => {
-      finish({ code, stdout, stderr, timedOut, error: null })
+      finish({ code, stdout, stderr, timedOut, cancelled, error: null })
     })
 
     timer = setTimeout(() => {

@@ -83,6 +83,8 @@ export interface DownloadAudioOptions {
   videoId: string
   outputDir: string
   timeoutMs?: number
+  /** Cancels the extraction and removes the temp directory. */
+  signal?: AbortSignal
 }
 
 export interface DownloadAudioResult {
@@ -92,8 +94,9 @@ export interface DownloadAudioResult {
 
 /**
  * Extracts the best audio stream as an MP3 into a private temp directory, then
- * moves only the finished file into the cache. A crashed download can never be
- * served as a half-written track.
+ * moves only the finished file into the cache. A crashed or cancelled download
+ * can never be served as a half-written track, because the temp directory is
+ * always removed.
  */
 export async function downloadAudioToMp3(
   options: DownloadAudioOptions,
@@ -101,6 +104,7 @@ export async function downloadAudioToMp3(
   if (!isYouTubeVideoId(options.videoId)) {
     throw new Error('Invalid YouTube video id.')
   }
+  if (options.signal?.aborted) throw new Error('MP3 extraction was cancelled.')
   const tempDir = path.join(
     options.outputDir,
     '.tmp',
@@ -134,8 +138,10 @@ export async function downloadAudioToMp3(
         youtubeWatchUrl(options.videoId),
       ],
       options.timeoutMs ?? DOWNLOAD_TIMEOUT_MS,
+      { signal: options.signal },
     )
 
+    if (result.cancelled) throw new Error('MP3 extraction was cancelled.')
     if (result.timedOut) throw new Error('MP3 extraction timed out.')
     if (result.error) {
       throw new Error(safeErrorMessage(result.error, 'yt-dlp could not be started.'))

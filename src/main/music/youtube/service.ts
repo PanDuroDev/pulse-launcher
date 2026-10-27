@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs'
 import { mkdir, readdir, rename, rm, stat, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import type {
+  MusicYouTubeCacheEntry,
   MusicYouTubeResolveResult,
   MusicYouTubeSearchResult,
   MusicYouTubeStatus,
@@ -11,6 +12,7 @@ import type {
 import { readJsonFile, writeJsonFileAtomic } from '../../fs-utils'
 import { APP_HOST, APP_SCHEME } from '../../paths'
 import { searchWithApi } from './api'
+import { cacheLimitBytes, selectEvictions } from './cache'
 import { YouTubeConfigStore } from './config'
 import {
   cleanChannelName,
@@ -37,6 +39,12 @@ const INDEX_FILE = 'index.json'
 const OEMBED_TIMEOUT_MS = 10_000
 const ARTWORK_TIMEOUT_MS = 15_000
 const MAX_ARTWORK_BYTES = 8_000_000
+/**
+ * Search results only need the last few queries: keeping every candidate ever
+ * seen would grow for the whole session, and the index already holds the rows
+ * that matter (the extracted ones).
+ */
+const MAX_CANDIDATE_ENTRIES = 500
 
 export interface MusicYouTubeServiceOptions {
   rootDir: string
@@ -118,7 +126,11 @@ export class MusicYouTubeService {
   /** API thumbnails are higher quality than the fixed hqdefault fallback. */
   private readonly thumbnails = new Map<string, string>()
   private readonly extractions = new Map<string, Promise<MusicYouTubeResolveResult>>()
+  /** One controller per running extraction, so the renderer can stop it. */
+  private readonly controllers = new Map<string, AbortController>()
   private index: YouTubeCacheIndex = { version: INDEX_VERSION, entries: {} }
+  /** Serialises cache writes so two extractions cannot race the index file. */
+  private indexQueue: Promise<void> = Promise.resolve()
 
   constructor(options: MusicYouTubeServiceOptions) {
     this.options = options
@@ -132,6 +144,11 @@ export class MusicYouTubeService {
     if (read.status === 'ok') this.index = parseIndex(read.value)
     for (const entry of Object.values(this.index.entries)) {
       if (entry.thumbnailUrl) this.thumbnails.set(entry.videoId, entry.thumbnailUrl)
+    }
+    while (this.thumbnails.size > MAX_CANDIDATE_ENTRIES) {
+      const oldest = this.thumbnails.keys().next().value
+      if (!oldest) break
+      this.thumbnails.delete(oldest)
     }
   }
 
@@ -151,7 +168,50 @@ export class MusicYouTubeService {
 
   async updateSettings(update: MusicYouTubeUpdate): Promise<MusicYouTubeStatus> {
     await this.config.update(update)
+    // Lowering the ceiling must free space immediately, not at the next download.
+    await this.pruneCache()
     return this.status()
+  }
+
+  /** Deletes one cached MP3 plus its cover and index row. */
+  async removeCached(videoId: string): Promise<MusicYouTubeStatus> {
+    if (!isYouTubeVideoId(videoId)) return this.status()
+    await this.deleteEntry(videoId)
+    await this.saveIndex()
+    return this.status()
+  }
+
+  /** Empties the MP3 cache. Settings, tools, and the library are untouched. */
+  async clearCache(): Promise<MusicYouTubeStatus> {
+    for (const videoId of Object.keys(this.index.entries)) {
+      await this.deleteEntry(videoId)
+    }
+    // Files extracted before the index existed (or with a corrupt index) are
+    // still on disk; sweep them so "clear" really means empty.
+    try {
+      const entries = await readdir(this.options.rootDir, { withFileTypes: true })
+      await Promise.all(
+        entries
+          .filter((entry) => entry.isFile() && entry.name.endsWith('.mp3'))
+          .map((entry) => rm(path.join(this.options.rootDir, entry.name), { force: true })),
+      )
+    } catch {
+      // An unreadable cache directory means there is nothing to delete.
+    }
+    this.index = { version: INDEX_VERSION, entries: {} }
+    await this.saveIndex()
+    return this.status()
+  }
+
+  /**
+   * Stops an extraction that `resolve` started. Returns false when nothing was
+   * running for that video, so the renderer can ignore a stale cancel.
+   */
+  async cancel(videoId: string): Promise<boolean> {
+    const controller = this.controllers.get(videoId)
+    if (!controller) return false
+    controller.abort()
+    return true
   }
 
   async search(rawQuery: string): Promise<MusicYouTubeSearchResult> {
@@ -217,15 +277,26 @@ export class MusicYouTubeService {
     for (const candidate of candidates) {
       const track = this.expose(candidate)
       if (!track) continue
-      this.candidates.set(candidate.videoId, candidate)
-      if (candidate.thumbnailUrl) {
-        this.thumbnails.set(candidate.videoId, candidate.thumbnailUrl)
-      }
+      this.rememberCandidate(candidate)
       tracks.push(track)
       if (tracks.length >= MAX_RESULTS) break
     }
 
     return { query, tracks, source, warning }
+  }
+
+  /** Keeps the newest 500 search rows so a long session cannot grow forever. */
+  private rememberCandidate(candidate: YouTubeCandidate): void {
+    this.candidates.set(candidate.videoId, candidate)
+    if (candidate.thumbnailUrl) {
+      this.thumbnails.set(candidate.videoId, candidate.thumbnailUrl)
+    }
+    while (this.candidates.size > MAX_CANDIDATE_ENTRIES) {
+      const oldest = this.candidates.keys().next().value
+      if (!oldest) break
+      this.candidates.delete(oldest)
+      this.thumbnails.delete(oldest)
+    }
   }
 
   async resolve(videoId: string): Promise<MusicYouTubeResolveResult> {
@@ -235,8 +306,11 @@ export class MusicYouTubeService {
     const existing = this.extractions.get(videoId)
     if (existing) return existing
 
-    const task = this.resolveInternal(videoId).finally(() => {
+    const controller = new AbortController()
+    this.controllers.set(videoId, controller)
+    const task = this.resolveInternal(videoId, controller.signal).finally(() => {
       this.extractions.delete(videoId)
+      this.controllers.delete(videoId)
     })
     this.extractions.set(videoId, task)
     return task
@@ -321,7 +395,10 @@ export class MusicYouTubeService {
     return entry ? entryCandidate(entry) : null
   }
 
-  private async resolveInternal(videoId: string): Promise<MusicYouTubeResolveResult> {
+  private async resolveInternal(
+    videoId: string,
+    signal: AbortSignal,
+  ): Promise<MusicYouTubeResolveResult> {
     try {
       const filePath = path.join(this.options.rootDir, `${videoId}.mp3`)
       let candidate = this.candidateFor(videoId)
@@ -377,8 +454,9 @@ export class MusicYouTubeService {
         ffmpegPath: ffmpeg.path,
         videoId,
         outputDir: this.options.rootDir,
+        signal,
       })
-      this.candidates.set(videoId, candidate)
+      this.rememberCandidate(candidate)
       await this.persistEntry(candidate)
       void this.cacheArtwork(videoId, candidate)
       return { ok: true, track: this.buildTrack(candidate) }
@@ -405,14 +483,93 @@ export class MusicYouTubeService {
     if (candidate.thumbnailUrl) {
       this.thumbnails.set(candidate.videoId, candidate.thumbnailUrl)
     }
-    try {
-      await writeJsonFileAtomic(
-        path.join(this.options.rootDir, INDEX_FILE),
-        this.index,
-      )
-    } catch {
-      // Playback should still work if the cache index cannot be written.
+    await this.saveIndex()
+    await this.pruneCache(candidate.videoId)
+  }
+
+  /**
+   * Writes the index through a single queue. Two extractions finishing at the
+   * same time would otherwise interleave writes and lose one of the rows.
+   */
+  private saveIndex(): Promise<void> {
+    const payload = { version: this.index.version, entries: { ...this.index.entries } }
+    const next = this.indexQueue.then(async () => {
+      try {
+        await writeJsonFileAtomic(path.join(this.options.rootDir, INDEX_FILE), payload)
+      } catch {
+        // Playback should still work if the cache index cannot be written.
+      }
+    })
+    this.indexQueue = next
+    return next
+  }
+
+  /**
+   * Enforces the size ceiling by deleting the least recently downloaded MP3s.
+   * Runs after every write, so the cache can only exceed the limit by one track.
+   */
+  private async pruneCache(protectId?: string): Promise<number> {
+    const limit = cacheLimitBytes(this.config.get().cacheLimitMb)
+    const entries = await this.cacheEntries()
+    if (entries.length === 0) return 0
+    const evicted = selectEvictions(entries, limit, protectId)
+    if (evicted.length === 0) return 0
+    for (const videoId of evicted) {
+      await this.deleteEntry(videoId)
     }
+    await this.saveIndex()
+    return evicted.length
+  }
+
+  /** Removes the MP3, its cover, and the index row; never throws. */
+  private async deleteEntry(videoId: string): Promise<void> {
+    await rm(path.join(this.options.rootDir, `${videoId}.mp3`), { force: true }).catch(
+      () => undefined,
+    )
+    await rm(path.join(this.options.artworkDir, `youtube-${videoId}.jpg`), {
+      force: true,
+    }).catch(() => undefined)
+    delete this.index.entries[videoId]
+    this.thumbnails.delete(videoId)
+    this.candidates.delete(videoId)
+  }
+
+  /** Cached MP3s with their size and download time, oldest first. */
+  private async cacheEntries(): Promise<MusicYouTubeCacheEntry[]> {
+    let names: string[]
+    try {
+      const entries = await readdir(this.options.rootDir, { withFileTypes: true })
+      names = entries
+        .filter((entry) => entry.isFile() && entry.name.endsWith('.mp3'))
+        .map((entry) => entry.name)
+    } catch {
+      return []
+    }
+
+    const rows = await Promise.all(
+      names.map(async (name): Promise<MusicYouTubeCacheEntry | null> => {
+        const videoId = name.slice(0, -'.mp3'.length)
+        if (!isYouTubeVideoId(videoId)) return null
+        let bytes = 0
+        try {
+          bytes = (await stat(path.join(this.options.rootDir, name))).size
+        } catch {
+          return null
+        }
+        const meta = this.index.entries[videoId]
+        return {
+          videoId,
+          title: meta?.title ?? videoId,
+          artist: meta?.artist ?? 'YouTube',
+          bytes,
+          downloadedAt: meta?.downloadedAt ?? 0,
+        }
+      }),
+    )
+
+    return rows
+      .filter((row): row is MusicYouTubeCacheEntry => row !== null)
+      .sort((a, b) => a.downloadedAt - b.downloadedAt || a.videoId.localeCompare(b.videoId))
   }
 
   private async fetchOembed(videoId: string): Promise<YouTubeCandidate | null> {
@@ -492,26 +649,14 @@ export class MusicYouTubeService {
     }
   }
 
-  private async cacheStats(): Promise<{ tracks: number; bytes: number }> {
-    try {
-      const entries = await readdir(this.options.rootDir, { withFileTypes: true })
-      const files = entries.filter(
-        (entry) => entry.isFile() && entry.name.endsWith('.mp3'),
-      )
-      let bytes = 0
-      await Promise.all(
-        files.map(async (entry) => {
-          try {
-            const info = await stat(path.join(this.options.rootDir, entry.name))
-            bytes += info.size
-          } catch {
-            // A file deleted during the scan simply does not count.
-          }
-        }),
-      )
-      return { tracks: files.length, bytes }
-    } catch {
-      return { tracks: 0, bytes: 0 }
-    }
+  private async cacheStats(): Promise<{
+    tracks: number
+    bytes: number
+    entries: MusicYouTubeCacheEntry[]
+  }> {
+    const entries = await this.cacheEntries()
+    let bytes = 0
+    for (const entry of entries) bytes += entry.bytes
+    return { tracks: entries.length, bytes, entries }
   }
 }

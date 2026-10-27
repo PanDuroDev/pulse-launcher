@@ -93,10 +93,12 @@ async function readAudioFiles(
   root: string,
   counters: ScanCounters,
   found: string[],
+  signal?: AbortSignal,
 ): Promise<void> {
   const queue: Array<{ dir: string; depth: number }> = [{ dir: root, depth: 0 }]
 
   while (queue.length > 0 && found.length < MAX_TRACKS) {
+    if (signal?.aborted) return
     const next = queue.shift()
     if (!next) break
 
@@ -109,6 +111,9 @@ async function readAudioFiles(
     }
 
     for await (const entry of directory) {
+      // A NAS folder can take seconds per entry, so the check lives in the loop
+      // and not only per directory.
+      if (signal?.aborted) return
       if (found.length >= MAX_TRACKS) break
 
       if (entry.isDirectory()) {
@@ -214,6 +219,8 @@ export class MusicLibraryService {
   private scanError: string | null = null
   private scannedAt = 0
   private scanPromise: Promise<MusicLibrarySnapshot> | null = null
+  /** Aborts the running scan; null when nothing is scanning. */
+  private scanAbort: AbortController | null = null
   private loaded = false
 
   constructor(options: MusicLibraryOptions) {
@@ -291,13 +298,35 @@ export class MusicLibraryService {
   }
 
   rescan(): Promise<MusicLibrarySnapshot> {
-    this.scanPromise ??= this.runScan().finally(() => {
-      this.scanPromise = null
+    // A rescan while a scan is running used to start a second walk over the same
+    // folders. Cancel the old one and queue exactly one fresh walk behind it.
+    const running = this.scanPromise
+    if (running) {
+      this.cancelScan()
+      const next = running.then(() => this.rescan())
+      this.scanPromise = next
+      return next
+    }
+    const scan = this.runScan().finally(() => {
+      if (this.scanPromise === scan) this.scanPromise = null
     })
-    return this.scanPromise
+    this.scanPromise = scan
+    return scan
+  }
+
+  /**
+   * Stops the running scan. The tracks found so far are kept, so a cancelled
+   * scan of a huge folder still leaves a usable partial library.
+   */
+  cancelScan(): MusicLibrarySnapshot {
+    this.scanAbort?.abort()
+    return this.snapshot
   }
 
   private async runScan(): Promise<MusicLibrarySnapshot> {
+    const controller = new AbortController()
+    this.scanAbort = controller
+    const signal = controller.signal
     this.scanning = true
     this.scanError = null
     this.scannedFiles = 0
@@ -312,12 +341,14 @@ export class MusicLibraryService {
 
     try {
       for (const folder of this.folders) {
+        if (signal.aborted) break
         const files: string[] = []
-        await readAudioFiles(folder, counters, files)
+        await readAudioFiles(folder, counters, files, signal)
 
         let cursor = 0
         const run = async (): Promise<void> => {
           while (cursor < files.length) {
+            if (signal.aborted) return
             const index = cursor
             cursor += 1
             const filePath = files[index]
@@ -339,6 +370,9 @@ export class MusicLibraryService {
       log.warn('music: scan failed', error)
     }
 
+    const cancelled = signal.aborted
+    if (this.scanAbort === controller) this.scanAbort = null
+
     const deduped = new Map<string, StoredMusicTrack>()
     for (const track of collected) {
       deduped.set(track.filePath.toLowerCase(), track)
@@ -352,7 +386,7 @@ export class MusicLibraryService {
     )
     this.scannedFiles = counters.scannedFiles
     this.skippedFiles = counters.skippedFiles
-    this.scannedAt = Date.now()
+    if (!cancelled) this.scannedAt = Date.now()
     this.scanning = false
 
     // Covers from tracks that disappeared (or were re-tagged) are dead weight.

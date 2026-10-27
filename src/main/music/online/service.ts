@@ -9,8 +9,13 @@ import { ONLINE_PROVIDERS } from './providers'
 import type { ProviderTrack } from './providers'
 import { rankTracks } from './ranking'
 
-/** The whole search shares one deadline so a slow catalog cannot stall the page. */
-const SEARCH_TIMEOUT_MS = 10_000
+/**
+ * Each catalog gets its own deadline, and the search as a whole gets a slightly
+ * longer one. iTunes regularly needs more than ten seconds while the other four
+ * answer in two, so a single shared budget used to drop it every time.
+ */
+const PROVIDER_TIMEOUT_MS = 12_000
+const SEARCH_TIMEOUT_MS = 15_000
 const MAX_RESULTS = 40
 const MAX_TOKEN_ENTRIES = 4_000
 const TOKEN_PATTERN = /^[a-f0-9]{32}$/
@@ -51,6 +56,29 @@ function errorMessage(error: unknown): string {
   return 'The catalog request failed.'
 }
 
+const PROVIDER_NAMES: Record<MusicOnlineProviderStatus['provider'], string> = {
+  itunes: 'iTunes',
+  deezer: 'Deezer',
+  audius: 'Audius',
+  openverse: 'Openverse',
+  archive: 'Internet Archive',
+}
+
+/**
+ * Names the catalogs that failed, because the count alone ("Online 27") does not
+ * tell the user that Apple Music previews are missing from the results.
+ */
+export function providerWarning(statuses: MusicOnlineProviderStatus[]): string | null {
+  const failed = statuses.filter((status) => !status.ok)
+  if (failed.length === 0) return null
+  const names = failed.map((status) => PROVIDER_NAMES[status.provider])
+  const list =
+    names.length === 1
+      ? names[0]
+      : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`
+  return `${list} did not respond; showing the other catalogs.`
+}
+
 interface ProviderRun {
   provider: MusicOnlineProviderStatus['provider']
   status: MusicOnlineProviderStatus
@@ -76,6 +104,7 @@ export class MusicOnlineService {
           count: 0,
           error: null,
         })),
+        warning: null,
       }
     }
 
@@ -88,8 +117,14 @@ export class MusicOnlineService {
     try {
       const runs = await Promise.all(
         ONLINE_PROVIDERS.map(async (provider): Promise<ProviderRun> => {
+          // A provider that hangs only costs its own budget, not the search's.
+          const providerController = new AbortController()
+          const abortProvider = (): void => providerController.abort()
+          if (controller.signal.aborted) providerController.abort()
+          else controller.signal.addEventListener('abort', abortProvider, { once: true })
+          const providerTimer = setTimeout(abortProvider, PROVIDER_TIMEOUT_MS)
           try {
-            const tracks = await provider.search(query, controller.signal)
+            const tracks = await provider.search(query, providerController.signal)
             return {
               provider: provider.id,
               status: {
@@ -111,6 +146,9 @@ export class MusicOnlineService {
               },
               tracks: [],
             }
+          } finally {
+            clearTimeout(providerTimer)
+            controller.signal.removeEventListener('abort', abortProvider)
           }
         }),
       )
@@ -124,10 +162,12 @@ export class MusicOnlineService {
         if (exposed) tracks.push(exposed)
       }
 
+      const statuses = runs.map((run) => run.status)
       return {
         query,
         tracks,
-        providers: runs.map((run) => run.status),
+        providers: statuses,
+        warning: providerWarning(statuses),
       }
     } finally {
       clearTimeout(timer)
