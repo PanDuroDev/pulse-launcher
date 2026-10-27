@@ -11,6 +11,8 @@ export interface MusicEngineState {
   repeat: MusicRepeat
   shuffle: boolean
   error: string | null
+  /** Video id of the extraction in progress, so the row can offer Cancel. */
+  preparingId: string | null
 }
 
 const STORAGE_KEY = 'pulse.music.prefs'
@@ -80,6 +82,7 @@ class MusicEngine {
       repeat: this.prefs.repeat,
       shuffle: this.prefs.shuffle,
       error: null,
+      preparingId: null,
     }
   }
 
@@ -260,8 +263,34 @@ class MusicEngine {
 
   stop(): void {
     this.playToken += 1
+    this.cancelPreparing()
     this.audio?.pause()
-    this.patch({ track: null, status: 'idle', positionMs: 0, durationMs: 0, error: null })
+    this.patch({
+      track: null,
+      status: 'idle',
+      positionMs: 0,
+      durationMs: 0,
+      error: null,
+      preparingId: null,
+    })
+  }
+
+  /**
+   * Stops the extraction started by the current row. The main process kills the
+   * yt-dlp/ffmpeg process tree, so this is a real cancel and not just a hidden
+   * progress indicator.
+   */
+  cancelPreparing(): void {
+    const videoId = this.state.preparingId
+    if (!videoId) return
+    this.playToken += 1
+    void window.launcher.music.youtube.cancel(videoId).catch(() => undefined)
+    this.patch({
+      status: 'paused',
+      error: null,
+      preparingId: null,
+      positionMs: 0,
+    })
   }
 
   private activeQueue(): MusicTrack[] {
@@ -276,6 +305,12 @@ class MusicEngine {
 
   private startTrack(track: MusicTrack): void {
     const token = ++this.playToken
+    // Choosing another row must stop the previous extraction, otherwise both
+    // downloads run in parallel and the user pays twice for one listen.
+    const pending = this.state.preparingId
+    if (pending && pending !== track.youtubeId) {
+      void window.launcher.music.youtube.cancel(pending).catch(() => undefined)
+    }
     if (track.youtubeId && !track.streamUrl) {
       this.patch({
         track,
@@ -283,6 +318,7 @@ class MusicEngine {
         positionMs: 0,
         durationMs: track.durationMs,
         error: null,
+        preparingId: track.youtubeId,
       })
       // Search rows intentionally carry no stream URL. The main process
       // downloads and converts the MP3 once, then the resolved track joins the
@@ -291,6 +327,7 @@ class MusicEngine {
         .resolve(track.youtubeId)
         .then((result) => {
           if (this.playToken !== token) return
+          this.patch({ preparingId: null })
           if (!result.ok || !result.track) {
             this.patch({
               status: 'error',
@@ -308,6 +345,7 @@ class MusicEngine {
           if (this.playToken !== token) return
           this.patch({
             status: 'error',
+            preparingId: null,
             error:
               error instanceof Error
                 ? error.message
@@ -331,6 +369,7 @@ class MusicEngine {
       positionMs: 0,
       durationMs: track.durationMs,
       error: null,
+      preparingId: null,
     })
     audio.src = track.streamUrl
     audio.volume = this.state.muted ? 0 : this.state.volume

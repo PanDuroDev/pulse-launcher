@@ -61,6 +61,11 @@ const YOUTUBE_YTDLP_FIELD = 'music-youtube-ytdlp'
 const YOUTUBE_FFMPEG_FIELD = 'music-youtube-ffmpeg'
 const YOUTUBE_SAVE_KEY = 'music-youtube-save'
 const YOUTUBE_REFRESH_KEY = 'music-youtube-refresh'
+const YOUTUBE_CACHE_LIMIT_FIELD = 'music-youtube-cache-limit'
+const YOUTUBE_CLEAR_KEY = 'music-youtube-clear-cache'
+const YOUTUBE_CANCEL_KEY = 'music-youtube-cancel'
+const YOUTUBE_REMOVE_KEY = 'music-youtube-remove'
+const SCAN_CANCEL_KEY = 'music-scan-cancel'
 const YOUTUBE_WATCH_KEY = 'music-youtube-watch'
 const ADD_KEY = 'music-add-folder'
 const RESCAN_KEY = 'music-rescan'
@@ -356,6 +361,7 @@ export function MusicPage({ onBack }: MusicPageProps) {
   const overlay = useMusicStore((state) => state.overlay)
   const addFolder = useMusicStore((state) => state.addFolder)
   const rescan = useMusicStore((state) => state.rescan)
+  const cancelScan = useMusicStore((state) => state.cancelScan)
   const updateOverlay = useMusicStore((state) => state.updateOverlay)
   const toggleOverlay = useMusicStore((state) => state.toggleOverlay)
 
@@ -368,6 +374,7 @@ export function MusicPage({ onBack }: MusicPageProps) {
   const [onlineProviders, setOnlineProviders] = useState<MusicOnlineProviderStatus[]>([])
   const [onlineSearching, setOnlineSearching] = useState(false)
   const [onlineError, setOnlineError] = useState<string | null>(null)
+  const [onlineWarning, setOnlineWarning] = useState<string | null>(null)
   const [youtubeQuery, setYoutubeQuery] = useState('')
   const [youtubeTracks, setYoutubeTracks] = useState<MusicYouTubeTrack[]>([])
   const [youtubeSource, setYoutubeSource] = useState<MusicYouTubeSearchSource | null>(null)
@@ -383,6 +390,8 @@ export function MusicPage({ onBack }: MusicPageProps) {
   const [youtubeFfmpegPath, setYoutubeFfmpegPath] = useState('')
   const [youtubeSaving, setYoutubeSaving] = useState(false)
   const [youtubeSaveError, setYoutubeSaveError] = useState<string | null>(null)
+  const [youtubeCacheLimit, setYoutubeCacheLimit] = useState('')
+  const [youtubeClearing, setYoutubeClearing] = useState(false)
   /** True once the draft fields hold the stored settings, so Save cannot blank them. */
   const [draftSynced, setDraftSynced] = useState(false)
   /** One search fans out to the online catalogs and YouTube at the same time. */
@@ -480,6 +489,7 @@ export function MusicPage({ onBack }: MusicPageProps) {
       setOnlineProviders([])
       setOnlineSearching(false)
       setOnlineError(null)
+      setOnlineWarning(null)
       return
     }
 
@@ -487,6 +497,7 @@ export function MusicPage({ onBack }: MusicPageProps) {
     setOnlineProviders([])
     setOnlineSearching(true)
     setOnlineError(null)
+    setOnlineWarning(null)
     searchTimer.current = window.setTimeout(() => {
       searchTimer.current = null
       void window.launcher.music.online
@@ -495,12 +506,14 @@ export function MusicPage({ onBack }: MusicPageProps) {
           if (searchRequest.current !== requestId) return
           setOnlineTracks(result.tracks)
           setOnlineProviders(result.providers)
+          setOnlineWarning(result.warning)
           setOnlineSearching(false)
         })
         .catch(() => {
           if (searchRequest.current !== requestId) return
           setOnlineTracks([])
           setOnlineProviders([])
+          setOnlineWarning(null)
           setOnlineError('Online search failed. Check your connection and try again.')
           setOnlineSearching(false)
         })
@@ -567,6 +580,7 @@ export function MusicPage({ onBack }: MusicPageProps) {
       setOnlineProviders([])
       setOnlineSearching(false)
       setOnlineError(null)
+      setOnlineWarning(null)
       setYoutubeTracks([])
       setYoutubeSource(null)
       setYoutubeWarning(null)
@@ -579,6 +593,7 @@ export function MusicPage({ onBack }: MusicPageProps) {
     setOnlineTracks([])
     setOnlineProviders([])
     setOnlineError(null)
+    setOnlineWarning(null)
     setYoutubeTracks([])
     setYoutubeSource(null)
     setYoutubeWarning(null)
@@ -595,12 +610,14 @@ export function MusicPage({ onBack }: MusicPageProps) {
           if (allRequest.current !== requestId) return
           setOnlineTracks(result.tracks)
           setOnlineProviders(result.providers)
+          setOnlineWarning(result.warning)
           setOnlineError(null)
         })
         .catch(() => {
           if (allRequest.current !== requestId) return
           setOnlineTracks([])
           setOnlineProviders([])
+          setOnlineWarning(null)
           setOnlineError('Online search failed. Check your connection and try again.')
         })
       const youtube = window.launcher.music.youtube
@@ -640,6 +657,7 @@ export function MusicPage({ onBack }: MusicPageProps) {
           setYoutubeApiKey(status.settings.apiKey)
           setYoutubeYtDlpPath(status.settings.ytDlpPath)
           setYoutubeFfmpegPath(status.settings.ffmpegPath)
+          setYoutubeCacheLimit(String(status.settings.cacheLimitMb))
           setDraftSynced(true)
         }
         setYoutubeStatusLoading(false)
@@ -653,17 +671,21 @@ export function MusicPage({ onBack }: MusicPageProps) {
   const saveYouTubeSettings = useCallback(() => {
     setYoutubeSaving(true)
     setYoutubeSaveError(null)
+    const parsedLimit = Number.parseInt(youtubeCacheLimit, 10)
     void window.launcher.music.youtube
       .updateSettings({
         apiKey: youtubeApiKey,
         ytDlpPath: youtubeYtDlpPath,
         ffmpegPath: youtubeFfmpegPath,
+        // An unreadable value falls back to the stored limit instead of 0.
+        cacheLimitMb: Number.isFinite(parsedLimit) ? parsedLimit : undefined,
       })
       .then((status) => {
         setYoutubeStatus(status)
         setYoutubeApiKey(status.settings.apiKey)
         setYoutubeYtDlpPath(status.settings.ytDlpPath)
         setYoutubeFfmpegPath(status.settings.ffmpegPath)
+        setYoutubeCacheLimit(String(status.settings.cacheLimitMb))
         setDraftSynced(true)
         setYoutubeSaving(false)
       })
@@ -671,7 +693,28 @@ export function MusicPage({ onBack }: MusicPageProps) {
         setYoutubeSaveError('Could not save the YouTube setup.')
         setYoutubeSaving(false)
       })
-  }, [youtubeApiKey, youtubeFfmpegPath, youtubeYtDlpPath])
+  }, [youtubeApiKey, youtubeCacheLimit, youtubeFfmpegPath, youtubeYtDlpPath])
+
+  const clearYouTubeCache = useCallback(() => {
+    setYoutubeClearing(true)
+    void window.launcher.music.youtube
+      .clearCache()
+      .then((status) => {
+        setYoutubeStatus(status)
+        setYoutubeClearing(false)
+      })
+      .catch(() => {
+        setYoutubeSaveError('Could not clear the MP3 cache.')
+        setYoutubeClearing(false)
+      })
+  }, [])
+
+  const removeCachedTrack = useCallback((videoId: string) => {
+    void window.launcher.music.youtube
+      .removeCached(videoId)
+      .then((status) => setYoutubeStatus(status))
+      .catch(() => setYoutubeSaveError('Could not delete that cached MP3.'))
+  }, [])
 
   /**
    * The setup panel is reachable from the All tab too, which never loads the
@@ -840,6 +883,14 @@ export function MusicPage({ onBack }: MusicPageProps) {
                 onClick={() => void rescan()}
                 disabled={scanning}
               />
+              {scanning ? (
+                <Tool
+                  focusKey={SCAN_CANCEL_KEY}
+                  label="Stop"
+                  icon={<PauseFilled className="size-4" />}
+                  onClick={() => void cancelScan()}
+                />
+              ) : null}
             </>
           ) : null}
           {mode === 'youtube' || mode === 'all' ? (
@@ -871,13 +922,18 @@ export function MusicPage({ onBack }: MusicPageProps) {
               apiKey={youtubeApiKey}
               ytDlpPath={youtubeYtDlpPath}
               ffmpegPath={youtubeFfmpegPath}
+              cacheLimitMb={youtubeCacheLimit}
               saving={youtubeSaving}
               saveError={youtubeSaveError}
+              clearing={youtubeClearing}
               onApiKeyChange={setYoutubeApiKey}
               onYtDlpChange={setYoutubeYtDlpPath}
               onFfmpegChange={setYoutubeFfmpegPath}
+              onCacheLimitChange={setYoutubeCacheLimit}
               onSave={saveYouTubeSettings}
               onRefresh={() => loadYouTubeStatus(false)}
+              onClearCache={clearYouTubeCache}
+              onRemoveCached={removeCachedTrack}
             />
           ) : null}
           <div
@@ -1010,6 +1066,7 @@ export function MusicPage({ onBack }: MusicPageProps) {
                         }
                         onPlay={playMixed}
                         onOpen={openYouTube}
+                        onCancel={() => musicEngine.cancelPreparing()}
                       />
                     ))}
                   </ul>
@@ -1082,17 +1139,24 @@ export function MusicPage({ onBack }: MusicPageProps) {
                 together.
               </p>
             ) : (
-              <ul className="flex flex-col gap-0.5">
-                {onlineTracks.map((track) => (
-                  <OnlineTrackRow
-                    key={track.id}
-                    track={track}
-                    current={playback.track?.id === track.id}
-                    playing={playing}
-                    onPlay={playOnline}
-                  />
-                ))}
-              </ul>
+              <>
+                {onlineWarning ? (
+                  <p className="mx-1 mb-1 rounded-lg bg-white/5 px-3 py-2 text-[0.7rem] leading-relaxed text-white/50">
+                    {onlineWarning}
+                  </p>
+                ) : null}
+                <ul className="flex flex-col gap-0.5">
+                  {onlineTracks.map((track) => (
+                    <OnlineTrackRow
+                      key={track.id}
+                      track={track}
+                      current={playback.track?.id === track.id}
+                      playing={playing}
+                      onPlay={playOnline}
+                    />
+                  ))}
+                </ul>
+              </>
               )
             ) : youtubePrompt ? (
               <div className="px-4 py-10">
@@ -1147,6 +1211,7 @@ export function MusicPage({ onBack }: MusicPageProps) {
                       }
                       onPlay={playYouTube}
                       onOpen={openYouTube}
+                      onCancel={() => musicEngine.cancelPreparing()}
                     />
                   ))}
                 </ul>
@@ -1419,6 +1484,7 @@ interface MixedTrackRowProps {
   preparing: boolean
   onPlay: (track: MusicTrack) => void
   onOpen: (videoId: string) => void
+  onCancel: () => void
 }
 
 /**
@@ -1433,6 +1499,7 @@ function MixedTrackRow({
   preparing,
   onPlay,
   onOpen,
+  onCancel,
 }: MixedTrackRowProps) {
   const source = trackSource(track)
   const youtubeId = track.youtubeId
@@ -1451,6 +1518,15 @@ function MixedTrackRow({
     onEnterPress: () => {
       if (youtubeId) onOpen(youtubeId)
     },
+  })
+
+  const { ref: cancelRef, focused: cancelFocused } = useFocusable<
+    Record<string, never>,
+    HTMLButtonElement
+  >({
+    focusKey: `${YOUTUBE_CANCEL_KEY}-${youtubeId ?? track.id}`,
+    accessibilityLabel: `Cancel extracting ${track.title}`,
+    onEnterPress: onCancel,
   })
 
   const badge =
@@ -1530,6 +1606,25 @@ function MixedTrackRow({
           {formatDuration(track.durationMs)}
         </span>
       </button>
+      {youtubeId && preparing ? (
+        <button
+          ref={cancelRef}
+          type="button"
+          tabIndex={-1}
+          data-focus-key={`${YOUTUBE_CANCEL_KEY}-${youtubeId}`}
+          aria-label={`Cancel extracting ${track.title}`}
+          onClick={onCancel}
+          className={cn(
+            'grid size-9 shrink-0 place-items-center rounded-full text-[0.62rem] font-semibold outline-none transition-colors',
+            cancelFocused
+              ? 'bg-white text-black'
+              : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white',
+          )}
+          style={cancelFocused ? { boxShadow: `0 0 0 2px ${uiAccent(0.55)}` } : undefined}
+        >
+          Stop
+        </button>
+      ) : null}
       {youtubeId ? (
         <button
           ref={linkRef}
@@ -1645,13 +1740,18 @@ interface YouTubeSetupProps {
   apiKey: string
   ytDlpPath: string
   ffmpegPath: string
+  cacheLimitMb: string
   saving: boolean
   saveError: string | null
+  clearing: boolean
   onApiKeyChange: (value: string) => void
   onYtDlpChange: (value: string) => void
   onFfmpegChange: (value: string) => void
+  onCacheLimitChange: (value: string) => void
   onSave: () => void
   onRefresh: () => void
+  onClearCache: () => void
+  onRemoveCached: (videoId: string) => void
 }
 
 function YouTubeSetup({
@@ -1661,14 +1761,32 @@ function YouTubeSetup({
   apiKey,
   ytDlpPath,
   ffmpegPath,
+  cacheLimitMb,
   saving,
   saveError,
+  clearing,
   onApiKeyChange,
   onYtDlpChange,
   onFfmpegChange,
+  onCacheLimitChange,
   onSave,
   onRefresh,
+  onClearCache,
+  onRemoveCached,
 }: YouTubeSetupProps) {
+  const { ref: clearRef, focused: clearFocused } = useFocusable<
+    Record<string, never>,
+    HTMLButtonElement
+  >({
+    focusKey: YOUTUBE_CLEAR_KEY,
+    accessibilityLabel: 'Clear the YouTube MP3 cache',
+    onEnterPress: onClearCache,
+  })
+  const entries = status?.cache.entries ?? []
+  const limit = Number(cacheLimitMb)
+  const overLimit =
+    status !== null && Number.isFinite(limit) && status.cache.bytes > limit * 1024 * 1024
+
   return (
     <div className="m-2 mb-0 rounded-xl border border-white/10 bg-white/4 p-3">
       <div className="flex items-start justify-between gap-3">
@@ -1719,6 +1837,14 @@ function YouTubeSetup({
           onChange={onFfmpegChange}
           placeholder="Auto-detect"
         />
+        <SetupField
+          focusKey={YOUTUBE_CACHE_LIMIT_FIELD}
+          label="MP3 cache limit (MB)"
+          value={cacheLimitMb}
+          onChange={onCacheLimitChange}
+          placeholder="2048"
+          wide
+        />
       </div>
 
       <div className="mt-2 grid gap-1.5 md:grid-cols-3">
@@ -1726,11 +1852,66 @@ function YouTubeSetup({
         <ToolBadge label="FFmpeg" info={status?.ffmpeg ?? null} />
         <div className="flex items-center justify-between gap-2 rounded-lg bg-black/20 px-2 py-1.5 ring-1 ring-white/8">
           <span className="text-[0.62rem] text-white/40">MP3 cache</span>
-          <span className="truncate text-[0.64rem] text-white/70">
+          <span className={cn('truncate text-[0.64rem]', overLimit ? 'text-white' : 'text-white/70')}>
             {status ? `${status.cache.tracks} · ${formatBytes(status.cache.bytes)}` : 'Checking…'}
           </span>
         </div>
       </div>
+
+      {entries.length > 0 ? (
+        <div className="mt-2 rounded-lg bg-black/20 p-1.5 ring-1 ring-white/8">
+          <div className="flex items-center justify-between gap-2 px-1 pb-1">
+            <span className="text-[0.6rem] tracking-[0.08em] text-white/35 uppercase">
+              Cached tracks · oldest first
+            </span>
+            <button
+              ref={clearRef}
+              type="button"
+              tabIndex={-1}
+              data-focus-key={YOUTUBE_CLEAR_KEY}
+              aria-label="Clear the YouTube MP3 cache"
+              onClick={onClearCache}
+              disabled={clearing}
+              className={cn(
+                'rounded-full px-2 py-0.5 text-[0.62rem] font-medium outline-none transition-colors',
+                clearing
+                  ? 'text-white/25'
+                  : clearFocused
+                    ? 'bg-white text-black'
+                    : 'text-white/60 hover:bg-white/10 hover:text-white',
+              )}
+              style={clearFocused ? { boxShadow: `0 0 0 2px ${uiAccent(0.55)}` } : undefined}
+            >
+              {clearing ? 'Clearing…' : 'Clear cache'}
+            </button>
+          </div>
+          <ul className="max-h-24 overflow-y-auto no-scrollbar">
+            {entries.slice(0, 12).map((entry) => (
+              <li
+                key={entry.videoId}
+                className="flex items-center justify-between gap-2 rounded px-1 py-0.5 text-[0.64rem] text-white/55"
+              >
+                <span className="min-w-0 truncate">
+                  {entry.title} · {entry.artist}
+                </span>
+                <span className="flex shrink-0 items-center gap-2">
+                  <span className="tabular-nums text-white/35">{formatBytes(entry.bytes)}</span>
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    data-focus-key={`${YOUTUBE_REMOVE_KEY}-${entry.videoId}`}
+                    aria-label={`Delete the cached MP3 for ${entry.title}`}
+                    onClick={() => onRemoveCached(entry.videoId)}
+                    className="rounded-full px-1.5 text-[0.6rem] text-white/40 transition-colors hover:bg-white/10 hover:text-white"
+                  >
+                    Delete
+                  </button>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       <div className="mt-2 flex items-center justify-between gap-3">
         <p className="max-w-xl text-[0.62rem] leading-relaxed text-white/35">
@@ -1760,6 +1941,7 @@ interface YouTubeTrackRowProps {
   preparing: boolean
   onPlay: (track: MusicYouTubeTrack) => void
   onOpen: (videoId: string) => void
+  onCancel: () => void
 }
 
 function YouTubeTrackRow({
@@ -1769,6 +1951,7 @@ function YouTubeTrackRow({
   preparing,
   onPlay,
   onOpen,
+  onCancel,
 }: YouTubeTrackRowProps) {
   const { ref, focused } = useFocusable<Record<string, never>, HTMLButtonElement>({
     focusKey: trackKey(track.id),
@@ -1782,6 +1965,14 @@ function YouTubeTrackRow({
     focusKey: youtubeLinkKey(track.youtubeId),
     accessibilityLabel: `Open ${track.title} on YouTube`,
     onEnterPress: () => onOpen(track.youtubeId),
+  })
+  const { ref: cancelRef, focused: cancelFocused } = useFocusable<
+    Record<string, never>,
+    HTMLButtonElement
+  >({
+    focusKey: `${YOUTUBE_CANCEL_KEY}-${track.youtubeId}`,
+    accessibilityLabel: `Cancel extracting ${track.title}`,
+    onEnterPress: onCancel,
   })
 
   return (
@@ -1852,6 +2043,25 @@ function YouTubeTrackRow({
           {formatDuration(track.durationMs)}
         </span>
       </button>
+      {preparing ? (
+        <button
+          ref={cancelRef}
+          type="button"
+          tabIndex={-1}
+          data-focus-key={`${YOUTUBE_CANCEL_KEY}-${track.youtubeId}`}
+          aria-label={`Cancel extracting ${track.title}`}
+          onClick={onCancel}
+          className={cn(
+            'grid size-9 shrink-0 place-items-center rounded-full text-[0.62rem] font-semibold outline-none transition-colors',
+            cancelFocused
+              ? 'bg-white text-black'
+              : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white',
+          )}
+          style={cancelFocused ? { boxShadow: `0 0 0 2px ${uiAccent(0.55)}` } : undefined}
+        >
+          Stop
+        </button>
+      ) : null}
       <button
         ref={linkRef}
         type="button"

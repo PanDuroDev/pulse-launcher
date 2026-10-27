@@ -20,6 +20,7 @@ interface MusicState {
   initialize: () => Promise<void>
   addFolder: () => Promise<void>
   rescan: () => Promise<void>
+  cancelScan: () => Promise<void>
   removeFolder: (folder: string) => Promise<void>
   updateOverlay: (patch: Partial<MusicOverlaySettings>) => Promise<void>
   toggleOverlay: () => Promise<void>
@@ -74,6 +75,11 @@ export const useMusicStore = create<MusicState>()((set) => {
 
     rescan: async () => {
       const snapshot = await window.launcher.music.rescan()
+      receive(snapshot)
+    },
+
+    cancelScan: async () => {
+      const snapshot = await window.launcher.music.cancelScan()
       receive(snapshot)
     },
 
