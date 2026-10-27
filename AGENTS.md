@@ -398,6 +398,7 @@ npm run typecheck      # tsc -p tsconfig.node.json AND -p tsconfig.app.json
 npm run lint           # oxlint src
 npm test               # vitest run (37 files / 379 tests)
 npm run test:watch     # vitest watch
+npm run design:check   # static visual census, warns (--strict fails)
 npm run build          # typecheck + electron-vite build → out/
 npm run pack           # build + unpacked app in release/win-unpacked
 npm run dist           # build + NSIS installer in release/

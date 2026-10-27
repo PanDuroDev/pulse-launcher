@@ -35,6 +35,10 @@ packaged `app.asar` is older than `out/`.
   `source: 'bundled'` branch was removed because `resources/bin/` is never
   shipped. yt-dlp still auto-downloads into `music/bin/`, FFmpeg is still detected
   from the configured path, `PATH`, and the usual package-manager locations.
+- Visual foundation (docs/design P2): six text roles replace 22 ad-hoc sizes,
+  four text levels replace 16 white alphas, one page gutter replaces the
+  viewport-relative padding, one blur and one focus ring replace the ad hoc
+  glows. A static census (`npm run design:check`) now guards the vocabulary.
 
 ## [0.1.0] - 2026-10-27
 
