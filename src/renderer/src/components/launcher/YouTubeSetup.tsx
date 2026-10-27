@@ -115,6 +115,7 @@ interface YouTubeSetupProps {
   ffmpegPath: string
   cacheLimitMb: string
   saving: boolean
+  draftSynced: boolean
   saveError: string | null
   clearing: boolean
   onApiKeyChange: (value: string) => void
@@ -136,6 +137,7 @@ export function YouTubeSetup({
   ffmpegPath,
   cacheLimitMb,
   saving,
+  draftSynced,
   saveError,
   clearing,
   onApiKeyChange,
@@ -296,7 +298,7 @@ export function YouTubeSetup({
           label={saving ? 'Saving' : 'Save'}
           icon={<CheckFilled className={cn('size-4', saving && 'animate-pulse')} />}
           onClick={onSave}
-          disabled={saving}
+          disabled={saving || !draftSynced}
         />
       </div>
       {saveError ? <p className="mt-1 text-[0.66rem] text-white/45">{saveError}</p> : null}
