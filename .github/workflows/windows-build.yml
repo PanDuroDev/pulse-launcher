@@ -2,11 +2,9 @@ name: Windows Installer
 
 on:
   push:
-    branches:
-      - '**'
+    branches: [main]
   pull_request:
-    branches:
-      - '**'
+    branches: ['**']
     types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
 
@@ -25,27 +23,91 @@ jobs:
 
     steps:
       - name: Check out source
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
           cache: npm
 
+      # electron-builder downloads Electron and the NSIS toolchain on the first
+      # build. Caching them makes repeated installer builds much faster.
+      - name: Cache Electron
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~\AppData\Local\electron\Cache
+            ~\AppData\Local\electron-builder\Cache
+          key: ${{ runner.os }}-electron-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-electron-
+
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --no-audit --no-fund
+
+      - name: Lint
+        run: npm run lint
 
       - name: Run tests
         run: npm test
 
+      # Signing is off until a code-signing certificate exists; the decision is
+      # documented in docs/audit/01-release-and-packaging.md §3. The secrets are
+      # already wired so enabling signing is only a repository-settings change.
       - name: Build and verify installer
         run: npm run dist
+        env:
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
 
-      - name: Upload Windows installer
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - name: Write checksums
+        shell: pwsh
+        run: |
+          $files = Get-ChildItem release -File | Where-Object {
+            $_.Name -like 'Pulse-Launcher-*-x64.exe' -or
+            $_.Name -like 'Pulse-Launcher-*-x64.exe.blockmap' -or
+            $_.Name -eq 'latest.yml'
+          }
+          $lines = foreach ($file in $files) {
+            $hash = (Get-FileHash $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$hash  $($file.Name)"
+          }
+          $lines | Set-Content -Path release/SHA256SUMS.txt -Encoding ascii
+          $lines
+
+      - name: Summarize installer
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem release -Filter 'Pulse-Launcher-*-x64.exe' | Select-Object -First 1
+          $hash = (Get-FileHash $exe.FullName -Algorithm SHA256).Hash
+          "### Windows installer" >> $env:GITHUB_STEP_SUMMARY
+          "" >> $env:GITHUB_STEP_SUMMARY
+          "**File:** ``$($exe.Name)``" >> $env:GITHUB_STEP_SUMMARY
+          "**Size:** $([math]::Round($exe.Length / 1MB, 1)) MB ($($exe.Length) bytes)" >> $env:GITHUB_STEP_SUMMARY
+          "**SHA-256:** ``$hash``" >> $env:GITHUB_STEP_SUMMARY
+          "" >> $env:GITHUB_STEP_SUMMARY
+          "The ``$($exe.Name)`` artifact is the raw installer, not a ZIP wrapper." >> $env:GITHUB_STEP_SUMMARY
+
+      # `archive: false` uploads the single .exe as-is; GitHub normally wraps
+      # artifacts in a ZIP. The artifact name comes from the file itself.
+      - name: Upload raw installer
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: Pulse-Launcher-Windows-${{ github.event.pull_request.head.sha || github.sha }}
-          path: release/*.exe
+          path: release/Pulse-Launcher-*-x64.exe
+          archive: false
           if-no-files-found: error
+          overwrite: true
+          retention-days: 14
+
+      - name: Upload update metadata
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: Pulse-Launcher-Windows-${{ github.event.pull_request.head.sha || github.sha }}-metadata
+          path: |
+            release/Pulse-Launcher-*-x64.exe.blockmap
+            release/latest.yml
+            release/SHA256SUMS.txt
+          if-no-files-found: error
+          overwrite: true
           retention-days: 14

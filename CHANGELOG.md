@@ -35,6 +35,11 @@ packaged `app.asar` is older than `out/`.
   `source: 'bundled'` branch was removed because `resources/bin/` is never
   shipped. yt-dlp still auto-downloads into `music/bin/`, FFmpeg is still detected
   from the configured path, `PATH`, and the usual package-manager locations.
+- GitHub Actions now publishes the Windows installer as a raw `.exe` artifact
+  instead of a ZIP wrapper (`archive: false`), adds `SHA256SUMS.txt` and a run
+  summary, caches Electron/NSIS downloads, and creates a GitHub Release with the
+  installer, blockmap, `latest.yml`, and checksums on `v*` tags. The PR installer
+  workflow runs once per pull-request update and on pushes to `main`.
 
 ## [0.1.0] - 2026-10-27
 
