@@ -7,6 +7,7 @@ export function useYouTubeSetup() {
   const [youtubeStatusError, setYoutubeStatusError] = useState<string | null>(null)
   const [setupOpen, setSetupOpen] = useState(false)
   const setupOpenRef = useRef(false)
+  const statusRequestRef = useRef(0)
   const draftRevisionRef = useRef({ apiKey: 0, ytDlpPath: 0, ffmpegPath: 0, cacheLimit: 0 })
   const [youtubeApiKey, setYoutubeApiKey] = useState('')
   const [youtubeYtDlpPath, setYoutubeYtDlpPath] = useState('')
@@ -19,11 +20,13 @@ export function useYouTubeSetup() {
   const [draftSynced, setDraftSynced] = useState(false)
 
   const loadYouTubeStatus = useCallback((syncDraft: boolean) => {
+    const requestId = ++statusRequestRef.current
     setYoutubeStatusLoading(true)
     setYoutubeStatusError(null)
     void window.launcher.music.youtube
       .status()
       .then((status) => {
+        if (statusRequestRef.current !== requestId) return
         setYoutubeStatus(status)
         if (syncDraft) {
           // Hydrate untouched fields without overwriting edits made while loading.
@@ -44,6 +47,7 @@ export function useYouTubeSetup() {
         setYoutubeStatusLoading(false)
       })
       .catch(() => {
+        if (statusRequestRef.current !== requestId) return
         setYoutubeStatusError('Could not read the YouTube setup on this machine.')
         setYoutubeStatusLoading(false)
       })
@@ -51,6 +55,8 @@ export function useYouTubeSetup() {
 
   const saveYouTubeSettings = useCallback(() => {
     if (!draftSynced || youtubeSaving) return
+    // Invalidate status reads already in flight so they cannot overwrite the save result.
+    statusRequestRef.current += 1
     setYoutubeSaving(true)
     setYoutubeSaveError(null)
     const draftRevision = { ...draftRevisionRef.current }
