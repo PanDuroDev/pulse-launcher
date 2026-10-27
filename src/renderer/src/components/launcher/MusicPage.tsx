@@ -98,7 +98,6 @@ const PROVIDER_LABELS: Record<MusicProvider, string> = {
 const ONLINE_CATALOG_HINT = 'iTunes · Deezer · Audius · Openverse · Archive'
 const YOUTUBE_TOOL_SOURCES: Record<MusicYouTubeStatus['ytDlp']['source'], string> = {
   configured: 'Configured',
-  bundled: 'Bundled',
   path: 'PATH',
   downloaded: 'Downloaded',
   missing: 'Missing',

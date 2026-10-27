@@ -1,7 +1,6 @@
 import { stat } from 'node:fs/promises'
 import path from 'node:path'
 import type { MusicYouTubeToolInfo, MusicYouTubeToolSource } from '@shared/types'
-import { resolveResourcePath } from '../../paths'
 import { downloadFile, runCommand } from './command'
 import { safeErrorMessage } from './parse'
 
@@ -153,7 +152,6 @@ export async function detectYtDlp(
   }
 
   const found = await firstRunnable([
-    { filePath: resolveResourcePath('bin', YTDLP_FILE), source: 'bundled', versionArgs: ['--version'] },
     { filePath: path.join(userBinDir, YTDLP_FILE), source: 'downloaded', versionArgs: ['--version'] },
     ...pathCandidates('yt-dlp').map((filePath) => ({
       filePath,
@@ -209,7 +207,6 @@ export async function detectFfmpeg(
   }
 
   const found = await firstRunnable([
-    { filePath: resolveResourcePath('bin', FFMPEG_FILE), source: 'bundled', versionArgs: ['-version'] },
     { filePath: path.join(userBinDir, FFMPEG_FILE), source: 'downloaded', versionArgs: ['-version'] },
     ...pathCandidates('ffmpeg').map((filePath) => ({
       filePath,

@@ -466,7 +466,6 @@ export interface MusicYouTubeSettings {
 
 export type MusicYouTubeToolSource =
   | 'configured'
-  | 'bundled'
   | 'path'
   | 'downloaded'
   | 'missing'
