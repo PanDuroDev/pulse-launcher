@@ -14,23 +14,19 @@ import path from 'node:path'
 import { z } from 'zod'
 import { IPC } from '@shared/ipc'
 import type {
-  AddManualResult,
   AppInfo,
   ArtKind,
-  DirectoryListing,
   FavoriteResult,
   GameControlResult,
   GameSource,
   GameSummary,
   LaunchResult,
   MusicOverlayState,
-  PickerRoots,
   ScanProgress,
   ScanResult,
   SelectionResult,
   Settings,
   SettingsUpdate,
-  UpdateManualResult,
   WindowMode,
 } from '@shared/types'
 import { DEFAULT_SETTINGS } from '@shared/types'
@@ -43,13 +39,6 @@ import {
 import { installAppProtocol, registerAppScheme } from './protocol'
 import { AppStore } from './store'
 import { CatalogService } from './catalog'
-import {
-  driveLocations,
-  isBrowsablePath,
-  listDirectory,
-  listDrives,
-  resolvePlaces,
-} from './library-browser'
 import type { PlaceCandidate } from './library-browser'
 import { GameProcessWatcher } from './process-watcher'
 import { launchGame } from './launch'
@@ -60,6 +49,7 @@ import type { AutoReturnState } from './auto-return'
 import type { GameRunMatch } from './game-processes'
 import { MusicLibraryService } from './music/library'
 import { registerMusicIpc } from './ipc/music'
+import { registerLibraryIpc } from './ipc/library'
 import { MusicOverlay } from './music/overlay'
 import { MusicConfigStore } from './music/config'
 import { MusicOnlineService } from './music/online/service'
@@ -131,22 +121,6 @@ const ForceCloseSchema = z.object({
   gameId: z.string().min(1).max(200),
   confirm: z.boolean(),
 })
-
-const BrowseSchema = z
-  .object({
-    path: z.string().min(1).max(1024),
-    kind: z.enum(['game', 'image']).optional(),
-  })
-  .strict()
-
-const UpdateManualSchema = z
-  .object({
-    gameId: z.string().min(1).max(200),
-    name: z.string().max(200).optional(),
-    executable: z.string().min(1).max(1024).optional(),
-    artwork: z.string().min(1).max(1024).nullable().optional(),
-  })
-  .strict()
 
 /**
  * Renderer crash reports are untrusted input: the renderer could be compromised,
@@ -626,74 +600,11 @@ function registerIpc(): void {
     },
   )
 
-  ipcMain.handle(IPC.libraryRoots, async (event): Promise<PickerRoots> => {
-    assertTrustedSender(event)
-    const [places, drives] = await Promise.all([
-      resolvePlaces(placeCandidates()),
-      listDrives(),
-    ])
-    return { places: [...places, ...driveLocations(drives)] }
+  registerLibraryIpc({
+    assertTrustedSender,
+    catalog,
+    placeCandidates,
   })
-
-  ipcMain.handle(
-    IPC.libraryList,
-    async (event, payload: unknown): Promise<DirectoryListing> => {
-      assertTrustedSender(event)
-      const parsed = BrowseSchema.parse(payload)
-      const listing = await listDirectory(parsed.path, parsed.kind ?? 'game')
-      log.info('[library] browse', {
-        ok: listing.ok,
-        path: listing.path,
-        entries: listing.entries?.length,
-      })
-      return listing
-    },
-  )
-
-  ipcMain.handle(
-    IPC.libraryAdd,
-    async (event, payload: unknown): Promise<AddManualResult> => {
-      assertTrustedSender(event)
-      const parsed = BrowseSchema.parse(payload)
-      if (!isBrowsablePath(parsed.path)) {
-        return { ok: false, error: 'Choose a game file on a local drive.' }
-      }
-      const result = await catalog.addManualGame(parsed.path)
-      log.info('[library] add manual game', {
-        ok: result.ok,
-        name: result.game?.name,
-        executable: parsed.path,
-      })
-      return result
-    },
-  )
-
-  ipcMain.handle(
-    IPC.libraryUpdate,
-    async (event, payload: unknown): Promise<UpdateManualResult> => {
-      assertTrustedSender(event)
-      const parsed = UpdateManualSchema.parse(payload)
-      if (parsed.executable !== undefined && !isBrowsablePath(parsed.executable)) {
-        return { ok: false, error: 'Choose a game file on a local drive.' }
-      }
-      if (typeof parsed.artwork === 'string' && !isBrowsablePath(parsed.artwork)) {
-        return { ok: false, error: 'Choose an image on a local drive.' }
-      }
-      const result = await catalog.updateManualGame({
-        gameId: parsed.gameId,
-        name: parsed.name,
-        executable: parsed.executable,
-        artwork: parsed.artwork,
-      })
-      log.info('[library] update manual game', {
-        ok: result.ok,
-        gameId: parsed.gameId,
-        previousId: result.previousId,
-        error: result.error,
-      })
-      return result
-    },
-  )
 
   ipcMain.handle(
     IPC.settingsRemoveManual,
