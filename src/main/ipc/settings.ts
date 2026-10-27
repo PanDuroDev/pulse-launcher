@@ -27,6 +27,7 @@ interface SettingsIpcDependencies {
   setWindowMode: (mode: WindowMode) => void
 }
 
+/** Registers settings IPC handlers while preserving settings-change side effects. */
 export function registerSettingsIpc({
   assertTrustedSender,
   store,
