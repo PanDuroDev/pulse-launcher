@@ -6,9 +6,8 @@ import type {
   RunningGameInfo,
   ScanProgress,
   ScanResult,
-  Settings,
-  SettingsUpdate,
-} from '@shared/types'
+} from '@shared/contracts/games'
+import type { Settings, SettingsUpdate } from '@shared/contracts/settings'
 import { DEFAULT_SETTINGS } from '@shared/types'
 
 type Status = 'loading' | 'ready' | 'error'
