@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import type { GameSummary, RunningGameInfo } from '@shared/types'
-import { FORCE_QUIT_GRACE_MS } from '@shared/game-control'
 import {
   IDLE_GAME_ACTION,
   type GameActionState,
@@ -127,14 +126,6 @@ export function useGameActionController() {
   const handleCancelForceQuit = useCallback(() => {
     setGameAction((current) => cancelForceQuit(current))
   }, [])
-
-  const selectedAction = actionForGame(gameAction, undefined)
-  const selectedForceRemaining =
-    selectedAction.kind === 'close-requested' || selectedAction.kind === 'force-confirming'
-      ? actionClock > 0
-        ? forceRemainingMs(selectedAction, actionClock)
-        : FORCE_QUIT_GRACE_MS
-      : 0
 
   return {
     gameAction,
