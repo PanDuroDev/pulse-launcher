@@ -34,8 +34,6 @@ import type {
   PlayHistory,
 } from './contracts/games'
 
-export * from './contracts/games'
-
 import type {
   MusicLibrarySnapshot,
   MusicOnlineSearchResult,
@@ -50,6 +48,8 @@ import type {
 } from './contracts/music'
 
 import type { Settings, SettingsUpdate } from './contracts/settings'
+
+export * from './contracts/games'
 export * from './contracts/music'
 export * from './contracts/settings'
 
