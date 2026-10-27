@@ -4,10 +4,10 @@ import { useFocusable } from '@noriginmedia/norigin-spatial-navigation-react'
 import type { MusicOnlineTrack, MusicProvider, MusicTrack, MusicYouTubeTrack } from '@shared/types'
 import { formatDuration, trackSource } from '@/lib/music-queue'
 import type { MusicSourceFilter } from '@/lib/music-queue'
-
-type SourceFilter = MusicSourceFilter
 import { uiAccent } from '@/lib/accent'
 import { cn } from 'cn'
+
+type SourceFilter = MusicSourceFilter
 
 const YOUTUBE_CANCEL_KEY = 'music-youtube-cancel'
 const YOUTUBE_WATCH_KEY = 'music-youtube-watch'
@@ -30,7 +30,7 @@ export const SOURCE_LABELS: Record<SourceFilter, string> = {
   youtube: 'YouTube',
 }
 
-function Cover({ track, size }: { track: MusicTrack | null; size: string }) {
+export function Cover({ track, size }: { track: MusicTrack | null; size: string }) {
   // Remote covers do fail: online-art tokens expire and some YouTube videos
   // have no maxres image. Without this the panel shows a broken image box
   // instead of the music placeholder, and the user cannot tell why.
