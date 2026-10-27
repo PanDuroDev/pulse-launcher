@@ -36,6 +36,7 @@ interface CatalogIpcDependencies {
   hideForGame: (gameId: string) => void
 }
 
+/** Registers catalog, game launch, and game-control IPC handlers. */
 export function registerCatalogIpc({
   assertTrustedSender,
   catalog,
