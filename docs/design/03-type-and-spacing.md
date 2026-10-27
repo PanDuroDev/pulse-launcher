@@ -153,11 +153,14 @@
   --text-title--line-height: 1.625rem;
   --text-heading: 1.75rem;
   --text-heading--line-height: 2.125rem;
+  --text-hero: clamp(2.5rem, 4.6vw, 4rem);
+  --text-hero--line-height: 0.98;
 
   --radius-control: 0.75rem;  /* 12 */
   --radius-card: 1.25rem;     /* 20 */
 
-  --spacing-page: clamp(1.5rem, 4vw, 4rem);
+  --page-gutter: clamp(1.5rem, 4vw, 4rem);
+  --page-max: 1600px;
   --duration-focus: 120ms;
   --duration-panel: 200ms;
 }
@@ -165,7 +168,8 @@
 
 ويُبنى مكوّن واحد `PageFrame` يملك:
 
-- الهامش (`--spacing-page`) والعرض الأقصى (`1600px`).
+- الهامش (`--page-gutter`) والعرض الأقصى (`--page-max` الذي يقيّد المحتوى
+  ويوسّطه تلقائياً).
 - رأس الصفحة (عنوان + إجراء واحد + رجوع موحّد).
 - منطقة المحتوى القابلة للتمرير مع مؤشر رفيع ظاهر.
 
