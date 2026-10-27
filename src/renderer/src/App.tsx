@@ -32,21 +32,11 @@ import { useMusicEngine } from '@/hooks/use-music-engine'
 import { useMusicStore } from '@/store/music'
 import { markMoodFor } from '@/lib/mark-mood'
 import { Backdrop } from '@/components/launcher/Backdrop'
-import { LibraryHome } from '@/components/launcher/LibraryHome'
+import { LauncherPageContent } from '@/components/launcher/LauncherPageContent'
 import { TopBar } from '@/components/launcher/TopBar'
-import { SearchPage } from '@/components/launcher/SearchPage'
-import { MusicPage } from '@/components/launcher/MusicPage'
-import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { HintBar } from '@/components/launcher/HintBar'
 import { PowerMenu } from '@/components/launcher/PowerMenu'
-import { SettingsPage } from '@/components/launcher/SettingsPage'
-import { AddGamePage } from '@/components/launcher/AddGamePage'
-import {
-  GameDetailsPage,
-  type GameDetailsDraft,
-} from '@/components/launcher/GameDetailsPage'
-import { EmptyLibrary } from '@/components/launcher/EmptyLibrary'
-import { LibraryLoading } from '@/components/launcher/LibraryLoading'
+import type { GameDetailsDraft } from '@/components/launcher/GameDetailsPage'
 import { BootScreen } from '@/components/launcher/BootScreen'
 import { Toaster } from '@/components/ui/sonner'
 
@@ -428,114 +418,62 @@ export default function App() {
             revealed ? 'opacity-100' : 'opacity-0'
           }`}
         >
-          {searchOpen ? (
-            <ErrorBoundary
-              surface="launcher"
-              onBack={{ label: 'Back to library', onClick: closeSearch }}
-            >
-              <SearchPage
-                games={games}
-                query={searchQuery}
-                onQueryChange={setSearchQuery}
-                onBack={closeSearch}
-                onSelect={handleSelect}
-                onLaunch={(game) => void handleLaunch(game)}
-              />
-            </ErrorBoundary>
-          ) : addOpen ? (
-            <ErrorBoundary
-              surface="launcher"
-              onBack={{ label: 'Back to library', onClick: closeAddGame }}
-            >
-              <AddGamePage
-                mode={addMode}
-                onBack={closeAddGame}
-                onAdded={addMode === 'game' ? handleGameAdded : undefined}
-                onPicked={
-                  addMode === 'image'
-                    ? handlePickedArtwork
-                    : addMode === 'path'
-                      ? handlePickedPath
-                      : undefined
-                }
-              />
-            </ErrorBoundary>
-          ) : detailsGame ? (
-            <ErrorBoundary
-              surface="launcher"
-              onBack={{ label: 'Back to library', onClick: closeDetails }}
-            >
-              <GameDetailsPage
-                key={detailsGame.id}
-                game={detailsGame}
-                pending={Boolean(
-                  pendingLaunch && pendingLaunch.id === detailsGame.id,
-                )}
-                action={selectedAction}
-                draft={
-                  manualDraft && manualDraft.gameId === detailsGame.id
-                    ? manualDraft
-                    : null
-                }
-                saving={detailsSaving}
-                removing={detailsRemoving}
-                onDraftChange={(patch) =>
-                  setManualDraft((current) =>
-                    current ? { ...current, ...patch } : current,
-                  )
-                }
-                onSave={() => void handleSaveDetails()}
-                onRemove={() => void handleRemoveDetails()}
-                onBack={closeDetails}
-                onLaunch={(game) => void handleLaunch(game)}
-                onToggleFavorite={(game) => void handleToggleFavorite(game)}
-                onPickExecutable={() => openDetailsPicker('path')}
-                onPickArtwork={() => openDetailsPicker('image')}
-              />
-            </ErrorBoundary>
-          ) : musicOpen ? (
-            <ErrorBoundary
-              surface="launcher"
-              onBack={{ label: 'Back to library', onClick: closeMusic }}
-            >
-              <MusicPage onBack={closeMusic} />
-            </ErrorBoundary>
-          ) : settingsOpen ? (
-            <ErrorBoundary
-              surface="launcher"
-              onBack={{ label: 'Back to library', onClick: closeSettings }}
-            >
-              <SettingsPage onBack={closeSettings} onAddGame={handleAddFromSettings} />
-            </ErrorBoundary>
-          ) : showLoading ? (
-            <LibraryLoading scanning={refreshing || status === 'loading'} />
-          ) : showEmpty ? (
-            <EmptyLibrary
-              error={showError ? error : null}
-              onRefresh={() => void handleRefresh()}
-              onAddGame={handleAddGame}
-            />
-          ) : (
-            <LibraryHome
-              game={selected}
-              pending={Boolean(pendingLaunch && selected && pendingLaunch.id === selected.id)}
-              reducedMotion={settings.motion === 'reduced'}
-              action={selectedAction}
-              forceQuitRemainingMs={selectedForceRemaining}
-              rows={rows}
-              librarySort={settings.librarySort}
-              onLaunch={(game) => void handleLaunch(game)}
-              onFocus={(game) => void handleFocusGame(game)}
-              onClose={(game) => void handleCloseGame(game)}
-              onForceQuit={(game) => void handleForceQuit(game)}
-              onCancelForce={handleCancelForceQuit}
-              onToggleFavorite={(game) => void handleToggleFavorite(game)}
-              onDetails={openDetails}
-              onSelect={handleSelect}
-              onCycleSort={handleCycleSort}
-            />
-            </>
-          )}
+          <LauncherPageContent
+            page={{
+              searchOpen,
+              searchQuery,
+              addOpen,
+              addMode,
+              detailsGame,
+              musicOpen,
+              settingsOpen,
+              showLoading,
+              showEmpty,
+              showError,
+              error,
+              status,
+              refreshing,
+              manualDraft,
+              detailsSaving,
+              detailsRemoving,
+            }}
+            library={{
+              games,
+              selected,
+              rows,
+              settings,
+              pendingLaunch,
+              selectedAction,
+              selectedForceRemaining,
+            }}
+            actions={{
+              closeSearch,
+              closeAddGame,
+              handleSelect,
+              handleLaunch,
+              handleGameAdded,
+              handlePickedArtwork,
+              handlePickedPath,
+              setSearchQuery,
+              setManualDraft,
+              handleSaveDetails,
+              handleRemoveDetails,
+              closeDetails,
+              openDetails,
+              handleToggleFavorite,
+              openDetailsPicker,
+              closeMusic,
+              closeSettings,
+              handleAddFromSettings,
+              handleRefresh,
+              handleAddGame,
+              handleFocusGame,
+              handleCloseGame,
+              handleForceQuit,
+              handleCancelForceQuit,
+              handleCycleSort,
+            }}
+          />
         </div>
 
         {settingsOpen || addOpen || searchOpen || powerOpen || detailsOpen || musicOpen ? null : (
