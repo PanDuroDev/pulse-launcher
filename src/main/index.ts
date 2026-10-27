@@ -10,12 +10,9 @@ import {
 import { writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { IPC } from '@shared/ipc'
-import type {
-  AppInfo,
-  MusicOverlayState,
-  ScanProgress,
-  WindowMode,
-} from '@shared/types'
+import type { AppInfo, ScanProgress } from '@shared/types'
+import type { MusicOverlayState } from '@shared/contracts/music'
+import type { WindowMode } from '@shared/contracts/settings'
 import { DEFAULT_SETTINGS } from '@shared/types'
 import { log } from './logger'
 import {
