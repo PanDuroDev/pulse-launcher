@@ -31,8 +31,8 @@ jobs:
       - run: npm test
       - run: npm run build
 
-  # Only version tags publish an installer. The raw .exe is attached directly
-  # to GitHub Releases; workflow artifacts are also available for 30 days.
+  # Only version tags publish an installer. The installer is attached directly
+  # to GitHub Releases; workflow artifacts are supplementary diagnostics.
   release:
     name: Build and publish Windows installer
     needs: verify
@@ -43,6 +43,8 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
@@ -96,14 +98,14 @@ jobs:
           "Size: $([math]::Round($exe[0].Length / 1MB, 1)) MB ($($exe[0].Length) bytes)" >> $env:GITHUB_STEP_SUMMARY
           "SHA-256: $hash" >> $env:GITHUB_STEP_SUMMARY
 
-      # Upload the .exe as a raw artifact, not a ZIP containing the .exe.
-      - name: Upload raw installer artifact
+      # The release upload below attaches the actual .exe. This artifact is a
+      # supplementary workflow download and may be packaged as a ZIP.
+      - name: Upload installer workflow artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
+          name: pulse-launcher-${{ github.ref_name }}-installer
           path: release/Pulse-Launcher-*-x64.exe
-          archive: false
           if-no-files-found: error
-          overwrite: true
           retention-days: 30
 
       - name: Upload release metadata artifact
@@ -115,7 +117,6 @@ jobs:
             release/latest.yml
             release/SHA256SUMS.txt
           if-no-files-found: error
-          overwrite: true
           retention-days: 30
 
       # Workflow artifacts alone do not appear on the Releases page.
@@ -141,13 +142,23 @@ jobs:
             $release = $releaseJson | ConvertFrom-Json
             $existingNames = @($release.assets | ForEach-Object { $_.name })
             $present = @($assetNames | Where-Object { $existingNames -contains $_ })
-            if ($present.Count -gt 0 -and $present.Count -ne $assetNames.Count) {
-              throw "Release '$tag' has only some expected assets. Refusing to overwrite/delete published files; repair the release assets manually and rerun."
+
+            if (-not $release.draft -and $present.Count -gt 0 -and $present.Count -ne $assetNames.Count) {
+              throw "Published release '$tag' has only some expected assets. Refusing to alter a partially populated published release; repair its assets manually and rerun."
             }
-            if ($present.Count -eq 0) {
-              gh release upload $tag $assets
+
+            if ($present.Count -ne $assetNames.Count) {
+              # Draft releases can be safely resumed after a transient partial upload.
+              # Upload only missing files; never clobber existing assets.
+              $missingAssets = @()
+              for ($i = 0; $i -lt $assetNames.Count; $i++) {
+                if ($existingNames -notcontains $assetNames[$i]) {
+                  $missingAssets += $assets[$i]
+                }
+              }
+              gh release upload $tag $missingAssets
               if ($LASTEXITCODE -ne 0) {
-                throw "Failed to upload assets to release '$tag'."
+                throw "Failed to upload missing assets to release '$tag'."
               }
             } else {
               Write-Host "All expected assets already exist on '$tag'; preserving them on rerun."
