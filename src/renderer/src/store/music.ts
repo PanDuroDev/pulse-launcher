@@ -4,7 +4,7 @@ import type {
   MusicLibrarySnapshot,
   MusicOverlaySettings,
   MusicTrack,
-} from '@shared/types'
+} from '@shared/contracts/music'
 
 interface MusicState {
   tracks: MusicTrack[]
