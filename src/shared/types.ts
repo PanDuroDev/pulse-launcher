@@ -298,6 +298,19 @@ export interface PlayHistoryEntry {
 
 export type PlayHistory = Record<string, PlayHistoryEntry>
 
+import type {
+  MusicLibrarySnapshot,
+  MusicOnlineSearchResult,
+  MusicYouTubeSearchResult,
+  MusicYouTubeResolveResult,
+  MusicYouTubeStatus,
+  MusicYouTubeUpdate,
+  MusicOverlaySettings,
+  MusicOverlayState,
+  MusicCommand,
+  MusicOverlayAction,
+} from './contracts/music'
+
 export * from './contracts/music'
 
 /**
