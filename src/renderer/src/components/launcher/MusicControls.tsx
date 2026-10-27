@@ -12,6 +12,7 @@ interface ToolProps {
   disabled?: boolean
 }
 
+/** Renders a focusable action used by the music page's toolbars and setup panel. */
 export function Tool({ focusKey, label, icon, onClick, active, disabled }: ToolProps) {
   const { ref, focused } = useFocusable<Record<string, never>, HTMLButtonElement>({
     focusKey,
@@ -56,6 +57,7 @@ interface ModeTabProps {
   onClick: () => void
 }
 
+/** Renders a spatial-navigation tab for switching music result modes. */
 export function ModeTab({ focusKey, label, active, onClick }: ModeTabProps) {
   const { ref, focused } = useFocusable<Record<string, never>, HTMLButtonElement>({
     focusKey,
@@ -96,6 +98,7 @@ interface TransportProps {
   active?: boolean
 }
 
+/** Renders a focusable playback transport action. */
 export function Transport({ focusKey, label, onClick, children, primary, active }: TransportProps) {
   const { ref, focused } = useFocusable<Record<string, never>, HTMLButtonElement>({
     focusKey,
