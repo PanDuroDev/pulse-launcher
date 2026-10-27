@@ -19,7 +19,6 @@ export function useYouTubeSetup() {
   const [draftSynced, setDraftSynced] = useState(false)
 
   const loadYouTubeStatus = useCallback((syncDraft: boolean) => {
-    const draftRevision = { ...draftRevisionRef.current }
     setYoutubeStatusLoading(true)
     setYoutubeStatusError(null)
     void window.launcher.music.youtube
@@ -28,16 +27,16 @@ export function useYouTubeSetup() {
         setYoutubeStatus(status)
         if (syncDraft) {
           // Hydrate untouched fields without overwriting edits made while loading.
-          if (draftRevisionRef.current.apiKey === draftRevision.apiKey) {
+          if (draftRevisionRef.current.apiKey === 0) {
             setYoutubeApiKey(status.settings.apiKey)
           }
-          if (draftRevisionRef.current.ytDlpPath === draftRevision.ytDlpPath) {
+          if (draftRevisionRef.current.ytDlpPath === 0) {
             setYoutubeYtDlpPath(status.settings.ytDlpPath)
           }
-          if (draftRevisionRef.current.ffmpegPath === draftRevision.ffmpegPath) {
+          if (draftRevisionRef.current.ffmpegPath === 0) {
             setYoutubeFfmpegPath(status.settings.ffmpegPath)
           }
-          if (draftRevisionRef.current.cacheLimit === draftRevision.cacheLimit) {
+          if (draftRevisionRef.current.cacheLimit === 0) {
             setYoutubeCacheLimit(String(status.settings.cacheLimitMb))
           }
           setDraftSynced(true)
@@ -54,6 +53,7 @@ export function useYouTubeSetup() {
     if (!draftSynced || youtubeSaving) return
     setYoutubeSaving(true)
     setYoutubeSaveError(null)
+    const draftRevision = { ...draftRevisionRef.current }
     const parsedLimit = Number.parseInt(youtubeCacheLimit, 10)
     void window.launcher.music.youtube
       .updateSettings({
@@ -65,10 +65,19 @@ export function useYouTubeSetup() {
       })
       .then((status) => {
         setYoutubeStatus(status)
-        setYoutubeApiKey(status.settings.apiKey)
-        setYoutubeYtDlpPath(status.settings.ytDlpPath)
-        setYoutubeFfmpegPath(status.settings.ffmpegPath)
-        setYoutubeCacheLimit(String(status.settings.cacheLimitMb))
+        // Keep edits made while the save request was in flight.
+        if (draftRevisionRef.current.apiKey === draftRevision.apiKey) {
+          setYoutubeApiKey(status.settings.apiKey)
+        }
+        if (draftRevisionRef.current.ytDlpPath === draftRevision.ytDlpPath) {
+          setYoutubeYtDlpPath(status.settings.ytDlpPath)
+        }
+        if (draftRevisionRef.current.ffmpegPath === draftRevision.ffmpegPath) {
+          setYoutubeFfmpegPath(status.settings.ffmpegPath)
+        }
+        if (draftRevisionRef.current.cacheLimit === draftRevision.cacheLimit) {
+          setYoutubeCacheLimit(String(status.settings.cacheLimitMb))
+        }
         setDraftSynced(true)
         setYoutubeSaving(false)
       })
