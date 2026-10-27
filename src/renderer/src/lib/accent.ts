@@ -15,6 +15,14 @@ export function accentAlpha(accent: string | undefined, alpha: number): string {
   return `hsl(${accent ?? DEFAULT_ACCENT} / ${alpha})`
 }
 
+/**
+ * One focus ring for the whole app: 2px accent, no glow, no lift. Returning an
+ * empty object keeps call sites able to spread the result unconditionally.
+ */
+export function focusRing(active: boolean): { boxShadow?: string } {
+  return active ? { boxShadow: `0 0 0 2px ${uiAccent()}` } : {}
+}
+
 export function initialsFor(name: string): string {
   return name
     .split(/\s+/)

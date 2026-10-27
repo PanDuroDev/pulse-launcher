@@ -61,9 +61,9 @@ export function SortControl({ sort, onPress }: SortControlProps) {
         'ml-auto inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-caption font-semibold tracking-[0.08em] uppercase outline-none transition-colors',
         focused
           ? 'bg-white text-black'
-          : 'bg-white/5 text-white/55 ring-1 ring-white/10 hover:bg-white/10 hover:text-white',
+          : 'bg-white/5 text-text-muted ring-1 ring-white/10 hover:bg-white/10 hover:text-text-primary',
       )}
-      style={focused ? { boxShadow: `0 0 0 2px ${uiAccent(0.7)}` } : undefined}
+      style={focused ? { boxShadow: `0 0 0 2px ${uiAccent()}` } : undefined}
     >
       <AzSortAscendingLettersFilled className="size-4" />
       {label}
@@ -101,12 +101,12 @@ export function GameRow({
       <div className="mb-2.5 flex items-center gap-3 px-gutter">
         <h2
           className={`text-body font-semibold tracking-wide transition-colors duration-[--duration-focus] ${
-            hasFocusedChild ? 'text-white' : 'text-white/70'
+            hasFocusedChild ? 'text-text-primary' : 'text-text-secondary'
           }`}
         >
           {title}
         </h2>
-        <span className="text-caption font-medium text-white/25">{games.length}</span>
+        <span className="text-caption font-medium text-text-faint">{games.length}</span>
         <div
           className={`h-px flex-1 transition-opacity duration-[--duration-focus] ${
             hasFocusedChild ? 'opacity-30' : 'opacity-0'

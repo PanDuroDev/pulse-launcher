@@ -25,7 +25,7 @@ function FocusableAction({ focusKey, label, onClick, primary }: FocusableActionP
       className={`inline-flex h-10 items-center gap-2 rounded-full px-5 text-caption font-semibold outline-none transition-all ${
         primary
           ? 'bg-white text-black'
-          : 'border border-white/15 bg-white/5 text-white/75 hover:bg-white/10'
+          : 'border border-white/15 bg-white/5 text-text-secondary hover:bg-white/10'
       } ${focused ? 'scale-105 ring-3 ring-[hsl(var(--pulse-accent))]' : ''}`}
     >
       {label}
@@ -46,14 +46,14 @@ export function EmptyLibrary({ error, onRefresh, onAddGame }: EmptyLibraryProps)
         <EmptyHeader>
           <EmptyMedia
             variant="icon"
-            className="size-12 rounded-2xl bg-white/8 text-white/70"
+            className="size-12 rounded-2xl bg-white/8 text-text-secondary"
           >
             {error ? <WarningFilled className="size-5" /> : <Game2Filled className="size-5" />}
           </EmptyMedia>
-          <EmptyTitle className="text-lg text-white/90">
+          <EmptyTitle className="text-label text-text-primary">
             {error ? 'Something went wrong' : 'No games found'}
           </EmptyTitle>
-          <EmptyDescription className="text-caption leading-relaxed text-white/35">
+          <EmptyDescription className="text-caption leading-relaxed text-text-faint">
             {error ??
               'Pulse looked through Steam, Epic Games, and your manual library. Add a game or scan again.'}
           </EmptyDescription>

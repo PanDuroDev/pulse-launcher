@@ -163,11 +163,11 @@ export function SearchPage({
             'inline-flex h-10 shrink-0 items-center gap-2 rounded-full px-4 text-caption font-medium outline-none transition-colors',
             backFocused
               ? 'bg-white text-black'
-              : 'bg-white/5 text-white/65 ring-1 ring-white/12 hover:bg-white/10 hover:text-white',
+              : 'bg-white/5 text-text-secondary ring-1 ring-white/12 hover:bg-white/10 hover:text-text-primary',
           )}
           style={
             backFocused
-              ? { boxShadow: `0 0 0 2px ${uiAccent(0.7)}` }
+              ? { boxShadow: `0 0 0 2px ${uiAccent()}` }
               : undefined
           }
         >
@@ -184,7 +184,7 @@ export function SearchPage({
               : undefined,
           }}
         >
-          <SearchFilled className="size-5 shrink-0 text-white/40" />
+          <SearchFilled className="size-5 shrink-0 text-text-faint" />
           <input
             ref={inputRef}
             id="library-search"
@@ -207,7 +207,7 @@ export function SearchPage({
             autoComplete="off"
             spellCheck={false}
             data-focus-key={INPUT_KEY}
-            className="h-full min-w-0 flex-1 bg-transparent text-body text-white outline-none placeholder:text-white/30"
+            className="h-full min-w-0 flex-1 bg-transparent text-body text-text-primary outline-none placeholder:text-text-faint"
           />
           {query ? (
             <button
@@ -216,7 +216,7 @@ export function SearchPage({
               aria-label="Clear search"
               onMouseDown={(event) => event.preventDefault()}
               onClick={() => onQueryChange('')}
-              className="grid size-7 shrink-0 place-items-center rounded-full bg-white/8 text-white/60 hover:bg-white/15 hover:text-white"
+              className="grid size-7 shrink-0 place-items-center rounded-full bg-white/8 text-text-secondary hover:bg-white/15 hover:text-text-primary"
             >
               <CloseFilled className="size-4" />
             </button>
@@ -226,7 +226,7 @@ export function SearchPage({
 
       <p
         aria-live="polite"
-        className="mt-4 px-gutter text-caption font-medium tracking-[0.14em] text-white/40 uppercase"
+        className="mt-4 px-gutter text-caption font-medium tracking-[0.14em] text-text-faint uppercase"
       >
         {trimmed
           ? `${results.length} ${results.length === 1 ? 'match' : 'matches'} for “${trimmed}”`
@@ -260,10 +260,10 @@ export function SearchPage({
         </div>
       ) : (
         <div className="flex min-h-0 flex-1 flex-col items-start px-gutter pt-10">
-          <p className="text-body text-white/70">
+          <p className="text-body text-text-secondary">
             No games match “{trimmed}”.
           </p>
-          <p className="mt-2 text-caption text-white/40">
+          <p className="mt-2 text-caption text-text-faint">
             Try a shorter name, a studio, or one of the{' '}
             {Array.from(new Set(games.map((game) => sourceLabel(game.source))))
               .slice(0, 3)
@@ -273,18 +273,18 @@ export function SearchPage({
         </div>
       )}
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex items-center gap-5 bg-gradient-to-t from-[#050508] via-[#050508]/80 to-transparent px-gutter pt-10 pb-5 text-caption text-white/50">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex items-center gap-5 bg-gradient-to-t from-[#050508] via-[#050508]/80 to-transparent px-gutter pt-10 pb-5 text-caption text-text-muted">
         <span>
-          <span className="text-white/70">Type</span> to filter instantly
+          <span className="text-text-secondary">Type</span> to filter instantly
         </span>
         <span>
-          <span className="text-white/70">↓</span> results
+          <span className="text-text-secondary">↓</span> results
         </span>
         <span>
-          <span className="text-white/70">Enter</span> open
+          <span className="text-text-secondary">Enter</span> open
         </span>
         <span>
-          <span className="text-white/70">Esc</span> close
+          <span className="text-text-secondary">Esc</span> close
         </span>
       </div>
     </section>

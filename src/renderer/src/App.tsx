@@ -1249,7 +1249,7 @@ export default function App() {
 
   return (
     <div
-      className="relative h-screen w-screen overflow-hidden text-white"
+      className="relative h-screen w-screen overflow-hidden text-text-primary"
       data-motion={settings.motion}
     >
       {/* The wallpaper belongs to the library, not the splash: it arrives with the

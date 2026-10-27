@@ -29,6 +29,7 @@ import type { AppInfo, GameSummary, MotionPreference, WindowMode } from '@shared
 import { sourceLabel } from '@shared/format'
 import { useLauncherStore } from '@/store/launcher'
 import { uiAccent } from '@/lib/accent'
+import { focusRing } from '@/lib/accent'
 import { playUI } from '@/lib/ui-sfx'
 import { cn } from 'cn'
 import { Input } from '@/components/ui/input'
@@ -69,12 +70,6 @@ const FOCUS = {
   windowMode: (value: WindowMode) => `settings-window-${value}`,
 }
 
-function focusRing(active: boolean): { boxShadow?: string } {
-  return active
-    ? { boxShadow: `0 0 0 2px ${uiAccent(0.8)}, 0 0 22px -8px ${uiAccent(0.6)}` }
-    : {}
-}
-
 /** Move focus and always consume the direction, so geometry cannot escape. */
 function moveTo(focusKey: string | null): boolean {
   if (!focusKey || !doesFocusableExist(focusKey)) return false
@@ -84,7 +79,7 @@ function moveTo(focusKey: string | null): boolean {
 
 function SectionLabel({ children }: { children: ReactNode }) {
   return (
-    <p className="text-caption font-semibold tracking-[0.2em] text-white/55 uppercase">
+    <p className="text-caption font-semibold tracking-[0.2em] text-text-muted uppercase">
       {children}
     </p>
   )
@@ -98,7 +93,7 @@ function RowIcon({ children }: { children: ReactNode }) {
   return (
     <span
       aria-hidden
-      className="grid size-8 shrink-0 place-items-center rounded-lg bg-white/6 text-white/55 ring-1 ring-white/8"
+      className="grid size-8 shrink-0 place-items-center rounded-lg bg-white/6 text-text-muted ring-1 ring-white/8"
     >
       {children}
     </span>
@@ -147,7 +142,7 @@ function SettingsAction({
         if (!disabled) onPress()
       }}
       className={cn(
-        'inline-flex h-10 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.06] px-3 text-caption font-medium text-white/85 outline-none transition-colors hover:bg-white/12 hover:text-white',
+        'inline-flex h-10 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.06] px-3 text-caption font-medium text-text-primary outline-none transition-colors hover:bg-white/12 hover:text-text-primary',
         disabled && 'cursor-default opacity-50',
         className,
       )}
@@ -218,8 +213,8 @@ function SettingsToggle({
           </span>
         ) : null}
         <span className="min-w-0">
-          <span className="block text-caption font-medium text-white/90">{label}</span>
-          <span className="mt-1 block text-caption leading-relaxed text-white/50">
+          <span className="block text-caption font-medium text-text-primary">{label}</span>
+          <span className="mt-1 block text-caption leading-relaxed text-text-muted">
             {description}
           </span>
         </span>
@@ -284,10 +279,10 @@ function SettingsChoice({
       onClick={onPress}
       className={cn(
         'rounded-md px-2.5 py-1.5 text-caption font-medium outline-none transition-colors',
-        selected ? 'bg-white text-black' : 'text-white/60 hover:text-white',
+        selected ? 'bg-white text-black' : 'text-text-secondary hover:text-text-primary',
         disabled && 'cursor-default opacity-60',
       )}
-      style={focused ? { boxShadow: `0 0 0 2px ${uiAccent(0.85)}` } : undefined}
+      style={focused ? { boxShadow: `0 0 0 2px ${uiAccent()}` } : undefined}
     >
       {label}
     </button>
@@ -315,8 +310,8 @@ function ManualGameRow({
   return (
     <div className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">
       <div className="min-w-0">
-        <p className="truncate text-caption font-medium text-white/85">{game.name}</p>
-        <p className="text-caption tracking-[0.12em] text-white/50 uppercase">
+        <p className="truncate text-caption font-medium text-text-primary">{game.name}</p>
+        <p className="text-caption tracking-[0.12em] text-text-muted uppercase">
           {sourceLabel(game.source)}
         </p>
       </div>
@@ -331,9 +326,9 @@ function ManualGameRow({
           'grid size-9 shrink-0 place-items-center rounded-lg outline-none transition-colors',
           focused
             ? 'bg-red-500/15 text-red-200'
-            : 'text-white/45 hover:bg-red-500/10 hover:text-red-300',
+            : 'text-text-faint hover:bg-red-500/10 hover:text-red-300',
         )}
-        style={focused ? { boxShadow: `0 0 0 2px rgba(248,113,113,0.55)` } : undefined}
+        style={focused ? { boxShadow: `0 0 0 2px rgb(248 113 113)` } : undefined}
       >
         <Delete2Filled className="size-5" />
       </button>
@@ -368,9 +363,9 @@ function BackToLibrary({
         'inline-flex h-9 shrink-0 items-center gap-2 rounded-full px-3.5 text-caption font-medium outline-none transition-colors',
         focused
           ? 'bg-white text-black'
-          : 'bg-white/[0.05] text-white/70 ring-1 ring-white/15 hover:bg-white/10 hover:text-white',
+          : 'bg-white/[0.05] text-text-secondary ring-1 ring-white/15 hover:bg-white/10 hover:text-text-primary',
       )}
-      style={focused ? { boxShadow: `0 0 0 2px ${uiAccent(0.45)}` } : undefined}
+      style={focused ? { boxShadow: `0 0 0 2px ${uiAccent()}` } : undefined}
     >
       <ArrowLeftFilled className="size-4" />
       Library
@@ -729,12 +724,12 @@ export function SettingsPage({ onBack, onAddGame }: SettingsPageProps) {
         <div className="mx-auto flex w-full max-w-[48rem] items-center gap-4">
           <BackToLibrary onBack={onBack} onArrowPress={backArrows} />
           <div className="min-w-0">
-            <h1 className="text-label font-semibold tracking-tight text-white/95">Settings</h1>
-            <p className="mt-0.5 text-caption text-white/60">
+            <h1 className="text-label font-semibold tracking-tight text-text-primary">Settings</h1>
+            <p className="mt-0.5 text-caption text-text-secondary">
               Library, artwork, and window preferences.
             </p>
           </div>
-          <p className="ml-auto hidden text-right text-caption leading-relaxed text-white/55 md:block">
+          <p className="ml-auto hidden text-right text-caption leading-relaxed text-text-muted md:block">
             Tab moves between controls
             <br />
             Esc leaves a field, then closes
@@ -780,7 +775,7 @@ export function SettingsPage({ onBack, onAddGame }: SettingsPageProps) {
             />
             {manualGames.length > 0 ? (
               <div className="grid gap-2">
-                <p className="text-caption text-white/50">Manually added</p>
+                <p className="text-caption text-text-muted">Manually added</p>
                 {manualGames.map((game) => (
                   <ManualGameRow
                     key={game.id}
@@ -802,7 +797,7 @@ export function SettingsPage({ onBack, onAddGame }: SettingsPageProps) {
                 <RowIcon>
                   <Key2Filled className="size-4" />
                 </RowIcon>
-                <label htmlFor="sgdb-key" className="text-caption text-white/90">
+                <label htmlFor="sgdb-key" className="text-caption text-text-primary">
                   SteamGridDB API key
                 </label>
               </div>
@@ -816,7 +811,7 @@ export function SettingsPage({ onBack, onAddGame }: SettingsPageProps) {
                   aria-label="SteamGridDB API key"
                   data-focus-key={FOCUS.apiKey}
                   placeholder="Optional — for Epic and local game covers"
-                  className="min-w-0 flex-1 border-white/15 bg-white/[0.06] text-white placeholder:text-white/35"
+                  className="min-w-0 flex-1 border-white/15 bg-white/[0.06] text-text-primary placeholder:text-text-faint"
                   style={focusRing(apiKeyFocused)}
                   spellCheck={false}
                   autoComplete="off"
@@ -848,7 +843,7 @@ export function SettingsPage({ onBack, onAddGame }: SettingsPageProps) {
                   {savingKey ? <Spinner className="size-5" /> : 'Save'}
                 </SettingsAction>
               </div>
-              <p className="text-caption leading-relaxed text-white/50">
+              <p className="text-caption leading-relaxed text-text-muted">
                 Used only when a game has no Steam artwork. Leave empty to use generated covers.
               </p>
             </div>
@@ -864,8 +859,8 @@ export function SettingsPage({ onBack, onAddGame }: SettingsPageProps) {
                   <CursorFilled className="size-4" />
                 </RowIcon>
                 <div>
-                  <p className="text-caption text-white/90">Hide cursor after</p>
-                  <p className="text-caption text-white/50">Seconds of inactivity</p>
+                  <p className="text-caption text-text-primary">Hide cursor after</p>
+                  <p className="text-caption text-text-muted">Seconds of inactivity</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -875,12 +870,12 @@ export function SettingsPage({ onBack, onAddGame }: SettingsPageProps) {
                   onChange={(event) => setCursorSeconds(event.target.value)}
                   onBlur={() => void handleCursorBlur()}
                   inputMode="numeric"
-                  className="w-16 border-white/15 bg-white/[0.06] text-center text-white"
+                  className="w-16 border-white/15 bg-white/[0.06] text-center text-text-primary"
                   style={focusRing(cursorFocused)}
                   data-focus-key={FOCUS.cursor}
                   aria-label="Cursor hide delay in seconds"
                 />
-                <span className="text-caption text-white/50">sec</span>
+                <span className="text-caption text-text-muted">sec</span>
               </div>
             </div>
 
@@ -890,8 +885,8 @@ export function SettingsPage({ onBack, onAddGame }: SettingsPageProps) {
                   <MonitorFilled className="size-4" />
                 </RowIcon>
                 <div>
-                  <p className="text-caption text-white/90">Motion</p>
-                  <p className="text-caption text-white/50">Animations and parallax</p>
+                  <p className="text-caption text-text-primary">Motion</p>
+                  <p className="text-caption text-text-muted">Animations and parallax</p>
                 </div>
               </div>
               <div
@@ -933,8 +928,8 @@ export function SettingsPage({ onBack, onAddGame }: SettingsPageProps) {
                   <FullscreenFilled className="size-4" />
                 </RowIcon>
                 <div>
-                  <p className="text-caption text-white/90">Window mode</p>
-                  <p className="text-caption text-white/50">Saved and used at startup</p>
+                  <p className="text-caption text-text-primary">Window mode</p>
+                  <p className="text-caption text-text-muted">Saved and used at startup</p>
                 </div>
               </div>
               <div
@@ -962,7 +957,7 @@ export function SettingsPage({ onBack, onAddGame }: SettingsPageProps) {
                 to restore it, and quit from the Power menu or the tray icon.
               </p>
             ) : (
-              <p className="text-caption leading-relaxed text-white/50">
+              <p className="text-caption leading-relaxed text-text-muted">
                 Escape and the close button only hide the launcher. Use the Power menu or the
                 tray icon to exit. Switching to Windowed reloads the window.
               </p>
@@ -983,7 +978,7 @@ export function SettingsPage({ onBack, onAddGame }: SettingsPageProps) {
 
           <section className="grid gap-3">
             <SectionLabel>About</SectionLabel>
-            <div className="grid gap-1.5 text-caption text-white/55">
+            <div className="grid gap-1.5 text-caption text-text-muted">
               <p>
                 Pulse Launcher {info?.version ?? '…'}
                 {info?.demo ? ' · Demo mode' : ''}
@@ -1016,7 +1011,7 @@ export function SettingsPage({ onBack, onAddGame }: SettingsPageProps) {
                 <Document2Filled className="size-5" />
                 Open logs
               </SettingsAction>
-              <p className="text-caption text-white/50">Hide and quit are in the Power menu.</p>
+              <p className="text-caption text-text-muted">Hide and quit are in the Power menu.</p>
             </div>
           </section>
         </div>

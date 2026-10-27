@@ -24,6 +24,7 @@ import { formatBytes, formatLastPlayed, sourceLabel } from '@shared/format'
 import { describeRunEvidence, runAssurance } from '@shared/run-state'
 import { cn } from 'cn'
 import { accentAlpha, initialsFor, uiAccent } from '@/lib/accent'
+import { focusRing } from '@/lib/accent'
 import { type GameActionState, isGameActionBusy } from '@/lib/game-actions'
 import { useArtwork } from '@/hooks/use-artwork'
 import { Input } from '@/components/ui/input'
@@ -71,12 +72,6 @@ const FOCUS = {
 /** How long the remove button stays armed before it goes back to safe. */
 const REMOVE_CONFIRM_MS = 3_000
 
-function focusRing(active: boolean): { boxShadow?: string } {
-  return active
-    ? { boxShadow: `0 0 0 2px ${uiAccent(0.8)}, 0 0 22px -8px ${uiAccent(0.6)}` }
-    : {}
-}
-
 /** Move focus and always consume the direction, so geometry cannot escape. */
 function moveTo(focusKey: string | null): boolean {
   if (!focusKey || !doesFocusableExist(focusKey)) return false
@@ -86,7 +81,7 @@ function moveTo(focusKey: string | null): boolean {
 
 function SectionLabel({ children }: { children: ReactNode }) {
   return (
-    <p className="text-caption font-semibold tracking-[0.2em] text-white/55 uppercase">
+    <p className="text-caption font-semibold tracking-[0.2em] text-text-muted uppercase">
       {children}
     </p>
   )
@@ -142,7 +137,7 @@ function DetailsAction({
           ? 'bg-white font-semibold text-black hover:bg-white/90'
           : danger
             ? 'bg-red-500/12 text-red-200 ring-1 ring-red-400/35 hover:bg-red-500/20'
-            : 'border border-white/10 bg-white/[0.06] text-white/85 hover:bg-white/12 hover:text-white',
+            : 'border border-white/10 bg-white/[0.06] text-text-primary hover:bg-white/12 hover:text-text-primary',
         disabled && 'cursor-default opacity-50',
         className,
       )}
@@ -412,24 +407,24 @@ export function GameDetailsPage({
               'inline-flex h-9 shrink-0 items-center gap-2 rounded-full px-3.5 text-caption font-medium outline-none transition-colors',
               backFocused
                 ? 'bg-white text-black'
-                : 'bg-white/[0.05] text-white/70 ring-1 ring-white/15 hover:bg-white/10 hover:text-white',
+                : 'bg-white/[0.05] text-text-secondary ring-1 ring-white/15 hover:bg-white/10 hover:text-text-primary',
             )}
-            style={backFocused ? { boxShadow: `0 0 0 2px ${uiAccent(0.45)}` } : undefined}
+            style={backFocused ? { boxShadow: `0 0 0 2px ${uiAccent()}` } : undefined}
           >
             <ArrowLeftFilled className="size-4" />
             Library
           </button>
           <div className="min-w-0">
-            <h1 className="text-label font-semibold tracking-tight text-white/95">
+            <h1 className="text-label font-semibold tracking-tight text-text-primary">
               Game details
             </h1>
-            <p className="mt-0.5 text-caption text-white/60">
+            <p className="mt-0.5 text-caption text-text-secondary">
               {manual
                 ? 'Edit the name, launch file, or cover of this local game.'
                 : 'What Pulse knows about this game.'}
             </p>
           </div>
-          <p className="ml-auto hidden text-right text-caption leading-relaxed text-white/55 md:block">
+          <p className="ml-auto hidden text-right text-caption leading-relaxed text-text-muted md:block">
             Enter activates
             <br />
             Esc returns to the library
@@ -459,14 +454,14 @@ export function GameDetailsPage({
                 />
               ) : (
                 <div className="absolute inset-0 grid place-items-center">
-                  <span className="text-6xl font-semibold tracking-[-0.08em] text-white/25">
+                  <span className="text-heading font-semibold tracking-[-0.08em] text-text-faint">
                     {initialsFor(game.name)}
                   </span>
                 </div>
               )}
             </div>
-            <div className="flex flex-wrap items-center gap-2 text-caption text-white/45">
-              <span className="rounded-full bg-white/8 px-2.5 py-1 text-caption font-semibold tracking-[0.16em] text-white/65 uppercase ring-1 ring-white/12">
+            <div className="flex flex-wrap items-center gap-2 text-caption text-text-faint">
+              <span className="rounded-full bg-white/8 px-2.5 py-1 text-caption font-semibold tracking-[0.16em] text-text-secondary uppercase ring-1 ring-white/12">
                 {sourceLabel(game.source)}
               </span>
               {statusText ? (
@@ -485,10 +480,10 @@ export function GameDetailsPage({
 
           <div className="grid min-w-0 content-start gap-6">
             <div className="min-w-0">
-              <h2 className="truncate text-[clamp(1.6rem,3.2vw,2.6rem)] leading-tight font-semibold tracking-[-0.03em] text-white">
+              <h2 className="truncate text-heading font-semibold tracking-[-0.03em] text-text-primary">
                 {game.name}
               </h2>
-              <p className="mt-1.5 max-w-2xl text-caption leading-relaxed text-white/45">
+              <p className="mt-1.5 max-w-2xl text-caption leading-relaxed text-text-faint">
                 {running
                   ? assurance === 'confirmed'
                     ? `${game.name} is running. Use Bring to front to switch back to it.`
@@ -498,7 +493,7 @@ export function GameDetailsPage({
                     : (game.subtitle ??
                       `Ready to ${actionLabel === 'Play' ? 'jump back in' : 'launch'} from your ${sourceLabel(game.source)} library.`)}
               </p>
-              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-caption text-white/45">
+              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-caption text-text-faint">
                 {lastPlayed ? (
                   <span className="flex items-center gap-1.5">
                     <ClockFilled className="size-4" />
@@ -566,7 +561,7 @@ export function GameDetailsPage({
                 <StarFilled
                   className={cn(
                     'size-4.5',
-                    game.favorite ? 'text-amber-300' : 'text-white/70',
+                    game.favorite ? 'text-amber-300' : 'text-text-secondary',
                   )}
                 />
                 {game.favorite ? 'Favorited' : 'Favorite'}
@@ -578,7 +573,7 @@ export function GameDetailsPage({
                 <section className="grid gap-3 border-t border-white/10 pt-5">
                   <SectionLabel>Name and launch file</SectionLabel>
                   <div className="grid gap-1.5">
-                    <label htmlFor="details-name-field" className="text-caption text-white/70">
+                    <label htmlFor="details-name-field" className="text-caption text-text-secondary">
                       Name
                     </label>
                     <Input
@@ -589,12 +584,12 @@ export function GameDetailsPage({
                       maxLength={80}
                       aria-label="Game name"
                       data-focus-key={FOCUS.name}
-                      className="max-w-xl border-white/15 bg-white/[0.06] text-white placeholder:text-white/35"
+                      className="max-w-xl border-white/15 bg-white/[0.06] text-text-primary placeholder:text-text-faint"
                       style={focusRing(nameFocused)}
                       spellCheck={false}
                       autoComplete="off"
                     />
-                    <p className="text-caption text-white/40">
+                    <p className="text-caption text-text-faint">
                       Up to 80 characters. Saving a new name keeps the game, its
                       favorite, and its play history.
                     </p>
@@ -602,12 +597,12 @@ export function GameDetailsPage({
 
                   <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
                     <div className="min-w-0">
-                      <p className="flex items-center gap-2 text-caption font-medium text-white/85">
-                        <FolderOpenFilled className="size-4 text-white/50" />
+                      <p className="flex items-center gap-2 text-caption font-medium text-text-primary">
+                        <FolderOpenFilled className="size-4 text-text-muted" />
                         Launch file
                       </p>
                       <p
-                        className="mt-1 truncate text-caption text-white/45"
+                        className="mt-1 truncate text-caption text-text-faint"
                         title={draft.executable}
                         data-details-path=""
                       >
@@ -635,12 +630,12 @@ export function GameDetailsPage({
                   <SectionLabel>Cover art</SectionLabel>
                   <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
                     <div className="min-w-0">
-                      <p className="flex items-center gap-2 text-caption font-medium text-white/85">
-                        <PicFilled className="size-4 text-white/50" />
+                      <p className="flex items-center gap-2 text-caption font-medium text-text-primary">
+                        <PicFilled className="size-4 text-text-muted" />
                         {hasCustomArtwork ? 'Custom image' : 'No custom image'}
                       </p>
                       <p
-                        className="mt-1 truncate text-caption text-white/45"
+                        className="mt-1 truncate text-caption text-text-faint"
                         title={chosenArtwork ?? undefined}
                         data-details-art=""
                       >

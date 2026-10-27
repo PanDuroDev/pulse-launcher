@@ -24,7 +24,7 @@ export function LibraryLoading({ scanning }: { scanning: boolean }) {
   return (
     <div className="relative z-10 flex min-h-0 flex-1 flex-col justify-end pb-24">
       {scanning ? (
-        <div className="mb-4 flex items-center gap-2 px-gutter text-caption text-white/40">
+        <div className="mb-4 flex items-center gap-2 px-gutter text-caption text-text-faint">
           <Refresh2Filled className="size-5 animate-spin" />
           Scanning your libraries…
         </div>

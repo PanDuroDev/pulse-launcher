@@ -51,13 +51,16 @@ const collect = (files, pattern, allowed) => {
   return found
 }
 
-// Only literal sizes are violations; the named roles are the sanctioned path.
+// The census has no live DOM: target size is measured by the runtime gate in
+// docs/design/06-roadmap-and-acceptance.md §3.1.1, not here.
 const fontSize = /text-\[(\d+(?:\.\d+)?(?:px|rem))\]/g
 const radius = /\brounded-\[[^\]]+\]/g
 const duration = /\bduration-\d+\b/g
 const blur = /\bbackdrop-blur-\d?[a-z]*\b/g
-const glow = /0 0 \d+px/g
+const glow = /\b(?:box-)?shadow-\[[^\]]*(?:rgba?|#)/g
 const viewportGutter = /(?:px|scroll-px)-\[[^\]]*vw\]/g
+// Colour ladder: any white text alpha outside the four levels is a violation.
+const strayTextAlpha = /\btext-white\//g
 
 const rules = [
   ['أحجام خطوط مخصّصة', fontSize, LIMITS.fontSizes, (t) => t !== 'text-[14px]'],
@@ -66,6 +69,7 @@ const rules = [
   ['شدات ضباب', blur, LIMITS.blurs, () => true],
   ['توهّجات', glow, 0, () => true],
   ['هوامش نسبية للعرض', viewportGutter, 0, () => true],
+  ['شفافيات نص خارج السلّم', strayTextAlpha, 0, () => true],
 ]
 
 export function census(root = ROOT) {

@@ -93,7 +93,7 @@ function ToolButton({ focusKey, label, icon, disabled = false, onClick }: ToolBu
         'flex h-9 items-center gap-2 rounded-full px-3 text-caption font-medium outline-none transition-colors',
         focused
           ? 'bg-white text-black'
-          : 'bg-white/[0.04] text-white/65 hover:bg-white/10 hover:text-white',
+          : 'bg-white/8 text-text-secondary hover:bg-white/12 hover:text-text-primary',
         disabled && 'cursor-default opacity-60',
       )}
     >
@@ -141,11 +141,11 @@ export function TopBar({
       <div className="flex min-w-0 items-center gap-3">
         <BrandMark reducedMotion={reducedMotion} visible={markVisible} mood={markMood} />
         <div className="flex min-w-0 items-baseline gap-2">
-          <span className="text-caption font-semibold tracking-[0.4em] text-white/90">
+          <span className="text-caption font-semibold tracking-[0.4em] text-text-primary">
             PULSE
           </span>
-          <span className="hidden text-white/20 sm:inline">/</span>
-          <span className="truncate text-caption font-medium tracking-[0.18em] text-white/45 uppercase">
+          <span className="hidden text-text-faint sm:inline">/</span>
+          <span className="truncate text-caption font-medium tracking-[0.18em] text-text-faint uppercase">
             {title}
           </span>
         </div>
@@ -159,7 +159,7 @@ export function TopBar({
       <div className="flex shrink-0 items-center gap-4">
         <div className="hidden min-h-5 items-center md:flex">
           {scanning ? (
-            <div className="flex items-center gap-2 rounded-full border border-white/10 bg-black/25 px-3 py-1 text-caption font-medium text-white/60 backdrop-blur-xl">
+            <div className="flex items-center gap-2 rounded-full border border-white/10 bg-black/25 px-3 py-1 text-caption font-medium text-text-secondary backdrop-blur-xl">
               <Refresh2Filled className="size-4 animate-spin" />
               {scanning}
             </div>
@@ -172,12 +172,12 @@ export function TopBar({
         </div>
 
         <div className="hidden items-center gap-2 text-right lg:flex">
-          <ClockFilled className="size-5 text-white/25" />
+          <ClockFilled className="size-5 text-text-faint" />
           <div>
-            <p className="text-caption leading-none font-semibold tracking-wide text-white/75 tabular-nums">
+            <p className="text-caption leading-none font-semibold tracking-wide text-text-secondary tabular-nums">
               {time}
             </p>
-            <p className="mt-1 hidden text-caption leading-none tracking-[0.1em] text-white/35 uppercase xl:block">
+            <p className="mt-1 hidden text-caption leading-none tracking-[0.1em] text-text-faint uppercase xl:block">
               {date}
             </p>
           </div>
