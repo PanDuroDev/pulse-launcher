@@ -9,7 +9,7 @@ import type {
   GameSummary,
   LaunchResult,
   ScanResult,
-} from '@shared/types'
+} from '@shared/contracts/games'
 import { log } from '../logger'
 import type { CatalogService } from '../catalog'
 import { GameControlService, terminateProcess } from '../game-control'
