@@ -6,7 +6,6 @@ import {
   Menu,
   powerSaveBlocker,
   session,
-  shell,
   Tray,
 } from 'electron'
 import { writeFile } from 'node:fs/promises'
@@ -40,6 +39,7 @@ import { registerMusicIpc } from './ipc/music'
 import { registerLibraryIpc } from './ipc/library'
 import { registerSettingsIpc } from './ipc/settings'
 import { registerCatalogIpc } from './ipc/catalog'
+import { registerAppIpc } from './ipc/app'
 import { MusicOverlay } from './music/overlay'
 import { MusicConfigStore } from './music/config'
 import { MusicOnlineService } from './music/online/service'
@@ -84,20 +84,6 @@ const RemoveManualSchema = z.object({
 const SelectionSchema = z.object({
   gameId: z.string().min(1).max(200).nullable(),
 })
-
-/**
- * Renderer crash reports are untrusted input: the renderer could be compromised,
- * so the strings are capped and the surface is a closed set before they reach
- * the log file.
- */
-const RendererErrorSchema = z
-  .object({
-    surface: z.enum(['launcher', 'overlay']),
-    message: z.string().max(2_000),
-    stack: z.string().max(20_000),
-    componentStack: z.string().max(20_000),
-  })
-  .strict()
 
 function knownPath(name: 'home' | 'desktop' | 'documents' | 'downloads'): string | undefined {
   try {
@@ -476,45 +462,13 @@ function registerIpc(): void {
     },
   )
 
-  ipcMain.handle(IPC.appInfo, (event): AppInfo => {
-    assertTrustedSender(event)
-    return appInfo()
-  })
-
-  ipcMain.handle(IPC.appHide, (event): void => {
-    assertTrustedSender(event)
-    hideWindow()
-  })
-
-  ipcMain.handle(IPC.appQuit, (event): void => {
-    assertTrustedSender(event)
-    quitApp()
-  })
-
-  ipcMain.handle(IPC.appOpenLogs, async (event): Promise<void> => {
-    assertTrustedSender(event)
-    const errorMessage = await shell.openPath(getAppPaths().logs)
-    if (errorMessage) log.warn('[logs] could not open logs', errorMessage)
-  })
-
-  /**
-   * The renderer has no file access, so a crash there would vanish once the
-   * ErrorBoundary replaces the page. Forwarding it here is the only way the
-   * failure survives in `logs/main.log` for a later diagnosis.
-   */
-  ipcMain.on(IPC.appRendererError, (event, payload: unknown) => {
-    // Both the launcher and the overlay can crash, and both load `app://`.
-    assertMusicSender(event)
-    const parsed = RendererErrorSchema.safeParse(payload)
-    if (!parsed.success) return
-    const { surface, message, stack, componentStack } = parsed.data
-    const senderUrl = event.senderFrame?.url ?? 'unknown'
-    log.error(
-      `[renderer] ${surface} crashed: ${message}\n` +
-        `url: ${senderUrl}\n` +
-        `stack: ${stack || '(none)'}\n` +
-        `componentStack: ${componentStack || '(none)'}`,
-    )
+  registerAppIpc({
+    assertTrustedSender,
+    assertMusicSender,
+    appInfo,
+    hideWindow,
+    quitApp,
+    logsPath: () => getAppPaths().logs,
   })
 
   registerMusicIpc({
