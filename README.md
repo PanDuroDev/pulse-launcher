@@ -280,6 +280,10 @@ wide public release; see `docs/audit/01-release-and-packaging.md` §3.
 - Online results depend on the catalogs: preview URLs can expire, and some results are covers, live versions, or uploads. Check the provider, publisher, version, and license labels before playing.
 - `npm audit` reports vulnerabilities in the shadcn CLI development toolchain. `npm audit --omit=dev` is clean; the affected tools are not included in the packaged app.
 
+## Repository audits
+
+Architecture, security, packaging, testing, and maintenance findings are documented in [the audit index](docs/audit/README.md).
+
 ## Roadmap
 
 Planned work and known bugs are tracked in [GitHub Issues](https://github.com/PanDuroDev/pulse-launcher/issues).
