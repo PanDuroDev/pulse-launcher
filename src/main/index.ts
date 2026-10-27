@@ -77,10 +77,6 @@ let autoReturn: AutoReturnState = NO_AUTO_RETURN
 let restoreShortcutRegistered = false
 let captureScheduled = false
 
-const RemoveManualSchema = z.object({
-  gameId: z.string().min(1).max(200),
-})
-
 const SelectionSchema = z.object({
   gameId: z.string().min(1).max(200).nullable(),
 })
@@ -438,15 +434,6 @@ function registerIpc(): void {
     catalog,
     placeCandidates,
   })
-
-  ipcMain.handle(
-    IPC.settingsRemoveManual,
-    async (event, payload: unknown) => {
-      assertTrustedSender(event)
-      const parsed = RemoveManualSchema.parse(payload)
-      return catalog.removeManualGame(parsed.gameId)
-    },
-  )
 
   ipcMain.handle(IPC.selectionGet, (event): string | null => {
     assertTrustedSender(event)
