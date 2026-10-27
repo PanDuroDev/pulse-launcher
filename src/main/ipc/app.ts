@@ -22,6 +22,7 @@ interface AppIpcDependencies {
   logsPath: () => string
 }
 
+/** Registers app lifecycle IPC handlers and validated renderer crash reporting. */
 export function registerAppIpc({
   assertTrustedSender,
   assertMusicSender,
