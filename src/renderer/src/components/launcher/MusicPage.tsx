@@ -117,6 +117,7 @@ export function MusicPage({ onBack }: MusicPageProps) {
     youtubeSaveError,
     youtubeCacheLimit,
     youtubeClearing,
+    draftSynced,
     setYoutubeApiKey,
     setYoutubeYtDlpPath,
     setYoutubeFfmpegPath,
@@ -408,6 +409,7 @@ export function MusicPage({ onBack }: MusicPageProps) {
               ffmpegPath={youtubeFfmpegPath}
               cacheLimitMb={youtubeCacheLimit}
               saving={youtubeSaving}
+              draftSynced={draftSynced}
               saveError={youtubeSaveError}
               clearing={youtubeClearing}
               onApiKeyChange={setYoutubeApiKey}
@@ -415,7 +417,7 @@ export function MusicPage({ onBack }: MusicPageProps) {
               onFfmpegChange={setYoutubeFfmpegPath}
               onCacheLimitChange={setYoutubeCacheLimit}
               onSave={saveYouTubeSettings}
-              onRefresh={() => loadYouTubeStatus(false)}
+              onRefresh={() => loadYouTubeStatus(!draftSynced)}
               onClearCache={clearYouTubeCache}
               onRemoveCached={removeCachedTrack}
             />
