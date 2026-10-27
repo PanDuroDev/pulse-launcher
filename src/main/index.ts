@@ -25,8 +25,6 @@ import type {
   ScanProgress,
   ScanResult,
   SelectionResult,
-  Settings,
-  SettingsUpdate,
   WindowMode,
 } from '@shared/types'
 import { DEFAULT_SETTINGS } from '@shared/types'
@@ -50,6 +48,7 @@ import type { GameRunMatch } from './game-processes'
 import { MusicLibraryService } from './music/library'
 import { registerMusicIpc } from './ipc/music'
 import { registerLibraryIpc } from './ipc/library'
+import { registerSettingsIpc } from './ipc/settings'
 import { MusicOverlay } from './music/overlay'
 import { MusicConfigStore } from './music/config'
 import { MusicOnlineService } from './music/online/service'
@@ -86,19 +85,6 @@ let windowMode: WindowMode = DEFAULT_SETTINGS.windowMode
 let autoReturn: AutoReturnState = NO_AUTO_RETURN
 let restoreShortcutRegistered = false
 let captureScheduled = false
-
-const SettingsUpdateSchema = z
-  .object({
-    showStartMenuApps: z.boolean().optional(),
-    steamGridDbApiKey: z.string().max(200).optional(),
-    hideCursorAfterMs: z.number().int().min(500).max(60_000).optional(),
-    motion: z.enum(['system', 'reduced', 'full']).optional(),
-    windowMode: z.enum(['windowed', 'fullscreen', 'kiosk']).optional(),
-    returnAfterGame: z.boolean().optional(),
-    librarySort: z.enum(['recent', 'title', 'added']).optional(),
-    uiSounds: z.boolean().optional(),
-  })
-  .strict()
 
 const ArtworkRequestSchema = z.object({
   gameId: z.string().min(1).max(200),
@@ -570,35 +556,13 @@ function registerIpc(): void {
     },
   )
 
-  ipcMain.handle(IPC.settingsGet, (event): Settings => {
-    assertTrustedSender(event)
-    return store.getSettings()
+  registerSettingsIpc({
+    assertTrustedSender,
+    store,
+    catalog,
+    send,
+    setWindowMode,
   })
-
-  ipcMain.handle(
-    IPC.settingsUpdate,
-    async (event, payload: unknown): Promise<Settings> => {
-      assertTrustedSender(event)
-      const update = SettingsUpdateSchema.parse(payload) as SettingsUpdate
-      log.info('[settings] update', {
-        ...update,
-        steamGridDbApiKey:
-          update.steamGridDbApiKey === undefined ? undefined : '[redacted]',
-      })
-      const before = store.getSettings()
-      const next = await store.updateSettings(update)
-      send(IPC.settingsChanged, next)
-      if (before.showStartMenuApps !== next.showStartMenuApps) {
-        void catalog.refresh().catch((error) => log.error('[settings] rescan failed', error))
-      }
-      if (before.windowMode !== next.windowMode) {
-        // Applied after this handler resolves so the renderer receives the
-        // updated settings before a mode change can recreate its window.
-        setTimeout(() => setWindowMode(next.windowMode), 0)
-      }
-      return next
-    },
-  )
 
   registerLibraryIpc({
     assertTrustedSender,
