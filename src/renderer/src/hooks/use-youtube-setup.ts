@@ -57,6 +57,7 @@ export function useYouTubeSetup() {
     if (!draftSynced || youtubeSaving) return
     // Invalidate status reads already in flight so they cannot overwrite the save result.
     statusRequestRef.current += 1
+    setYoutubeStatusLoading(false)
     setYoutubeSaving(true)
     setYoutubeSaveError(null)
     const draftRevision = { ...draftRevisionRef.current }
