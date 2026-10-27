@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import type { GameSummary } from '@shared/types'
+import type { GameSummary } from '@shared/contracts/games'
 import { useArtwork } from '@/hooks/use-artwork'
 
 interface BackdropProps {
