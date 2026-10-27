@@ -26,6 +26,7 @@ export function useGameLaunchController({
   const [pendingLaunch, setPendingLaunch] = useState<PendingLaunch | null>(null)
   const pendingLaunchRef = useRef<PendingLaunch | null>(null)
   const launchResetTimer = useRef<number | null>(null)
+  const launchRequestRef = useRef(0)
 
   const updatePendingLaunch = useCallback((value: PendingLaunch | null) => {
     pendingLaunchRef.current = value
@@ -76,10 +77,13 @@ export function useGameLaunchController({
         return
       }
       if (pendingLaunchRef.current?.id === game.id) return
+      const launchRequest = ++launchRequestRef.current
       announceAttention('launch')
       updatePendingLaunch({ id: game.id, name: game.name })
       try {
         const result = await window.launcher.launch(game.id)
+        // A newer launch request owns the pending state and detection timer.
+        if (launchRequest !== launchRequestRef.current) return
         if (!result.ok) {
           playUI('error')
           toast.error(result.error ?? 'Could not launch this game.')
@@ -101,7 +105,7 @@ export function useGameLaunchController({
         launchResetTimer.current = window.setTimeout(() => {
           launchResetTimer.current = null
           const pending = pendingLaunchRef.current
-          if (!pending || pending.id !== game.id) return
+          if (launchRequest !== launchRequestRef.current || !pending || pending.id !== game.id) return
           updatePendingLaunch(null)
           toast.info(`${game.name} was not detected as running`, {
             description:
@@ -109,6 +113,7 @@ export function useGameLaunchController({
           })
         }, LAUNCH_DETECT_TIMEOUT_MS)
       } catch (launchError) {
+        if (launchRequest !== launchRequestRef.current) return
         playUI('error')
         toast.error(launchError instanceof Error ? launchError.message : 'Launch failed.')
         updatePendingLaunch(null)
