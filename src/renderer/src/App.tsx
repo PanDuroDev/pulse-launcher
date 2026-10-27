@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { pause, resume } from '@noriginmedia/norigin-spatial-navigation-core'
 import type { GameSummary } from '@shared/contracts/games'
-import { FORCE_QUIT_GRACE_MS } from '@shared/game-control'
 import { useLauncherStore } from '@/store/launcher'
 import { useLibraryView } from '@/hooks/use-library-view'
 import { useLauncherBootSequence } from '@/hooks/use-launcher-boot-sequence'
@@ -11,6 +10,7 @@ import { useGameActionController } from '@/hooks/use-game-action-controller'
 import { useGameLaunchController } from '@/hooks/use-game-launch-controller'
 import { useLibraryActions } from '@/hooks/use-library-actions'
 import { useLauncherInputHandlers } from '@/hooks/use-launcher-input-handlers'
+import { useLauncherViewModel } from '@/hooks/use-launcher-view-model'
 import { useLauncherFocusManagement } from '@/hooks/use-launcher-focus-management'
 import { useGameDetailsActions } from '@/hooks/use-game-details-actions'
 import { useGameDetailsNavigation } from '@/hooks/use-game-details-navigation'
@@ -18,12 +18,10 @@ import { useGameAddedFocus } from '@/hooks/use-game-added-focus'
 import { useSearchNavigation } from '@/hooks/use-search-navigation'
 import { useAddGameNavigation } from '@/hooks/use-add-game-navigation'
 import { useSecondaryPageNavigation } from '@/hooks/use-secondary-page-navigation'
-import { actionForGame, forceRemainingMs } from '@/lib/game-actions'
 import { useAutoHideCursor } from '@/hooks/use-clock'
 import { useUISounds } from '@/hooks/use-ui-sounds'
 import { useMusicEngine } from '@/hooks/use-music-engine'
 import { useMusicStore } from '@/store/music'
-import { markMoodFor } from '@/lib/mark-mood'
 import { LauncherPageContent } from '@/components/launcher/LauncherPageContent'
 import { LauncherFrame } from '@/components/launcher/LauncherFrame'
 import type { GameDetailsDraft } from '@/components/launcher/GameDetailsPage'
@@ -103,6 +101,17 @@ export default function App() {
     onFocusGame: handleFocusGame,
   })
 
+  const { markMood, showLoading, showError, showEmpty, selectedAction, selectedForceRemaining } =
+    useLauncherViewModel({
+      status,
+      games,
+      refreshing,
+      pendingLaunch,
+      selected,
+      gameAction,
+      actionClock,
+    })
+
   const { handleRefresh, handleToggleFavorite, handleCycleSort } = useLibraryActions({
     refresh,
     updateSettings,
@@ -119,22 +128,6 @@ export default function App() {
 
   useAutoHideCursor(settings.hideCursorAfterMs)
   useUISounds(settings.uiSounds)
-
-  // The header mark is the launcher's face. Everything it needs is already
-  // decided here, so the mapping stays a pure function of the library's state.
-  const markMood = useMemo(
-    () =>
-      markMoodFor({
-        status,
-        refreshing,
-        pending: Boolean(pendingLaunch && selected && pendingLaunch.id === selected.id),
-        running: Boolean(selected?.running),
-        favorite: Boolean(selected?.favorite),
-        hasSelection: Boolean(selected),
-        seed: selected?.id ?? null,
-      }),
-    [pendingLaunch, refreshing, selected, status],
-  )
 
   // Spatial navigation also listens to the arrow keys. Freeze it while the
   // overlay is up, then hand the library back on the same tick the fade ends.
@@ -270,23 +263,6 @@ export default function App() {
     setPowerOpen,
     settingsOpen,
   })
-
-  const showLoading = status === 'loading' || (games.length === 0 && refreshing)
-  const showError = status === 'error' && games.length === 0
-  const showEmpty = !showLoading && games.length === 0
-
-  // The action state belongs to one game; another selection starts idle.
-  // The countdown reads the clock kept in state, never the wall clock during
-  // render. Before the first tick the grace period is still fully pending.
-  const selectedAction = actionForGame(gameAction, selected?.id)
-  const countdownVisible =
-    selectedAction.kind === 'close-requested' ||
-    selectedAction.kind === 'force-confirming'
-  const selectedForceRemaining = countdownVisible
-    ? actionClock > 0
-      ? forceRemainingMs(selectedAction, actionClock)
-      : FORCE_QUIT_GRACE_MS
-    : 0
 
   return (
     <LauncherFrame
