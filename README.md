@@ -239,7 +239,7 @@ npm run lint
 npm run build
 ```
 
-The suite currently contains 37 files and 379 tests covering VDF parsing, Steam and Epic manifests, manual game normalization, shared formatting helpers, the music queue and source filtering, online catalog normalization and ranking, online provider mapping, YouTube video ids and durations, YouTube title/artist/channel parsing, YouTube API mapping and thumbnail selection, yt-dlp error mapping, secret redaction, URL safety, and renderer logic.
+The Vitest suite covers VDF parsing, Steam and Epic manifests, manual game normalization, shared formatting helpers, the music queue and source filtering, online catalog normalization and ranking, online provider mapping, YouTube video ids and durations, YouTube title/artist/channel parsing, YouTube API mapping and thumbnail selection, yt-dlp error mapping, secret redaction, URL safety, and renderer logic. Run `npm test` to execute the current suite; the test count is intentionally not duplicated here because it changes as tests are added.
 
 ## Packaging
 
