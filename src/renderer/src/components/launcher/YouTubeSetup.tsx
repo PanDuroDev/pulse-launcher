@@ -5,6 +5,13 @@ import { uiAccent } from '@/lib/accent'
 import { cn } from 'cn'
 import { Tool } from '@/components/launcher/MusicControls'
 
+const YOUTUBE_TOOL_SOURCES: Record<MusicYouTubeStatus['ytDlp']['source'], string> = {
+  configured: 'Configured',
+  path: 'PATH',
+  downloaded: 'Downloaded',
+  missing: 'Missing',
+}
+
 const YOUTUBE_REFRESH_KEY = 'music-youtube-refresh'
 const YOUTUBE_KEY_FIELD = 'music-youtube-key'
 const YOUTUBE_YTDLP_FIELD = 'music-youtube-ytdlp'
