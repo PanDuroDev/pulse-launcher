@@ -12,8 +12,6 @@ import type {
   LibrarySort,
   UpdateManualGameInput,
 } from '@shared/types'
-import { sourceLabel } from '@shared/format'
-import { nextLibrarySort } from '@shared/library'
 import { FORCE_QUIT_GRACE_MS } from '@shared/game-control'
 import { useLauncherStore } from '@/store/launcher'
 import { useGamepad } from '@/hooks/use-gamepad'
@@ -21,6 +19,7 @@ import { useLibraryView } from '@/hooks/use-library-view'
 import { useLauncherInitialization } from '@/hooks/use-launcher-initialization'
 import { useGameActionController } from '@/hooks/use-game-action-controller'
 import { useGameLaunchController } from '@/hooks/use-game-launch-controller'
+import { useLibraryActions } from '@/hooks/use-library-actions'
 import { actionForGame, forceRemainingMs } from '@/lib/game-actions'
 import { useAutoHideCursor } from '@/hooks/use-clock'
 import { useUISounds } from '@/hooks/use-ui-sounds'
@@ -112,6 +111,12 @@ export default function App() {
     games,
     demo,
     onFocusGame: handleFocusGame,
+  })
+
+  const { handleRefresh, handleToggleFavorite, handleCycleSort } = useLibraryActions({
+    refresh,
+    updateSettings,
+    librarySort: settings.librarySort,
   })
 
   useLauncherInitialization({
@@ -246,22 +251,6 @@ export default function App() {
     return () => window.removeEventListener('focus', onWindowFocus)
   }, [bootDone, initialFocusKey])
 
-  const handleRefresh = useCallback(async () => {
-    const result = await refresh()
-    if (!result) {
-      playUI('error')
-      toast.error('Could not refresh the library.')
-      return
-    }
-    toast.success(`Library refreshed · ${result.games.length} games`)
-    for (const scanError of result.errors) {
-      const suffix = result.staleSources.includes(scanError.source)
-        ? ' Showing the last known library.'
-        : ''
-      toast.error(`${sourceLabel(scanError.source)}: ${scanError.message}${suffix}`)
-    }
-  }, [refresh])
-
   const handleAddGame = useCallback(() => {
     setPowerOpen(false)
     setSettingsOpen(false)
@@ -276,38 +265,6 @@ export default function App() {
     },
     [select],
   )
-
-  const handleToggleFavorite = useCallback(
-    async (game: GameSummary) => {
-      try {
-        const result = await window.launcher.catalog.toggleFavorite(game.id)
-        if (!result.ok) {
-          playUI('error')
-          toast.error(result.error ?? 'Could not update favorites.')
-          return
-        }
-        playUI(result.favorite ? 'select' : 'deselect')
-        toast.success(
-          result.favorite
-            ? `${game.name} added to favorites`
-            : `${game.name} removed from favorites`,
-        )
-      } catch (error) {
-        playUI('error')
-        toast.error(error instanceof Error ? error.message : 'Could not update favorites.')
-      }
-    },
-    [],
-  )
-
-  const handleCycleSort = useCallback(() => {
-    const next: LibrarySort = nextLibrarySort(settings.librarySort)
-    playUI('select')
-    updateSettings({ librarySort: next }).catch((error: unknown) => {
-      playUI('error')
-      toast.error(error instanceof Error ? error.message : 'Could not save the sort order.')
-    })
-  }, [settings.librarySort, updateSettings])
 
   const openSearch = useCallback(() => {
     if (searchOpen || settingsOpen || addOpen || powerOpen) return
