@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import type { GameSummary, RunningGameInfo } from '@shared/types'
+import type { GameSummary, RunningGameInfo } from '@shared/contracts/games'
 import {
   IDLE_GAME_ACTION,
   type GameActionState,
