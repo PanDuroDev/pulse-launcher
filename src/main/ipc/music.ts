@@ -105,6 +105,7 @@ interface MusicIpcDependencies {
   send: (channel: string, payload: unknown) => void
 }
 
+/** Registers music, YouTube, and overlay IPC handlers with injected application dependencies. */
 export function registerMusicIpc({
   assertMusicSender,
   getMainWindow,
