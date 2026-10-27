@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react'
 import { AzSortAscendingLettersFilled } from '@mingcute/react/core-filled'
 import { useFocusable } from '@noriginmedia/norigin-spatial-navigation-react'
-import type { GameSummary, LibrarySort } from '@shared/types'
+import type { GameSummary } from '@shared/contracts/games'
+import type { LibrarySort } from '@shared/contracts/settings'
 import { uiAccent } from '@/lib/accent'
 import {
   doesFocusableExist,
