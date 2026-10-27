@@ -14,19 +14,18 @@ import type {
 } from '@shared/types'
 import { sourceLabel } from '@shared/format'
 import { nextLibrarySort } from '@shared/library'
-import { runAssurance } from '@shared/run-state'
 import { FORCE_QUIT_GRACE_MS } from '@shared/game-control'
 import { useLauncherStore } from '@/store/launcher'
 import { useGamepad } from '@/hooks/use-gamepad'
 import { useLibraryView } from '@/hooks/use-library-view'
 import { useLauncherInitialization } from '@/hooks/use-launcher-initialization'
 import { useGameActionController } from '@/hooks/use-game-action-controller'
+import { useGameLaunchController } from '@/hooks/use-game-launch-controller'
 import { actionForGame, forceRemainingMs } from '@/lib/game-actions'
 import { useAutoHideCursor } from '@/hooks/use-clock'
 import { useUISounds } from '@/hooks/use-ui-sounds'
 import { useMusicEngine } from '@/hooks/use-music-engine'
 import { useMusicStore } from '@/store/music'
-import { announceAttention } from '@/lib/attention'
 import { markMoodFor } from '@/lib/mark-mood'
 import { playUI } from '@/lib/ui-sfx'
 import { Backdrop } from '@/components/launcher/Backdrop'
@@ -50,13 +49,6 @@ import { LibraryLoading } from '@/components/launcher/LibraryLoading'
 import { BootScreen } from '@/components/launcher/BootScreen'
 import { bootPhaseFor } from '@/lib/boot'
 import { Toaster } from '@/components/ui/sonner'
-
-const LAUNCH_DETECT_TIMEOUT_MS = 60_000
-
-interface PendingLaunch {
-  id: string
-  name: string
-}
 
 export default function App() {
   const games = useLauncherStore((state) => state.games)
@@ -83,14 +75,11 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('')
   const [powerOpen, setPowerOpen] = useState(false)
   const [musicOpen, setMusicOpen] = useState(false)
-  const [pendingLaunch, setPendingLaunch] = useState<PendingLaunch | null>(null)
   const [demo, setDemo] = useState(false)
   const [bootDone, setBootDone] = useState(false)
   /** True once the landed mark has had a beat to settle and the library can follow. */
   const [revealed, setRevealed] = useState(false)
   const lastFocusKey = useRef<string | null>(null)
-  const pendingLaunchRef = useRef<PendingLaunch | null>(null)
-  const launchResetTimer = useRef<number | null>(null)
   const initialFocusDone = useRef(false)
   const emptyFocusDone = useRef(false)
   const pendingFocusGame = useRef<string | null>(null)
@@ -110,17 +99,6 @@ export default function App() {
     detailsSnapshot,
   })
 
-  const updatePendingLaunch = useCallback((value: PendingLaunch | null) => {
-    pendingLaunchRef.current = value
-    setPendingLaunch(value)
-  }, [])
-
-  const clearDetectTimer = useCallback(() => {
-    if (launchResetTimer.current === null) return
-    window.clearTimeout(launchResetTimer.current)
-    launchResetTimer.current = null
-  }, [])
-
   const {
     gameAction,
     actionClock,
@@ -130,6 +108,11 @@ export default function App() {
     handleForceQuit,
     handleCancelForceQuit,
   } = useGameActionController()
+  const { pendingLaunch, handleLaunch } = useGameLaunchController({
+    games,
+    demo,
+    onFocusGame: handleFocusGame,
+  })
 
   useLauncherInitialization({
     clearFinishedGameAction,
@@ -138,31 +121,6 @@ export default function App() {
 
   const musicTracks = useMusicStore((state) => state.tracks)
   useMusicEngine(musicTracks, bootDone)
-
-  useEffect(() => {
-    return () => {
-      if (launchResetTimer.current !== null) {
-        window.clearTimeout(launchResetTimer.current)
-      }
-    }
-  }, [])
-
-  // A launch request is only upgraded to "running" when the catalog reports the
-  // process, whether that arrives through the watcher event or a refresh.
-  useEffect(() => {
-    const pending = pendingLaunchRef.current
-    if (!pending) return
-    const runningGame = games.find((game) => game.id === pending.id && game.running)
-    if (!runningGame) return
-
-    clearDetectTimer()
-    updatePendingLaunch(null)
-    toast.info(
-      runAssurance(runningGame.runState) === 'confirmed'
-        ? `${pending.name} is running.`
-        : `${pending.name} appears to be running.`,
-    )
-  }, [games, clearDetectTimer, updatePendingLaunch])
 
   useAutoHideCursor(settings.hideCursorAfterMs)
   useUISounds(settings.uiSounds)
@@ -310,67 +268,6 @@ export default function App() {
     setAddMode('game')
     setAddOpen(true)
   }, [])
-
-  const handleLaunch = useCallback(
-    async (game: GameSummary) => {
-      if (game.running) {
-        // Enter/long-press on a running game now does something useful instead
-        // of reporting that nothing can be done.
-        if (runAssurance(game.runState) === 'confirmed') {
-          void handleFocusGame(game)
-        } else {
-          toast.info(`${game.name} appears to be running.`, {
-            description:
-              'The launcher could not identify a single game process, so it cannot target it.',
-          })
-        }
-        return
-      }
-      if (pendingLaunchRef.current?.id === game.id) return
-      announceAttention('launch')
-      updatePendingLaunch({ id: game.id, name: game.name })
-      try {
-        const result = await window.launcher.launch(game.id)
-        if (!result.ok) {
-          playUI('error')
-          toast.error(result.error ?? 'Could not launch this game.')
-          updatePendingLaunch(null)
-          return
-        }
-
-        // The request was accepted: the process watcher takes it from here.
-        playUI('start')
-        if (demo) {
-          updatePendingLaunch(null)
-          toast.success(`Demo mode · ${game.name} would launch`)
-          return
-        }
-
-        // The platform accepted the request. The game is only "running" once
-        // the process watcher reports it, so this state stays pending until
-        // then (or until the detection timeout).
-        toast.success(`Launch requested · ${game.name}`, {
-          description: 'Waiting for the game process to appear.',
-        })
-        clearDetectTimer()
-        launchResetTimer.current = window.setTimeout(() => {
-          launchResetTimer.current = null
-          const pending = pendingLaunchRef.current
-          if (!pending || pending.id !== game.id) return
-          updatePendingLaunch(null)
-          toast.info(`${game.name} was not detected as running`, {
-            description:
-              'It may still be starting. Check the taskbar before trying again.',
-          })
-        }, LAUNCH_DETECT_TIMEOUT_MS)
-      } catch (launchError) {
-        playUI('error')
-        toast.error(launchError instanceof Error ? launchError.message : 'Launch failed.')
-        updatePendingLaunch(null)
-      }
-    },
-    [clearDetectTimer, demo, handleFocusGame, updatePendingLaunch],
-  )
 
   const handleSelect = useCallback(
     (game: GameSummary, focusKey: string) => {
