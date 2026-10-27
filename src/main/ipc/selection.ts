@@ -13,6 +13,7 @@ interface SelectionIpcDependencies {
   store: AppStore
 }
 
+/** Registers IPC handlers for reading and updating the last selected game. */
 export function registerSelectionIpc({
   assertTrustedSender,
   store,
