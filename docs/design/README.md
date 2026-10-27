@@ -36,6 +36,7 @@
 | 04 | [اللون والتباين والحركة](04-color-contrast-motion.md) | كم مستوى لونياً نحتاج؟ وما الحركة المسموحة؟ |
 | 05 | [تبسيط الشاشات](05-screen-simplification.md) | ماذا يُحذف/يُدمج في كل شاشة؟ |
 | 06 | [خريطة التنفيذ والقبول](06-roadmap-and-acceptance.md) | بأي ترتيب ننفّذ؟ وكيف نثبت أننا نجحنا؟ |
+| 07 | [مدير الملفات الموحّد](07-file-manager.md) | كيف يصبح اختيار الملفات واحداً في كل التطبيق؟ (PR مستقل) |
 
 ---
 
@@ -142,4 +143,21 @@
     بوابة `design:dom` الحيّة (P3.0، عبر DevTools)، ويضع قواعد الـviewport
     والاكتشاف والإخفاء والاستقرار، ويمنع تفعيل `--strict` قبل وجود البوابة
     الحيّة.
+
+## 7.1 خطة مدير الملفات (PR مستقل)
+
+الوثيقة `07-file-manager.md` مكتوبة في فرع `design/file-manager-plan` لأنها
+تلمس عقد IPC مشتركاً لا شكلاً بصرياً:
+
+- المشكلة: `music.addFolder` يفتح نافذة ويندوز الأصلية
+  (`src/main/index.ts:929-950`) بينما الألعاب والصور تستخدم المدير الداخلي
+  (`AddGamePage.tsx` + `library-browser.ts`)، وتعليق `types.ts:582` يقول «No
+  native dialog» بينما `:596` يقول العكس.
+- الحل: `PickerFilter` بدل `PickerKind` المغلق (`select` + `extensions` +
+  `multiple` + `startPath`)، و`music.addFolders(paths)` بدل `addFolder()`،
+  ومكوّن واحد `FileManager` + `use-file-manager.ts` + `file-manager-config.ts`.
+- التنفيذ: 6 PRs (FM1–FM6)؛ FM1 وFM4 بلا أثر بصري، وFM6 يحذف `PickerKind`
+  نهائياً.
+- الأمان: يبقى `assertTrustedSender` و`isBrowsablePath` و`MAX_DIRECTORY_ENTRIES`
+  كما هي، وتُضاف فحوص نمط للامتدادات وسقف 32 مجلداً في الطلب.
 
