@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Every push and pull request must pass the same four gates used locally:
+  # tests, typecheck, lint (4 known warnings / 0 errors), and a full build.
+  verify:
+    name: Verify
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+
+  # A version tag is the only thing that produces an installer. It re-runs the
+  # gates first, then `npm run dist` ends with `verify-installer.mjs`, so a
+  # build that somehow produced an older package fails here instead of shipping.
+  release:
+    name: Installer
+    needs: verify
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Signing is off until a code-signing certificate exists; the decision is
+      # documented in docs/audit/01-release-and-packaging.md §3. Adding the two
+      # repository secrets below is the whole switch: electron-builder picks them
+      # up and flips the fuses before signing.
+      - name: Build installer
+        run: npm run dist
+        env:
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+
+      - name: SHA-256
+        shell: pwsh
+        run: |
+          Get-ChildItem release -Filter 'Pulse-Launcher-*-x64.exe' |
+            ForEach-Object { Get-FileHash $_.FullName -Algorithm SHA256 } |
+            Format-List
+
+      # The blockmap and latest.yml are what an auto-update feed would consume,
+      # so they ship alongside the installer from day one.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pulse-launcher-${{ github.ref_name }}
+          if-no-files-found: error
+          path: |
+            release/Pulse-Launcher-*-x64.exe
+            release/Pulse-Launcher-*-x64.exe.blockmap
+            release/latest.yml
