@@ -45,7 +45,7 @@ export function useLauncherFocusManagement({
       lastFocusKey.current = initialFocusKey
       void setFocus(initialFocusKey)
     }, 250)
-  }, [games.length, initialFocusKey, lastFocusKey]
+  }, [games.length, initialFocusKey, lastFocusKey])
 
   useEffect(() => {
     if (status === 'loading' || !bootDone) return
@@ -64,7 +64,7 @@ export function useLauncherFocusManagement({
       }
     }, 180)
     return () => window.clearTimeout(timer)
-  }, [games, initialFocusKey, lastFocusKey, status]
+  }, [games, initialFocusKey, lastFocusKey, status])
 
   useEffect(() => {
     if (!bootDone) return
@@ -82,5 +82,5 @@ export function useLauncherFocusManagement({
     }
     window.addEventListener('focus', onWindowFocus)
     return () => window.removeEventListener('focus', onWindowFocus)
-  }, [bootDone, initialFocusKey, lastFocusKey]
+  }, [bootDone, initialFocusKey, lastFocusKey])
 }

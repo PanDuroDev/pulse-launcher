@@ -62,7 +62,7 @@ export function useGameAddedFocus({
     pendingFocusGame.current = null
     rememberFocusKey(focusKey)
     void setFocus(focusKey)
-  }, [addOpen, rememberFocusKey, rows]
+  }, [addOpen, rememberFocusKey, rows])
 
   return handleGameAdded
 }
