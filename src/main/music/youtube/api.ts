@@ -10,7 +10,7 @@ import type { YouTubeCandidate } from './types'
 
 const API_BASE = 'https://www.googleapis.com/youtube/v3'
 const MAX_RESULTS = 25
-/** Search spends 100 quota units, so keep the follow-up video lookup optional. */
+/** Search.list has a separate default quota of 100 calls/day (1 unit/call as of Oct 2026); keep the follow-up details lookup optional. */
 const VIDEO_LOOKUP_LIMIT = 50
 
 interface ApiThumbnail {
