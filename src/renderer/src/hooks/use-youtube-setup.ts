@@ -7,6 +7,7 @@ export function useYouTubeSetup() {
   const [youtubeStatusError, setYoutubeStatusError] = useState<string | null>(null)
   const [setupOpen, setSetupOpen] = useState(false)
   const setupOpenRef = useRef(false)
+  const draftRevisionRef = useRef(0)
   const [youtubeApiKey, setYoutubeApiKey] = useState('')
   const [youtubeYtDlpPath, setYoutubeYtDlpPath] = useState('')
   const [youtubeFfmpegPath, setYoutubeFfmpegPath] = useState('')
@@ -18,17 +19,21 @@ export function useYouTubeSetup() {
   const [draftSynced, setDraftSynced] = useState(false)
 
   const loadYouTubeStatus = useCallback((syncDraft: boolean) => {
+    const draftRevision = draftRevisionRef.current
     setYoutubeStatusLoading(true)
     setYoutubeStatusError(null)
     void window.launcher.music.youtube
       .status()
       .then((status) => {
         setYoutubeStatus(status)
-        if (syncDraft) {
+        if (syncDraft && draftRevisionRef.current === draftRevision) {
           setYoutubeApiKey(status.settings.apiKey)
           setYoutubeYtDlpPath(status.settings.ytDlpPath)
           setYoutubeFfmpegPath(status.settings.ffmpegPath)
           setYoutubeCacheLimit(String(status.settings.cacheLimitMb))
+          setDraftSynced(true)
+        } else if (syncDraft) {
+          // Keep edits made while the status request was pending.
           setDraftSynced(true)
         }
         setYoutubeStatusLoading(false)
@@ -92,6 +97,26 @@ export function useYouTubeSetup() {
    * status. Opening it must hydrate the draft fields first, otherwise Save
    * would write empty values over a key that is already stored.
    */
+  const updateYoutubeApiKey = useCallback((value: string) => {
+    draftRevisionRef.current += 1
+    setYoutubeApiKey(value)
+  }, [])
+
+  const updateYoutubeYtDlpPath = useCallback((value: string) => {
+    draftRevisionRef.current += 1
+    setYoutubeYtDlpPath(value)
+  }, [])
+
+  const updateYoutubeFfmpegPath = useCallback((value: string) => {
+    draftRevisionRef.current += 1
+    setYoutubeFfmpegPath(value)
+  }, [])
+
+  const updateYoutubeCacheLimit = useCallback((value: string) => {
+    draftRevisionRef.current += 1
+    setYoutubeCacheLimit(value)
+  }, [])
+
   const toggleSetup = useCallback(() => {
     const nextOpen = !setupOpenRef.current
     setupOpenRef.current = nextOpen
@@ -111,10 +136,10 @@ export function useYouTubeSetup() {
     youtubeSaveError,
     youtubeCacheLimit,
     youtubeClearing,
-    setYoutubeApiKey,
-    setYoutubeYtDlpPath,
-    setYoutubeFfmpegPath,
-    setYoutubeCacheLimit,
+    setYoutubeApiKey: updateYoutubeApiKey,
+    setYoutubeYtDlpPath: updateYoutubeYtDlpPath,
+    setYoutubeFfmpegPath: updateYoutubeFfmpegPath,
+    setYoutubeCacheLimit: updateYoutubeCacheLimit,
     loadYouTubeStatus,
     saveYouTubeSettings,
     clearYouTubeCache,
