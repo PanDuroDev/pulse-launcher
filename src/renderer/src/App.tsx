@@ -10,28 +10,16 @@ import { toast } from 'sonner'
 import type {
   GameSummary,
   LibrarySort,
-  RunningGameInfo,
   UpdateManualGameInput,
 } from '@shared/types'
 import { sourceLabel } from '@shared/format'
 import { nextLibrarySort } from '@shared/library'
 import { runAssurance } from '@shared/run-state'
-import { FORCE_QUIT_GRACE_MS } from '@shared/game-control'
 import { useLauncherStore } from '@/store/launcher'
-import {
-  IDLE_GAME_ACTION,
-  type GameActionState,
-  actionForGame,
-  cancelForceQuit,
-  completeGameAction,
-  failGameAction,
-  forceRemainingMs,
-  promptForceQuit,
-  startGameAction,
-} from '@/lib/game-actions'
 import { useGamepad } from '@/hooks/use-gamepad'
 import { useLibraryView } from '@/hooks/use-library-view'
 import { useLauncherInitialization } from '@/hooks/use-launcher-initialization'
+import { useGameActionController } from '@/hooks/use-game-action-controller'
 import { useAutoHideCursor } from '@/hooks/use-clock'
 import { useUISounds } from '@/hooks/use-ui-sounds'
 import { useMusicEngine } from '@/hooks/use-music-engine'
@@ -94,8 +82,6 @@ export default function App() {
   const [powerOpen, setPowerOpen] = useState(false)
   const [musicOpen, setMusicOpen] = useState(false)
   const [pendingLaunch, setPendingLaunch] = useState<PendingLaunch | null>(null)
-  const [gameAction, setGameAction] = useState<GameActionState>(IDLE_GAME_ACTION)
-  const [actionClock, setActionClock] = useState(0)
   const [demo, setDemo] = useState(false)
   const [bootDone, setBootDone] = useState(false)
   /** True once the landed mark has had a beat to settle and the library can follow. */
@@ -133,16 +119,15 @@ export default function App() {
     launchResetTimer.current = null
   }, [])
 
-  // Close/force state belongs to a verified process, so it is dropped as soon
-  // as that game is no longer reported as running (the process exited).
-  const clearFinishedGameAction = useCallback((infos: RunningGameInfo[]) => {
-    const running = new Set(infos.map((info) => info.gameId))
-    setGameAction((current) =>
-      current.kind !== 'idle' && !running.has(current.gameId)
-        ? IDLE_GAME_ACTION
-        : current,
-    )
-  }, [])
+  const {
+    gameAction,
+    actionClock,
+    clearFinishedGameAction,
+    handleFocusGame,
+    handleCloseGame,
+    handleForceQuit,
+    handleCancelForceQuit,
+  } = useGameActionController()
 
   useLauncherInitialization({
     clearFinishedGameAction,
@@ -176,19 +161,6 @@ export default function App() {
         : `${pending.name} appears to be running.`,
     )
   }, [games, clearDetectTimer, updatePendingLaunch])
-
-  // Force quit unlocks after the grace period the main process enforces, so the
-  // countdown follows the same clock and the button appears on time.
-  useEffect(() => {
-    if (gameAction.kind !== 'close-requested') return
-    const remaining = forceRemainingMs(gameAction, actionClock)
-    if (remaining <= 0) return
-    const timer = window.setTimeout(
-      () => setActionClock(Date.now()),
-      Math.min(1_000, remaining + 20),
-    )
-    return () => window.clearTimeout(timer)
-  }, [gameAction, actionClock])
 
   useAutoHideCursor(settings.hideCursorAfterMs)
   useUISounds(settings.uiSounds)
@@ -335,92 +307,6 @@ export default function App() {
     setSettingsOpen(false)
     setAddMode('game')
     setAddOpen(true)
-  }, [])
-
-  const handleFocusGame = useCallback(async (game: GameSummary) => {
-    setGameAction((current) => startGameAction(current, game.id, 'focus'))
-    try {
-      const result = await window.launcher.game.focus(game.id)
-      setGameAction((current) => completeGameAction(current, result, Date.now()))
-      if (!result.ok) {
-        playUI('error')
-        toast.error(result.error ?? 'Could not bring the game to the front.')
-      }
-    } catch (error) {
-      setGameAction((current) => failGameAction(current))
-      playUI('error')
-      toast.error(error instanceof Error ? error.message : 'Could not reach the game.')
-    }
-  }, [])
-
-  const handleCloseGame = useCallback(async (game: GameSummary) => {
-    setGameAction((current) => startGameAction(current, game.id, 'close'))
-    try {
-      const result = await window.launcher.game.close(game.id)
-      const finishedAt = Date.now()
-      setActionClock(finishedAt)
-      setGameAction((current) => completeGameAction(current, result, finishedAt))
-      if (!result.ok) {
-        playUI('error')
-        toast.error(result.error ?? 'Could not close the game.')
-        return
-      }
-      playUI('close')
-      toast.success(`Close requested · ${game.name}`, {
-        description: 'Force quit appears if the game does not exit on its own.',
-      })
-    } catch (error) {
-      setGameAction((current) => failGameAction(current))
-      playUI('error')
-      toast.error(error instanceof Error ? error.message : 'Could not close the game.')
-    }
-  }, [])
-
-  const handleForceQuit = useCallback(
-    async (game: GameSummary) => {
-      const now = Date.now()
-      setActionClock(now)
-      const current = actionForGame(gameAction, game.id)
-
-      if (current.kind === 'close-requested') {
-        const remaining = forceRemainingMs(current, now)
-        if (remaining > 0) {
-          toast.info(
-            `Force quit unlocks in ${Math.ceil(remaining / 1000)}s.`,
-            { description: 'Give the game a chance to close first.' },
-          )
-          return
-        }
-        setGameAction(promptForceQuit(current, game.id, now))
-        return
-      }
-
-      if (current.kind !== 'force-confirming') return
-
-      setGameAction((state) => startGameAction(state, game.id, 'force-close'))
-      try {
-        const result = await window.launcher.game.forceClose(game.id, true)
-        const finishedAt = Date.now()
-        setActionClock(finishedAt)
-        setGameAction((state) => completeGameAction(state, result, finishedAt))
-        if (!result.ok) {
-          playUI('error')
-          toast.error(result.error ?? 'Force quit failed.')
-          return
-        }
-        playUI('delete')
-        toast.success(`Force quit · ${game.name}`)
-      } catch (error) {
-        setGameAction((state) => failGameAction(state))
-        playUI('error')
-        toast.error(error instanceof Error ? error.message : 'Force quit failed.')
-      }
-    },
-    [gameAction],
-  )
-
-  const handleCancelForceQuit = useCallback(() => {
-    setGameAction((current) => cancelForceQuit(current))
   }, [])
 
   const handleLaunch = useCallback(
