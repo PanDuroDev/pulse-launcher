@@ -30,6 +30,8 @@ A PS5-style fullscreen game launcher for Windows. Pulse Launcher gathers games f
 - Motion, Sonner, MingCute filled icons
 - `uisfx` (zen interface cues), Bloub avatar engine (MIT, vendored)
 - Norigin Spatial Navigation
+
+Renderer responsibilities and component boundaries are documented in [the renderer architecture guide](docs/architecture/renderer.md).
 - Zod, electron-log, music-metadata
 - Vitest, oxlint, electron-builder
 
