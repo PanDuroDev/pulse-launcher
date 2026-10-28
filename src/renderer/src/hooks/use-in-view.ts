@@ -5,15 +5,12 @@ export function useInView<T extends Element>(
   rootMargin = '500px',
 ): [RefObject<T | null>, boolean] {
   const ref = useRef<T | null>(null)
-  const [visible, setVisible] = useState(false)
+  const [visible, setVisible] = useState(() => typeof IntersectionObserver === 'undefined')
 
   useEffect(() => {
     const node = ref.current
     if (!node) return
-    if (typeof IntersectionObserver === 'undefined') {
-      setVisible(true)
-      return
-    }
+    if (typeof IntersectionObserver === 'undefined') return
 
     const observer = new IntersectionObserver(
       (entries) => {
