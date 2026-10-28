@@ -1,7 +1,7 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback } from 'react'
 import type { GameSummary } from '@shared/contracts/games'
 import type { LibrarySort } from '@shared/contracts/settings'
-import type { GameDetailsDraft } from '@/components/launcher/GameDetailsPage'
+import type { LauncherPageState } from '@/hooks/use-launcher-page-state'
 import { useLibraryView } from '@/hooks/use-library-view'
 import { useAddGameNavigation } from '@/hooks/use-add-game-navigation'
 import { useLauncherViewTransition } from '@/hooks/use-launcher-view-transition'
@@ -12,7 +12,6 @@ import { useGameAddedFocus } from '@/hooks/use-game-added-focus'
 import { useGameDetailsNavigation } from '@/hooks/use-game-details-navigation'
 import { useGameDetailsActions } from '@/hooks/use-game-details-actions'
 
-type AddMode = 'game' | 'path' | 'image'
 type LauncherStatus = 'loading' | 'ready' | 'error'
 
 interface UseLauncherNavigationControllerOptions {
@@ -23,6 +22,7 @@ interface UseLauncherNavigationControllerOptions {
   status: LauncherStatus
   bootDone: boolean
   select: (gameId: string) => void
+  page: LauncherPageState
 }
 
 /** Coordinates page state, focus restoration, and top-level navigation actions. */
@@ -34,24 +34,35 @@ export function useLauncherNavigationController({
   status,
   bootDone,
   select,
+  page,
 }: UseLauncherNavigationControllerOptions) {
-  const [settingsOpen, setSettingsOpen] = useState(false)
-  const [addOpen, setAddOpen] = useState(false)
-  const [addMode, setAddMode] = useState<AddMode>('game')
-  const [detailsOpen, setDetailsOpen] = useState(false)
-  const [detailsSnapshot, setDetailsSnapshot] = useState<GameSummary | null>(null)
-  const [manualDraft, setManualDraft] = useState<GameDetailsDraft | null>(null)
-  const [detailsSaving, setDetailsSaving] = useState(false)
-  const [detailsRemoving, setDetailsRemoving] = useState(false)
-  const [searchOpen, setSearchOpen] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [powerOpen, setPowerOpen] = useState(false)
-  const [musicOpen, setMusicOpen] = useState(false)
-  const lastFocusKey = useRef<string | null>(null)
-
-  const rememberFocusKey = useCallback((focusKey: string) => {
-    lastFocusKey.current = focusKey
-  }, [])
+  const {
+    settingsOpen,
+    setSettingsOpen,
+    addOpen,
+    setAddOpen,
+    addMode,
+    setAddMode,
+    detailsOpen,
+    detailsSnapshot,
+    setDetailsSnapshot,
+    manualDraft,
+    setManualDraft,
+    detailsSaving,
+    setDetailsSaving,
+    detailsRemoving,
+    setDetailsRemoving,
+    searchOpen,
+    setSearchOpen,
+    searchQuery,
+    setSearchQuery,
+    powerOpen,
+    setPowerOpen,
+    musicOpen,
+    setMusicOpen,
+    lastFocusKey,
+    rememberFocusKey,
+  } = page
 
   const {
     rows,
@@ -177,25 +188,6 @@ export function useLauncherNavigationController({
   }, [closeSettings, handleAddGame])
 
   return {
-    page: {
-      settingsOpen,
-      setSettingsOpen,
-      addOpen,
-      setAddOpen,
-      addMode,
-      setAddMode,
-      detailsOpen,
-      manualDraft,
-      setManualDraft,
-      detailsSaving,
-      detailsRemoving,
-      searchOpen,
-      searchQuery,
-      setSearchQuery,
-      powerOpen,
-      setPowerOpen,
-      musicOpen,
-    },
     library: { rows, selected, detailsGame, initialFocusKey },
     focus: { lastFocusKey },
     navigation: {

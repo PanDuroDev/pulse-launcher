@@ -8,6 +8,7 @@ import { useGameLaunchController } from '@/hooks/use-game-launch-controller'
 import { useLibraryActions } from '@/hooks/use-library-actions'
 import { useLauncherInputHandlers } from '@/hooks/use-launcher-input-handlers'
 import { useLauncherNavigationController } from '@/hooks/use-launcher-navigation-controller'
+import { useLauncherPageState } from '@/hooks/use-launcher-page-state'
 import { useLauncherViewModel } from '@/hooks/use-launcher-view-model'
 import { useAutoHideCursor } from '@/hooks/use-clock'
 import { useUISounds } from '@/hooks/use-ui-sounds'
@@ -32,12 +33,8 @@ export default function App() {
   const [demo, setDemo] = useState(false)
   const { bootDone, finishBoot, revealed, bootPhase } = useLauncherBootSequence(status)
 
-  const {
-    page,
-    library,
-    focus,
-    navigation,
-  } = useLauncherNavigationController({
+  const page = useLauncherPageState()
+  const { library, focus, navigation } = useLauncherNavigationController({
     games,
     selectedId,
     librarySort: settings.librarySort,
@@ -45,6 +42,7 @@ export default function App() {
     status,
     bootDone,
     select,
+    page,
   })
 
   const {
