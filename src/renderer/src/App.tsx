@@ -90,16 +90,32 @@ export default function App() {
     handleLaunch,
   } = useLauncherGameRuntime({ games, demo })
 
-  const { markMood, showLoading, showError, showEmpty, selectedAction, selectedForceRemaining } =
-    useLauncherViewModel({
-      status,
-      games,
-      refreshing,
-      pendingLaunch,
-      selected,
-      gameAction,
-      actionClock,
-    })
+  const {
+    markMood,
+    showLoading,
+    showError,
+    showEmpty,
+    selectedAction,
+    selectedForceRemaining,
+    title,
+    showTools,
+    showHintBar,
+  } = useLauncherViewModel({
+    status,
+    games,
+    refreshing,
+    pendingLaunch,
+    selected,
+    gameAction,
+    actionClock,
+    searchOpen,
+    addOpen,
+    addMode,
+    detailsOpen,
+    musicOpen,
+    settingsOpen,
+    powerOpen,
+  })
 
   const { handleRefresh, handleToggleFavorite, handleCycleSort } = useLibraryActions({
     refresh,
@@ -148,25 +164,9 @@ export default function App() {
       revealed={revealed}
       bootDone={bootDone}
       demo={demo}
-      title={
-        searchOpen
-          ? 'Search'
-          : addOpen
-            ? addMode === 'image'
-              ? 'Cover art'
-              : addMode === 'path'
-                ? 'Game file'
-                : 'Add game'
-            : detailsOpen
-              ? 'Game details'
-              : musicOpen
-                ? 'Music'
-                : settingsOpen
-                  ? 'Settings'
-                  : 'Library'
-      }
+      title={title}
       markMood={markMood}
-      showTools={!settingsOpen && !addOpen && !searchOpen && !detailsOpen && !musicOpen}
+      showTools={showTools}
       refreshing={refreshing}
       scanProgress={scanProgress}
       staleSources={staleSources}
@@ -175,7 +175,7 @@ export default function App() {
       onOpenMusic={openMusic}
       onOpenSettings={openSettings}
       onOpenPower={openPower}
-      showHintBar={!(settingsOpen || addOpen || searchOpen || powerOpen || detailsOpen || musicOpen)}
+      showHintBar={showHintBar}
       gameCount={games.length}
       powerOpen={powerOpen}
       onClosePower={closePower}

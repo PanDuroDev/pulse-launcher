@@ -7,6 +7,7 @@ import { markMoodFor } from '@/lib/mark-mood'
 import type { MarkMood } from '@/lib/mark-mood'
 
 type LauncherStatus = 'loading' | 'ready' | 'error'
+type AddMode = 'game' | 'path' | 'image'
 
 interface PendingLaunchIdentity {
   id: string
@@ -20,6 +21,13 @@ interface UseLauncherViewModelOptions {
   selected: GameSummary | undefined
   gameAction: GameActionState
   actionClock: number
+  searchOpen: boolean
+  addOpen: boolean
+  addMode: AddMode
+  detailsOpen: boolean
+  musicOpen: boolean
+  settingsOpen: boolean
+  powerOpen: boolean
 }
 
 interface LauncherViewModel {
@@ -29,6 +37,9 @@ interface LauncherViewModel {
   showEmpty: boolean
   selectedAction: GameActionState
   selectedForceRemaining: number
+  title: string
+  showTools: boolean
+  showHintBar: boolean
 }
 
 /** Derives presentation-only state for the active library and selected game. */
@@ -40,6 +51,13 @@ export function useLauncherViewModel({
   selected,
   gameAction,
   actionClock,
+  searchOpen,
+  addOpen,
+  addMode,
+  detailsOpen,
+  musicOpen,
+  settingsOpen,
+  powerOpen,
 }: UseLauncherViewModelOptions): LauncherViewModel {
   const markMood = useMemo(
     () =>
@@ -71,6 +89,24 @@ export function useLauncherViewModel({
       : FORCE_QUIT_GRACE_MS
     : 0
 
+  const title = searchOpen
+    ? 'Search'
+    : addOpen
+      ? addMode === 'image'
+        ? 'Cover art'
+        : addMode === 'path'
+          ? 'Game file'
+          : 'Add game'
+      : detailsOpen
+        ? 'Game details'
+        : musicOpen
+          ? 'Music'
+          : settingsOpen
+            ? 'Settings'
+            : 'Library'
+  const showTools = !settingsOpen && !addOpen && !searchOpen && !detailsOpen && !musicOpen
+  const showHintBar = !(settingsOpen || addOpen || searchOpen || powerOpen || detailsOpen || musicOpen)
+
   return {
     markMood,
     showLoading,
@@ -78,5 +114,8 @@ export function useLauncherViewModel({
     showEmpty,
     selectedAction,
     selectedForceRemaining,
+    title,
+    showTools,
+    showHintBar,
   }
 }
