@@ -1,5 +1,4 @@
 import { useCallback, useRef, useState } from 'react'
-import type { Dispatch, SetStateAction } from 'react'
 import type { GameSummary } from '@shared/contracts/games'
 import type { LibrarySort } from '@shared/contracts/settings'
 import type { GameDetailsDraft } from '@/components/launcher/GameDetailsPage'
