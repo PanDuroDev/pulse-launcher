@@ -92,9 +92,8 @@ export default function App() {
 
   const {
     markMood,
-    showLoading,
+    activePage,
     showError,
-    showEmpty,
     selectedAction,
     selectedForceRemaining,
     title,
@@ -111,7 +110,7 @@ export default function App() {
     searchOpen,
     addOpen,
     addMode,
-    detailsOpen,
+    detailsGame,
     musicOpen,
     settingsOpen,
     powerOpen,
@@ -187,15 +186,10 @@ export default function App() {
     >
       <LauncherPageContent
         page={{
-          searchOpen,
+          activePage,
           searchQuery,
-          addOpen,
           addMode,
           detailsGame,
-          musicOpen,
-          settingsOpen,
-          showLoading,
-          showEmpty,
           showError,
           error,
           status,

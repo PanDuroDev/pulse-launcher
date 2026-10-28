@@ -12,6 +12,7 @@ import { LibraryLoading } from '@/components/launcher/LibraryLoading'
 import { EmptyLibrary } from '@/components/launcher/EmptyLibrary'
 import { LibraryHome } from '@/components/launcher/LibraryHome'
 import type { GameActionState } from '@/lib/game-actions'
+import type { LauncherRoute } from '@/lib/launcher-view-model'
 
 type AddMode = 'game' | 'path' | 'image'
 type LauncherStatus = 'loading' | 'ready' | 'error'
@@ -28,15 +29,10 @@ interface PendingLaunch {
 }
 
 interface LauncherPageState {
-  searchOpen: boolean
+  activePage: LauncherRoute
   searchQuery: string
-  addOpen: boolean
   addMode: AddMode
   detailsGame: GameSummary | null
-  musicOpen: boolean
-  settingsOpen: boolean
-  showLoading: boolean
-  showEmpty: boolean
   showError: boolean
   error: string | null
   status: LauncherStatus
@@ -96,7 +92,7 @@ export function LauncherPageContent({
   library,
   actions,
 }: LauncherPageContentProps) {
-  return page.searchOpen ? (
+  return page.activePage === 'search' ? (
     <ErrorBoundary
       surface="launcher"
       onBack={{ label: 'Back to library', onClick: actions.closeSearch }}
@@ -110,7 +106,7 @@ export function LauncherPageContent({
         onLaunch={(game) => void actions.handleLaunch(game)}
       />
     </ErrorBoundary>
-  ) : page.addOpen ? (
+  ) : page.activePage === 'add' ? (
     <ErrorBoundary
       surface="launcher"
       onBack={{ label: 'Back to library', onClick: actions.closeAddGame }}
@@ -128,7 +124,7 @@ export function LauncherPageContent({
         }
       />
     </ErrorBoundary>
-  ) : page.detailsGame ? (
+  ) : page.activePage === 'details' && page.detailsGame ? (
     <ErrorBoundary
       surface="launcher"
       onBack={{ label: 'Back to library', onClick: actions.closeDetails }}
@@ -161,14 +157,14 @@ export function LauncherPageContent({
         onPickArtwork={() => actions.openDetailsPicker('image')}
       />
     </ErrorBoundary>
-  ) : page.musicOpen ? (
+  ) : page.activePage === 'music' ? (
     <ErrorBoundary
       surface="launcher"
       onBack={{ label: 'Back to library', onClick: actions.closeMusic }}
     >
       <MusicPage onBack={actions.closeMusic} />
     </ErrorBoundary>
-  ) : page.settingsOpen ? (
+  ) : page.activePage === 'settings' ? (
     <ErrorBoundary
       surface="launcher"
       onBack={{ label: 'Back to library', onClick: actions.closeSettings }}
@@ -178,9 +174,9 @@ export function LauncherPageContent({
         onAddGame={actions.handleAddFromSettings}
       />
     </ErrorBoundary>
-  ) : page.showLoading ? (
+  ) : page.activePage === 'loading' ? (
     <LibraryLoading scanning={page.refreshing || page.status === 'loading'} />
-  ) : page.showEmpty ? (
+  ) : page.activePage === 'empty' ? (
     <EmptyLibrary
       error={page.showError ? page.error : null}
       onRefresh={() => void actions.handleRefresh()}

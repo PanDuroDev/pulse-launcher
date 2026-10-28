@@ -26,7 +26,7 @@ const defaults: LauncherViewModelInput = {
   searchOpen: false,
   addOpen: false,
   addMode: 'game',
-  detailsOpen: false,
+  detailsGame: null,
   musicOpen: false,
   settingsOpen: false,
   powerOpen: false,
@@ -35,13 +35,13 @@ const defaults: LauncherViewModelInput = {
 describe('deriveLauncherViewModel', () => {
   it('distinguishes loading, empty, and empty-error library states', () => {
     const loading = deriveLauncherViewModel({ ...defaults, status: 'loading' })
-    expect(loading).toMatchObject({ showLoading: true, showError: false, showEmpty: false })
+    expect(loading).toMatchObject({ activePage: 'loading', showLoading: true, showError: false, showEmpty: false })
 
     const empty = deriveLauncherViewModel(defaults)
-    expect(empty).toMatchObject({ showLoading: false, showError: false, showEmpty: true })
+    expect(empty).toMatchObject({ activePage: 'empty', showLoading: false, showError: false, showEmpty: true })
 
     const error = deriveLauncherViewModel({ ...defaults, status: 'error' })
-    expect(error).toMatchObject({ showLoading: false, showError: true, showEmpty: true })
+    expect(error).toMatchObject({ activePage: 'empty', showLoading: false, showError: true, showEmpty: true })
   })
 
   it('keeps the search route ahead of other open-page flags', () => {
@@ -50,28 +50,33 @@ describe('deriveLauncherViewModel', () => {
       searchOpen: true,
       addOpen: true,
       addMode: 'image',
-      detailsOpen: true,
+      detailsGame: selectedGame,
       musicOpen: true,
       settingsOpen: true,
     })
 
+    expect(view.activePage).toBe('search')
     expect(view.title).toBe('Search')
     expect(view.showTools).toBe(false)
     expect(view.showHintBar).toBe(false)
   })
 
   it('uses the right title for picker mode and later pages', () => {
-    expect(deriveLauncherViewModel({ ...defaults, addOpen: true, addMode: 'path' }).title)
-      .toBe('Game file')
-    expect(deriveLauncherViewModel({ ...defaults, addOpen: true, addMode: 'image' }).title)
-      .toBe('Cover art')
-    expect(deriveLauncherViewModel({ ...defaults, detailsOpen: true }).title).toBe('Game details')
-    expect(deriveLauncherViewModel({ ...defaults, musicOpen: true }).title).toBe('Music')
-    expect(deriveLauncherViewModel({ ...defaults, settingsOpen: true }).title).toBe('Settings')
+    expect(deriveLauncherViewModel({ ...defaults, addOpen: true, addMode: 'path' }))
+      .toMatchObject({ activePage: 'add', title: 'Game file' })
+    expect(deriveLauncherViewModel({ ...defaults, addOpen: true, addMode: 'image' }))
+      .toMatchObject({ activePage: 'add', title: 'Cover art' })
+    expect(deriveLauncherViewModel({ ...defaults, detailsGame: selectedGame }))
+      .toMatchObject({ activePage: 'details', title: 'Game details' })
+    expect(deriveLauncherViewModel({ ...defaults, musicOpen: true }))
+      .toMatchObject({ activePage: 'music', title: 'Music' })
+    expect(deriveLauncherViewModel({ ...defaults, settingsOpen: true }))
+      .toMatchObject({ activePage: 'settings', title: 'Settings' })
   })
 
   it('does not hide library tools behind the power overlay, but hides the hint bar', () => {
     const view = deriveLauncherViewModel({ ...defaults, powerOpen: true })
+    expect(view.activePage).toBe('library')
     expect(view.title).toBe('Library')
     expect(view.showTools).toBe(true)
     expect(view.showHintBar).toBe(false)
@@ -121,4 +126,29 @@ describe('deriveLauncherViewModel', () => {
     expect(anotherGame.selectedAction).toBe(IDLE_GAME_ACTION)
     expect(anotherGame.selectedForceRemaining).toBe(0)
   })
+
+  it('falls through to the next available page if details has no game snapshot', () => {
+    const view = deriveLauncherViewModel({
+      ...defaults,
+      musicOpen: true,
+      settingsOpen: true,
+      detailsGame: null,
+    })
+
+    expect(view.activePage).toBe('music')
+    expect(view.title).toBe('Music')
+  })
+
+  it('keeps the populated library route when no page overlay is active', () => {
+    const view = deriveLauncherViewModel({
+      ...defaults,
+      games: [selectedGame],
+      selected: selectedGame,
+    })
+
+    expect(view.activePage).toBe('library')
+    expect(view.showTools).toBe(true)
+    expect(view.showHintBar).toBe(true)
+  })
+
 })

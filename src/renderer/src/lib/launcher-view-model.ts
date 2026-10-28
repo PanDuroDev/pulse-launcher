@@ -7,6 +7,15 @@ import type { MarkMood } from '@/lib/mark-mood'
 
 export type LauncherStatus = 'loading' | 'ready' | 'error'
 export type AddMode = 'game' | 'path' | 'image'
+export type LauncherRoute =
+  | 'search'
+  | 'add'
+  | 'details'
+  | 'music'
+  | 'settings'
+  | 'loading'
+  | 'empty'
+  | 'library'
 
 interface PendingLaunchIdentity {
   id: string
@@ -23,13 +32,14 @@ export interface LauncherViewModelInput {
   searchOpen: boolean
   addOpen: boolean
   addMode: AddMode
-  detailsOpen: boolean
+  detailsGame: GameSummary | null
   musicOpen: boolean
   settingsOpen: boolean
   powerOpen: boolean
 }
 
 export interface LauncherViewModel {
+  activePage: LauncherRoute
   markMood: MarkMood
   showLoading: boolean
   showError: boolean
@@ -53,7 +63,7 @@ export function deriveLauncherViewModel({
   searchOpen,
   addOpen,
   addMode,
-  detailsOpen,
+  detailsGame,
   musicOpen,
   settingsOpen,
   powerOpen,
@@ -84,26 +94,55 @@ export function deriveLauncherViewModel({
       : FORCE_QUIT_GRACE_MS
     : 0
 
-  // Keep the same route priority as the renderer's page switch.
-  const title = searchOpen
-    ? 'Search'
+  // The active route is shared by the title and the page renderer.
+  const activePage: LauncherRoute = searchOpen
+    ? 'search'
     : addOpen
-      ? addMode === 'image'
-        ? 'Cover art'
-        : addMode === 'path'
-          ? 'Game file'
-          : 'Add game'
-      : detailsOpen
-        ? 'Game details'
+      ? 'add'
+      : detailsGame
+        ? 'details'
         : musicOpen
-          ? 'Music'
+          ? 'music'
           : settingsOpen
-            ? 'Settings'
-            : 'Library'
-  const showTools = !settingsOpen && !addOpen && !searchOpen && !detailsOpen && !musicOpen
-  const showHintBar = !(settingsOpen || addOpen || searchOpen || powerOpen || detailsOpen || musicOpen)
+            ? 'settings'
+            : showLoading
+              ? 'loading'
+              : showEmpty
+                ? 'empty'
+                : 'library'
+
+  const title =
+    activePage === 'search'
+      ? 'Search'
+      : activePage === 'add'
+        ? addMode === 'image'
+          ? 'Cover art'
+          : addMode === 'path'
+            ? 'Game file'
+            : 'Add game'
+        : activePage === 'details'
+          ? 'Game details'
+          : activePage === 'music'
+            ? 'Music'
+            : activePage === 'settings'
+              ? 'Settings'
+              : 'Library'
+  const showTools =
+    activePage !== 'search' &&
+    activePage !== 'add' &&
+    activePage !== 'details' &&
+    activePage !== 'music' &&
+    activePage !== 'settings'
+  const showHintBar =
+    activePage !== 'search' &&
+    activePage !== 'add' &&
+    activePage !== 'details' &&
+    activePage !== 'music' &&
+    activePage !== 'settings' &&
+    !powerOpen
 
   return {
+    activePage,
     markMood,
     showLoading,
     showError,
