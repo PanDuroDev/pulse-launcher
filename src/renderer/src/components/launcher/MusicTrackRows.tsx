@@ -1,7 +1,7 @@
 import { ExternalLinkFilled, MusicFilled, YoutubeFilled } from '@mingcute/react/core-filled'
 import { useState } from 'react'
 import { useFocusable } from '@noriginmedia/norigin-spatial-navigation-react'
-import type { MusicOnlineTrack, MusicTrack, MusicYouTubeTrack } from '@shared/types'
+import type { MusicOnlineTrack, MusicTrack, MusicYouTubeTrack } from '@shared/contracts/music'
 import { formatDuration, trackSource } from '@/lib/music-queue'
 import { PROVIDER_LABELS, SOURCE_LABELS } from '@/lib/music-labels'
 import { uiAccent } from '@/lib/accent'

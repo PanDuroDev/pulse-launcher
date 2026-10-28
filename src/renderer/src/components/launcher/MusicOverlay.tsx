@@ -10,7 +10,7 @@ import {
   VolumeFilled,
   VolumeMuteFilled,
 } from '@mingcute/react/core-filled'
-import type { MusicOverlayAction, MusicOverlayState } from '@shared/types'
+import type { MusicOverlayAction, MusicOverlayState } from '@shared/contracts/music'
 import { formatDuration, progressRatio } from '@/lib/music-queue'
 import { uiAccent } from '@/lib/accent'
 import { cn } from '@/lib/utils'

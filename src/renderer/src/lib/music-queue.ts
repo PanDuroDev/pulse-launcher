@@ -1,4 +1,4 @@
-import type { MusicRepeat, MusicTrack } from '@shared/types'
+import type { MusicRepeat, MusicTrack } from '@shared/contracts/music'
 
 export interface QueueOptions {
   repeat: MusicRepeat

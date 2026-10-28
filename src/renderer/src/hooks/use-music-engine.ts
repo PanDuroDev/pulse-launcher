@@ -1,5 +1,5 @@
 import { useEffect, useSyncExternalStore } from 'react'
-import type { MusicOverlayState, MusicTrack } from '@shared/types'
+import type { MusicOverlayState, MusicTrack } from '@shared/contracts/music'
 import { musicEngine } from '@/lib/music-engine'
 import type { MusicEngineState } from '@/lib/music-engine'
 

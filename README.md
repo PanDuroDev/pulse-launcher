@@ -30,6 +30,8 @@ A PS5-style fullscreen game launcher for Windows. Pulse Launcher gathers games f
 - Motion, Sonner, MingCute filled icons
 - `uisfx` (zen interface cues), Bloub avatar engine (MIT, vendored)
 - Norigin Spatial Navigation
+
+Renderer responsibilities and component boundaries are documented in [the renderer architecture guide](docs/architecture/renderer.md).
 - Zod, electron-log, music-metadata
 - Vitest, oxlint, electron-builder
 
@@ -239,7 +241,7 @@ npm run lint
 npm run build
 ```
 
-The suite currently contains 37 files and 379 tests covering VDF parsing, Steam and Epic manifests, manual game normalization, shared formatting helpers, the music queue and source filtering, online catalog normalization and ranking, online provider mapping, YouTube video ids and durations, YouTube title/artist/channel parsing, YouTube API mapping and thumbnail selection, yt-dlp error mapping, secret redaction, URL safety, and renderer logic.
+The Vitest suite covers VDF parsing, Steam and Epic manifests, manual game normalization, shared formatting helpers, the music queue and source filtering, online catalog normalization and ranking, online provider mapping, YouTube video ids and durations, YouTube title/artist/channel parsing, YouTube API mapping and thumbnail selection, yt-dlp error mapping, secret redaction, URL safety, and renderer logic. Run `npm test` to execute the current suite; the test count is intentionally not duplicated here because it changes as tests are added.
 
 ## Packaging
 
@@ -279,6 +281,10 @@ wide public release; see `docs/audit/01-release-and-packaging.md` §3.
 - YouTube downloads are subject to YouTube's Terms of Service and copyright law; only extract content you have the rights to. MP3 files stay in `music/youtube/` until you delete them, so the cache grows with each new track.
 - Online results depend on the catalogs: preview URLs can expire, and some results are covers, live versions, or uploads. Check the provider, publisher, version, and license labels before playing.
 - `npm audit` reports vulnerabilities in the shadcn CLI development toolchain. `npm audit --omit=dev` is clean; the affected tools are not included in the packaged app.
+
+## Repository audits
+
+Architecture, security, packaging, testing, and maintenance findings are documented in [the audit index](docs/audit/README.md).
 
 ## Roadmap
 

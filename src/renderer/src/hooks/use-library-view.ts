@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
-import type { GameSummary, LibrarySort } from '@shared/types'
+import type { GameSummary } from '@shared/contracts/games'
+import type { LibrarySort } from '@shared/contracts/settings'
 import { favoriteGames, recentlyPlayed, sortGames } from '@shared/library'
 
 interface LibraryRow {

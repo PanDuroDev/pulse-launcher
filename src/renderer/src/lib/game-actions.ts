@@ -1,4 +1,4 @@
-import type { GameControlAction, GameControlResult } from '@shared/types'
+import type { GameControlAction, GameControlResult } from '@shared/contracts/games'
 import { FORCE_QUIT_GRACE_MS } from '@shared/game-control'
 
 /**

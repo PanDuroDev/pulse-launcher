@@ -4,7 +4,7 @@ import type {
   MusicOnlineTrack,
   MusicYouTubeSearchSource,
   MusicYouTubeTrack,
-} from '@shared/types'
+} from '@shared/contracts/music'
 
 // One debounce for both remote search modes keeps their behaviour identical.
 const SEARCH_DELAY_MS = 450

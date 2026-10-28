@@ -1,7 +1,7 @@
 import { ipcMain } from 'electron'
 import { z } from 'zod'
 import { IPC } from '@shared/ipc'
-import type { Settings, SettingsUpdate, WindowMode } from '@shared/types'
+import type { Settings, SettingsUpdate, WindowMode } from '@shared/contracts/settings'
 import { log } from '../logger'
 import type { AppStore } from '../store'
 import type { CatalogService } from '../catalog'

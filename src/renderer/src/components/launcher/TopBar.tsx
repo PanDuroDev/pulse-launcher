@@ -9,7 +9,7 @@ import {
 } from '@mingcute/react/core-filled'
 import { useFocusable } from '@noriginmedia/norigin-spatial-navigation-react'
 import type { ReactNode } from 'react'
-import type { GameSource, ScanProgress } from '@shared/types'
+import type { GameSource, ScanProgress } from '@shared/contracts/games'
 import { useClock } from '@/hooks/use-clock'
 import { announceAttention } from '@/lib/attention'
 import type { MarkMood } from '@/lib/mark-mood'

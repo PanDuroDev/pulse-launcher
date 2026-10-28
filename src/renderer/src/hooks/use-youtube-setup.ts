@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react'
-import type { MusicYouTubeStatus } from '@shared/types'
+import type { MusicYouTubeStatus } from '@shared/contracts/music'
 
 export function useYouTubeSetup() {
   const [youtubeStatus, setYoutubeStatus] = useState<MusicYouTubeStatus | null>(null)

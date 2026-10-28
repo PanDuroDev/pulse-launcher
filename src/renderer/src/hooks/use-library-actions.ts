@@ -1,6 +1,7 @@
 import { useCallback } from 'react'
 import { toast } from 'sonner'
-import type { GameSummary, LibrarySort } from '@shared/types'
+import type { GameSummary } from '@shared/contracts/games'
+import type { LibrarySort } from '@shared/contracts/settings'
 import { sourceLabel } from '@shared/format'
 import { nextLibrarySort } from '@shared/library'
 import { playUI } from '@/lib/ui-sfx'

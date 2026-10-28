@@ -3,7 +3,6 @@ import type { IpcRendererEvent } from 'electron'
 import { IPC } from '@shared/ipc'
 import type {
   AddManualResult,
-  AppInfo,
   ArtKind,
   ArtworkResult,
   DirectoryListing,
@@ -12,7 +11,17 @@ import type {
   GameSource,
   GameSummary,
   LaunchResult,
-  LauncherApi,
+  PickerKind,
+  PickerRoots,
+  RemoveManualResult,
+  RunningGameInfo,
+  ScanProgress,
+  ScanResult,
+  SelectionResult,
+  UpdateManualGameInput,
+  UpdateManualResult,
+} from '@shared/contracts/games'
+import type {
   MusicCommand,
   MusicLibrarySnapshot,
   MusicOnlineSearchResult,
@@ -23,18 +32,10 @@ import type {
   MusicYouTubeSearchResult,
   MusicYouTubeStatus,
   MusicYouTubeUpdate,
-  PickerKind,
-  PickerRoots,
-  RemoveManualResult,
-  RunningGameInfo,
-  ScanProgress,
-  ScanResult,
-  SelectionResult,
-  Settings,
-  SettingsUpdate,
-  UpdateManualGameInput,
-  UpdateManualResult,
-} from '@shared/types'
+} from '@shared/contracts/music'
+import type { AppInfo } from '@shared/contracts/app'
+import type { LauncherApi } from '@shared/contracts/launcher-api'
+import type { Settings, SettingsUpdate } from '@shared/contracts/settings'
 
 function subscribe<T>(channel: string, listener: (payload: T) => void): () => void {
   const wrapped = (_event: IpcRendererEvent, payload: T): void => listener(payload)

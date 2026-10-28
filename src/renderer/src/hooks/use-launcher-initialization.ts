@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import type { RunningGameInfo } from '@shared/types'
+import type { RunningGameInfo } from '@shared/contracts/games'
 import { useLauncherStore } from '@/store/launcher'
 import { useMusicStore } from '@/store/music'
 

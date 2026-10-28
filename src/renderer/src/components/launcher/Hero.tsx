@@ -18,7 +18,7 @@ import {
   StarFilled,
 } from '@mingcute/react/core-filled'
 import { cn } from 'cn'
-import type { GameSummary } from '@shared/types'
+import type { GameSummary } from '@shared/contracts/games'
 import { formatBytes, formatLastPlayed, sourceLabel } from '@shared/format'
 import { describeRunEvidence, runAssurance } from '@shared/run-state'
 import {

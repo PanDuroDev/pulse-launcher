@@ -3,17 +3,16 @@ import type { RefObject } from 'react'
 
 export function useInView<T extends Element>(
   rootMargin = '500px',
+  targetRef?: RefObject<T | null>,
 ): [RefObject<T | null>, boolean] {
-  const ref = useRef<T | null>(null)
-  const [visible, setVisible] = useState(false)
+  const localRef = useRef<T | null>(null)
+  const ref = targetRef ?? localRef
+  const [visible, setVisible] = useState(() => typeof IntersectionObserver === 'undefined')
 
   useEffect(() => {
     const node = ref.current
     if (!node) return
-    if (typeof IntersectionObserver === 'undefined') {
-      setVisible(true)
-      return
-    }
+    if (typeof IntersectionObserver === 'undefined') return
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -26,7 +25,7 @@ export function useInView<T extends Element>(
     )
     observer.observe(node)
     return () => observer.disconnect()
-  }, [rootMargin])
+  }, [ref, rootMargin])
 
   return [ref, visible]
 }

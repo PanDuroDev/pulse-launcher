@@ -6,7 +6,7 @@ import type {
   DirectoryListing,
   PickerRoots,
   UpdateManualResult,
-} from '@shared/types'
+} from '@shared/contracts/games'
 import { log } from '../logger'
 import type { CatalogService } from '../catalog'
 import {

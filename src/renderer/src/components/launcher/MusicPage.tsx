@@ -22,7 +22,7 @@ import type {
   MusicOnlineTrack,
   MusicTrack,
   MusicYouTubeTrack,
-} from '@shared/types'
+} from '@shared/contracts/music'
 import {
   countSources,
   filterBySource,
