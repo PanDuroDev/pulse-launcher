@@ -9,15 +9,13 @@ interface PanelProps {
   children: ReactNode
   /** One line under the title, so a panel explains itself where a page header used to. */
   description?: string
-  /** Card-sized panels (details) stay narrower than work surfaces (settings). */
-  width?: 'card' | 'wide'
 }
 
 /**
  * One layer above the destination. The destination stays mounted and visible
  * underneath, so closing a panel never loses library scroll or selection.
  */
-export function Panel({ title, onClose, children, description, width = 'wide' }: PanelProps) {
+export function Panel({ title, onClose, children, description }: PanelProps) {
   const surfaceRef = useRef<HTMLDivElement | null>(null)
 
   // Close on Escape only when no field owns the key: inside a field the first
@@ -45,19 +43,12 @@ export function Panel({ title, onClose, children, description, width = 'wide' }:
   useEffect(() => {
     const surface = surfaceRef.current
     if (!surface) return
-    let scroller: HTMLElement | null = null
-    for (const candidate of surface.querySelectorAll<HTMLElement>('*')) {
-      const overflow = getComputedStyle(candidate).overflowY
-      if (overflow === 'auto' || overflow === 'scroll') {
-        scroller = candidate
-        break
-      }
-    }
-    if (!scroller) return
-    const target = scroller
+    // The panel surface itself is the scroller now; nested scrollers still win.
+    const owns = (node: EventTarget | null): boolean =>
+      node instanceof Node && surface.contains(node)
     const onWheel = (event: WheelEvent): void => {
-      if (event.deltaY === 0 || target.contains(event.target as Node)) return
-      target.scrollTop += event.deltaY
+      if (event.deltaY === 0 || owns(event.target)) return
+      surface.scrollTop += event.deltaY
       event.preventDefault()
     }
     window.addEventListener('wheel', onWheel, { passive: false })
@@ -65,25 +56,16 @@ export function Panel({ title, onClose, children, description, width = 'wide' }:
   }, [])
 
   return (
-    <div className="absolute inset-0 z-20">
-      {/* Dismiss target: a click on the dimmed library closes the panel. */}
-      <button
-        type="button"
-        tabIndex={-1}
-        aria-label={`Close ${title.toLowerCase()}`}
-        onClick={onClose}
-        className="absolute inset-0 cursor-default bg-black/45"
-      />
-      <div
-        ref={surfaceRef}
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-        data-panel={title.toLowerCase()}
-        className={`panel-in absolute inset-x-0 top-4 bottom-4 mx-auto flex min-h-0 flex-col overflow-hidden rounded-card border border-white/10 bg-[#08080d]/92 shadow-panel backdrop-blur-xl ${
-          width === 'card' ? 'max-w-[45rem]' : 'max-w-[64rem]'
-        }`}
-      >
+    <div
+      ref={surfaceRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
+      data-panel={title.toLowerCase()}
+      // A panel is a full screen, header included; the screen below it stays
+      // mounted but is hidden and inert.
+      className="panel-in absolute inset-0 z-20 flex min-h-0 flex-col overflow-y-auto bg-[#08080d]"
+    >
         {/* The only close affordance: no screen keeps its own back button. */}
         <button
           type="button"
@@ -94,14 +76,13 @@ export function Panel({ title, onClose, children, description, width = 'wide' }:
         >
           <CloseFilled className="size-4" />
         </button>
-        <div className="shrink-0 px-6 pr-16 pt-5 pb-4">
-          <h1 className="text-label font-semibold tracking-tight text-text-primary">{title}</h1>
+        <div className="shrink-0 px-gutter pt-6 pr-16 pb-4">
+          <h1 className="text-title font-semibold tracking-tight text-text-primary">{title}</h1>
           {description ? (
             <p className="mt-0.5 text-caption text-text-secondary">{description}</p>
           ) : null}
         </div>
         {children}
-      </div>
     </div>
   )
 }

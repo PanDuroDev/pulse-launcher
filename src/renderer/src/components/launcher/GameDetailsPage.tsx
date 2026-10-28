@@ -57,6 +57,7 @@ interface GameDetailsPageProps {
 const FOCUS = {
   primary: 'details-primary',
   favorite: 'details-favorite',
+  edit: 'details-edit',
   name: 'details-name',
   path: 'details-path',
   art: 'details-art',
@@ -170,8 +171,11 @@ export function GameDetailsPage({
   const scrollerRef = useRef<HTMLDivElement>(null)
   const [confirmRemove, setConfirmRemove] = useState(false)
   const removeTimer = useRef<number | null>(null)
+  // Read first: the edit form only exists for a local game whose ✎ Edit was pressed.
+  const [editing, setEditing] = useState(false)
 
   const manual = Boolean(draft)
+  const showForm = manual && editing
   const running = game.running
   const assurance = runAssurance(game.runState)
   const evidence = describeRunEvidence(game.runState)
@@ -194,6 +198,15 @@ export function GameDetailsPage({
       if (removeTimer.current !== null) window.clearTimeout(removeTimer.current)
     }
   }, [])
+
+  // D4: Edit lands on the name field as soon as the form is painted.
+  useEffect(() => {
+    if (!editing) return
+    const frame = requestAnimationFrame(() => {
+      if (doesFocusableExist(FOCUS.name)) void setFocus(FOCUS.name)
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [editing])
 
   // A long page should start at the top like Settings does.
   useEffect(() => {
@@ -249,15 +262,22 @@ export function GameDetailsPage({
   }, [confirmRemove, onRemove, removing])
 
   // --- Arrow graph -------------------------------------------------------
+  const editArrows = (direction: string): boolean => {
+    if (direction === 'left') return moveTo(FOCUS.favorite)
+    if (direction === 'down') return true
+    return true
+  }
+
   const primaryArrows = (direction: string): boolean => {
     if (direction === 'right') return moveTo(FOCUS.favorite)
-    if (direction === 'down') return manual ? moveTo(FOCUS.name) : false
+    if (direction === 'down') return showForm ? moveTo(FOCUS.name) : false
     return true
   }
 
   const favoriteArrows = (direction: string): boolean => {
     if (direction === 'left') return moveTo(FOCUS.primary)
-    if (direction === 'down') return manual ? moveTo(FOCUS.name) : false
+    if (direction === 'right') return manual ? moveTo(FOCUS.edit) : false
+    if (direction === 'down') return showForm ? moveTo(FOCUS.name) : false
     return false
   }
 
@@ -324,13 +344,14 @@ export function GameDetailsPage({
 
   const tabOrder = useMemo(() => {
     const order: string[] = [FOCUS.primary, FOCUS.favorite]
-    if (manual) {
+    if (manual) order.push(FOCUS.edit)
+    if (showForm) {
       order.push(FOCUS.name, FOCUS.path, FOCUS.art)
       if (hasCustomArtwork) order.push(FOCUS.artClear)
       order.push(FOCUS.save, FOCUS.cancel, FOCUS.remove)
     }
     return order
-  }, [hasCustomArtwork, manual])
+  }, [hasCustomArtwork, manual, showForm])
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
@@ -530,9 +551,20 @@ export function GameDetailsPage({
                 />
                 {game.favorite ? 'Favorited' : 'Favorite'}
               </DetailsAction>
+              {manual && !showForm ? (
+                <DetailsAction
+                  focusKey={FOCUS.edit}
+                  label={`Edit ${game.name}`}
+                  onPress={() => setEditing(true)}
+                  onArrowPress={editArrows}
+                >
+                  <EditFilled className="size-4" />
+                  Edit
+                </DetailsAction>
+              ) : null}
             </div>
 
-            {manual && draft ? (
+            {showForm && draft ? (
               <>
                 <section className="grid gap-3 border-t border-white/10 pt-5">
                   <SectionLabel>Name and launch file</SectionLabel>

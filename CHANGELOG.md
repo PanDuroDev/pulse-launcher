@@ -50,6 +50,9 @@ packaged `app.asar` is older than `out/`.
   The header hides while a panel is open. Keyboard navigation is unchanged.
 - Panels now carry their own title and one-line description, so the settings
   page lost its duplicated header; up from its first row reaches the panel's ✕.
+- Every secondary screen (settings, add game, game details, search) is now a
+  full-window screen instead of a floating card: it covers the whole app
+  including the header, which stays mounted but hidden behind it.
 - Home (docs/design P1.2, first half): Steam, Epic and Local are now filter chips
   inside All Games instead of three more rows, so the library is Running Now /
   Continue / Favorites / All Games. The chip row only appears when the library

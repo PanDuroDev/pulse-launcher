@@ -182,7 +182,7 @@
 }
 
 .panel-in {
-  animation: panel-in var(--duration-panel) cubic-bezier(0.2, 0, 0, 1);
+  animation: panel-in var(--duration-panel) cubic-bezier(0.2, 0, 0, 1) both;
 }
 
 .no-scrollbar::-webkit-scrollbar {

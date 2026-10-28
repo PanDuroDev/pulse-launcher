@@ -1295,7 +1295,7 @@ export default function App() {
       />
     </Panel>
   ) : detailsGame ? (
-    <Panel title="Game details" onClose={closeDetails} width="card">
+    <Panel title="Game details" onClose={closeDetails}>
       <GameDetailsPage
         key={detailsGame.id}
         game={detailsGame}
@@ -1359,7 +1359,7 @@ export default function App() {
             header has to be there — dimmed to nothing until the ball lands. */}
         <div
           className={`transition-opacity duration-[--duration-focus] ease-out ${
-            bootDone && !panel ? 'opacity-100' : 'opacity-0'
+            bootDone ? 'opacity-100' : 'opacity-0'
           }`}
           inert={Boolean(panel)}
         >
@@ -1389,7 +1389,8 @@ export default function App() {
             revealed ? 'opacity-100' : 'opacity-0'
           }`}
         >
-          <AppShell panel={panel}>
+          <div className="flex min-h-0 flex-1 flex-col">
+            <AppShell panel={panel}>
             {musicOpen ? (
               <ErrorBoundary
                 surface="launcher"
@@ -1463,6 +1464,7 @@ export default function App() {
               </>
             )}
           </AppShell>
+          </div>
         </div>
 
         {panel ? null : (
