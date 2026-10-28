@@ -173,6 +173,18 @@
   -ms-overflow-style: none;
 }
 
+/* Panels arrive as light, not as a page: opacity plus a 6px rise. */
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+.panel-in {
+  animation: panel-in var(--duration-panel) cubic-bezier(0.2, 0, 0, 1);
+}
+
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -193,6 +205,7 @@
 [data-motion='reduced'] *::after {
   transition-duration: 0.01ms !important;
   scroll-behavior: auto !important;
+  animation-duration: 0.01ms !important;
 }
 
 html.cursor-hidden,

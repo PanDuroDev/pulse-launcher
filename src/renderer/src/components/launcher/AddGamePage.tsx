@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import {
-  ArrowLeftFilled,
   ArrowRightFilled,
   ArrowUpFilled,
   DriveFilled,
@@ -27,7 +26,6 @@ import { cn } from 'cn'
 import { Spinner } from '@/components/ui/spinner'
 
 interface AddGamePageProps {
-  onBack: () => void
   /** Called after main accepted the file; the library is already updated. */
   onAdded?: (game: GameSummary) => void
   /**
@@ -41,7 +39,6 @@ interface AddGamePageProps {
 }
 
 const FOCUS = {
-  back: 'add-back',
   up: 'add-up',
   confirm: 'add-confirm',
   cancel: 'add-cancel',
@@ -264,7 +261,6 @@ function EntryRow({
  * a separate, validated call.
  */
 export function AddGamePage({
-  onBack,
   onAdded,
   mode = 'game',
   onPicked,
@@ -293,7 +289,6 @@ export function AddGamePage({
         return
       }
       if (doesFocusableExist(FOCUS.up)) void setFocus(FOCUS.up)
-      else if (doesFocusableExist(FOCUS.back)) void setFocus(FOCUS.back)
     }, delay)
   }, [])
 
@@ -362,7 +357,7 @@ export function AddGamePage({
     const timer = window.setTimeout(() => {
       const current = getCurrentFocusKey()
       if (current && current.startsWith('add-')) return
-      if (doesFocusableExist(FOCUS.back)) void setFocus(FOCUS.back)
+      if (doesFocusableExist(FOCUS.up)) void setFocus(FOCUS.up)
     }, 90)
     return () => window.clearTimeout(timer)
   }, [])
@@ -423,24 +418,16 @@ export function AddGamePage({
   }, [adding, onAdded, onPicked, pickOnly, selected])
 
   // --- Arrow graph -------------------------------------------------------
-  const backArrows = (direction: string): boolean => {
-    if (direction === 'down' || direction === 'right') {
-      return moveTo(places[0] ? FOCUS.place(places[0].id) : FOCUS.up)
-    }
-    return false
-  }
-
   const upArrows = (direction: string): boolean => {
-    if (direction === 'up') return moveTo(FOCUS.back)
     if (direction === 'down' || direction === 'right') return moveTo(FOCUS.entry(0))
-    if (direction === 'left') return moveTo(lastPlaceKey ?? FOCUS.back)
+    if (direction === 'left') return moveTo(lastPlaceKey)
     return false
   }
 
   const placeArrows = (index: number) => (direction: string): boolean => {
     if (direction === 'up') {
       if (index > 0) return moveTo(FOCUS.place(places[index - 1]!.id))
-      return moveTo(FOCUS.back)
+      return false
     }
     if (direction === 'down') {
       const next = places[index + 1]
@@ -461,7 +448,7 @@ export function AddGamePage({
       if (next) return moveTo(FOCUS.entry(index + 1))
       return selected ? moveTo(FOCUS.confirm) : false
     }
-    if (direction === 'left') return moveTo(lastPlaceKey ?? FOCUS.back)
+    if (direction === 'left') return moveTo(lastPlaceKey)
     if (direction === 'right') return selected ? moveTo(FOCUS.confirm) : false
     return false
   }
@@ -479,16 +466,6 @@ export function AddGamePage({
   }
 
   // --- Focusable header actions -----------------------------------------
-  const { ref: backRef, focused: backFocused } = useFocusable<
-    Record<string, never>,
-    HTMLButtonElement
-  >({
-    focusKey: FOCUS.back,
-    accessibilityLabel: 'Back to library',
-    onEnterPress: onBack,
-    onArrowPress: backArrows,
-    onFocus: () => backRef.current?.scrollIntoView({ block: 'nearest' }),
-  })
   const { ref: upRef, focused: upFocused } = useFocusable<
     Record<string, never>,
     HTMLButtonElement
@@ -502,7 +479,7 @@ export function AddGamePage({
   })
 
   const tabOrder = useMemo(() => {
-    const order: string[] = [FOCUS.back, FOCUS.up]
+    const order: string[] = [FOCUS.up]
     for (const place of places) order.push(FOCUS.place(place.id))
     for (let index = 0; index < entries.length; index += 1) order.push(FOCUS.entry(index))
     if (selected) order.push(FOCUS.cancel, FOCUS.confirm)
@@ -533,26 +510,8 @@ export function AddGamePage({
 
   return (
     <main className="relative z-10 flex min-h-0 flex-1 flex-col">
-      <div className="px-gutter pb-4">
-        <div className="mx-auto flex w-full max-w-[64rem] items-center gap-4">
-          <button
-            ref={backRef}
-            type="button"
-            tabIndex={-1}
-            aria-label={pickOnly ? 'Back to game details' : 'Back to library'}
-            data-focus-key={FOCUS.back}
-            onClick={onBack}
-            className={cn(
-              'inline-flex h-9 shrink-0 items-center gap-2 rounded-full px-3.5 text-caption font-medium outline-none transition-colors',
-              backFocused
-                ? 'bg-white text-black'
-                : 'bg-white/[0.05] text-text-secondary ring-1 ring-white/15 hover:bg-white/10 hover:text-text-primary',
-            )}
-            style={backFocused ? { boxShadow: `0 0 0 2px ${uiAccent()}` } : undefined}
-          >
-            <ArrowLeftFilled className="size-4" />
-            {pickOnly ? 'Details' : 'Library'}
-          </button>
+      <div className="px-6 pb-4 pt-5">
+        <div className="mx-auto flex w-full items-center gap-4">
           <div className="min-w-0">
             <h1 className="text-label font-semibold tracking-tight text-text-primary">
               {imageMode
@@ -569,15 +528,15 @@ export function AddGamePage({
                   : 'Browse for a game .exe or a .lnk shortcut, then add it to your library.'}
             </p>
           </div>
-          <p className="ml-auto hidden text-right text-caption leading-relaxed text-text-muted md:block">
+          <p className="ml-auto mr-12 hidden text-right text-caption leading-relaxed text-text-muted md:block">
             Enter opens or selects
             <br />
-            {pickOnly ? 'Esc returns to game details' : 'Esc returns to the library'}
+            Esc closes this panel
           </p>
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 gap-4 px-gutter pb-8">
+      <div className="flex min-h-0 flex-1 gap-4 px-6 pb-6">
         {places.length > 0 ? (
           <aside className="hidden w-52 shrink-0 flex-col rounded-2xl border border-white/10 bg-[#08080d]/92 p-2 backdrop-blur-xl sm:flex">
             <p className="px-2 pt-1.5 pb-2 text-caption font-semibold tracking-[0.2em] text-text-faint uppercase">

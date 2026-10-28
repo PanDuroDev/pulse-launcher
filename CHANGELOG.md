@@ -39,6 +39,11 @@ packaged `app.asar` is older than `out/`.
   four text levels replace 16 white alphas, one page gutter replaces the
   viewport-relative padding, one blur and one focus ring replace the ad hoc
   glows. A static census (`npm run design:check`) now guards the vocabulary.
+- Shell and panels (docs/design P3): the library is the only destination, and
+  search, details, add-game and settings open as panels over it instead of
+  swapping the whole page. The five back buttons are gone; a panel closes with
+  its ✕, Escape, or a click outside, and focus returns to whatever opened it.
+  The header hides while a panel is open. Keyboard navigation is unchanged.
 
 ## [0.1.0] - 2026-10-27
 

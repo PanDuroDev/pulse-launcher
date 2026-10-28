@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import {
-  ArrowLeftFilled,
   ArrowUpFilled,
   ClockFilled,
   DriveFilled,
@@ -23,8 +22,7 @@ import type { GameSummary } from '@shared/types'
 import { formatBytes, formatLastPlayed, sourceLabel } from '@shared/format'
 import { describeRunEvidence, runAssurance } from '@shared/run-state'
 import { cn } from 'cn'
-import { accentAlpha, initialsFor, uiAccent } from '@/lib/accent'
-import { focusRing } from '@/lib/accent'
+import { accentAlpha, focusRing, initialsFor } from '@/lib/accent'
 import { type GameActionState, isGameActionBusy } from '@/lib/game-actions'
 import { useArtwork } from '@/hooks/use-artwork'
 import { Input } from '@/components/ui/input'
@@ -57,7 +55,6 @@ interface GameDetailsPageProps {
 }
 
 const FOCUS = {
-  back: 'details-back',
   primary: 'details-primary',
   favorite: 'details-favorite',
   name: 'details-name',
@@ -252,19 +249,15 @@ export function GameDetailsPage({
   }, [confirmRemove, onRemove, removing])
 
   // --- Arrow graph -------------------------------------------------------
-  const backArrows = (direction: string): boolean =>
-    direction === 'down' ? moveTo(FOCUS.primary) : false
-
   const primaryArrows = (direction: string): boolean => {
-    if (direction === 'left') return moveTo(FOCUS.back)
     if (direction === 'right') return moveTo(FOCUS.favorite)
-    if (direction === 'down') return moveTo(manual ? FOCUS.name : FOCUS.back)
+    if (direction === 'down') return manual ? moveTo(FOCUS.name) : false
     return true
   }
 
   const favoriteArrows = (direction: string): boolean => {
     if (direction === 'left') return moveTo(FOCUS.primary)
-    if (direction === 'down') return moveTo(manual ? FOCUS.name : FOCUS.back)
+    if (direction === 'down') return manual ? moveTo(FOCUS.name) : false
     return false
   }
 
@@ -320,17 +313,6 @@ export function GameDetailsPage({
   }
 
   // --- Focusable controls ------------------------------------------------
-  const { ref: backRef, focused: backFocused } = useFocusable<
-    Record<string, never>,
-    HTMLButtonElement
-  >({
-    focusKey: FOCUS.back,
-    accessibilityLabel: 'Back to library',
-    onEnterPress: onBack,
-    onArrowPress: backArrows,
-    onFocus: () => backRef.current?.scrollIntoView({ block: 'nearest' }),
-  })
-
   const {
     ref: nameFieldRef,
     focused: nameFocused,
@@ -341,7 +323,7 @@ export function GameDetailsPage({
   })
 
   const tabOrder = useMemo(() => {
-    const order: string[] = [FOCUS.back, FOCUS.primary, FOCUS.favorite]
+    const order: string[] = [FOCUS.primary, FOCUS.favorite]
     if (manual) {
       order.push(FOCUS.name, FOCUS.path, FOCUS.art)
       if (hasCustomArtwork) order.push(FOCUS.artClear)
@@ -394,26 +376,8 @@ export function GameDetailsPage({
       data-page="game-details"
       data-game-id={game.id}
     >
-      <div className="px-gutter pb-4">
-        <div className="mx-auto flex w-full max-w-[64rem] items-center gap-4">
-          <button
-            ref={backRef}
-            type="button"
-            tabIndex={-1}
-            aria-label="Back to library"
-            data-focus-key={FOCUS.back}
-            onClick={onBack}
-            className={cn(
-              'inline-flex h-9 shrink-0 items-center gap-2 rounded-full px-3.5 text-caption font-medium outline-none transition-colors',
-              backFocused
-                ? 'bg-white text-black'
-                : 'bg-white/[0.05] text-text-secondary ring-1 ring-white/15 hover:bg-white/10 hover:text-text-primary',
-            )}
-            style={backFocused ? { boxShadow: `0 0 0 2px ${uiAccent()}` } : undefined}
-          >
-            <ArrowLeftFilled className="size-4" />
-            Library
-          </button>
+      <div className="px-6 pb-4 pt-5">
+        <div className="mx-auto flex w-full items-center gap-4">
           <div className="min-w-0">
             <h1 className="text-label font-semibold tracking-tight text-text-primary">
               Game details
@@ -424,19 +388,19 @@ export function GameDetailsPage({
                 : 'What Pulse knows about this game.'}
             </p>
           </div>
-          <p className="ml-auto hidden text-right text-caption leading-relaxed text-text-muted md:block">
+          <p className="ml-auto mr-12 hidden text-right text-caption leading-relaxed text-text-muted md:block">
             Enter activates
             <br />
-            Esc returns to the library
+            Esc closes this panel
           </p>
         </div>
       </div>
 
       <div
         ref={scrollerRef}
-        className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-gutter pb-16"
+        className="min-h-0 flex-1 overflow-y-auto px-6 pb-6"
       >
-        <div className="mx-auto grid w-full max-w-[64rem] gap-7 rounded-2xl border border-white/10 bg-[#08080d]/92 px-6 py-6 backdrop-blur-xl md:grid-cols-[15rem_minmax(0,1fr)]">
+        <div className="grid w-full gap-6 md:grid-cols-[14rem_minmax(0,1fr)]">
           <div className="flex flex-col gap-3">
             <div
               className="relative aspect-[2/3] w-full max-w-[15rem] overflow-hidden rounded-2xl bg-white/5 ring-1 ring-white/10"

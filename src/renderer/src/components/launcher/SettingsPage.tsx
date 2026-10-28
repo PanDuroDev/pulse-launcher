@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import {
-  ArrowLeftFilled,
   BackFilled,
   CursorFilled,
   Delete2Filled,
@@ -37,7 +36,6 @@ import { Separator } from '@/components/ui/separator'
 import { Spinner } from '@/components/ui/spinner'
 
 interface SettingsPageProps {
-  onBack: () => void
   onAddGame: () => void
 }
 
@@ -54,7 +52,6 @@ const WINDOW_MODE_OPTIONS: Array<{ value: WindowMode; label: string }> = [
 ]
 
 const FOCUS = {
-  back: 'settings-back',
   refresh: 'settings-refresh',
   add: 'settings-add',
   shortcuts: 'settings-shortcuts',
@@ -336,43 +333,6 @@ function ManualGameRow({
   )
 }
 
-function BackToLibrary({
-  onBack,
-  onArrowPress,
-}: {
-  onBack: () => void
-  onArrowPress: (direction: string) => boolean
-}) {
-  const { ref, focused } = useFocusable<Record<string, never>, HTMLButtonElement>({
-    focusKey: FOCUS.back,
-    accessibilityLabel: 'Back to library',
-    onEnterPress: onBack,
-    onArrowPress,
-    onFocus: () => ref.current?.scrollIntoView({ block: 'nearest' }),
-  })
-
-  return (
-    <button
-      ref={ref}
-      type="button"
-      tabIndex={-1}
-      aria-label="Back to library"
-      data-focus-key={FOCUS.back}
-      onClick={onBack}
-      className={cn(
-        'inline-flex h-9 shrink-0 items-center gap-2 rounded-full px-3.5 text-caption font-medium outline-none transition-colors',
-        focused
-          ? 'bg-white text-black'
-          : 'bg-white/[0.05] text-text-secondary ring-1 ring-white/15 hover:bg-white/10 hover:text-text-primary',
-      )}
-      style={focused ? { boxShadow: `0 0 0 2px ${uiAccent()}` } : undefined}
-    >
-      <ArrowLeftFilled className="size-4" />
-      Library
-    </button>
-  )
-}
-
 /**
  * Settings as a page inside Pulse instead of a dialog over the library.
  * Hide and Quit live in the header Power menu, not here.
@@ -381,7 +341,7 @@ function BackToLibrary({
  * consumed, and Tab walks the same controls in visual order. Text fields are
  * the only place where keys are handed back to the DOM while editing.
  */
-export function SettingsPage({ onBack, onAddGame }: SettingsPageProps) {
+export function SettingsPage({ onAddGame }: SettingsPageProps) {
   const games = useLauncherStore((state) => state.games)
   const settings = useLauncherStore((state) => state.settings)
   const refreshing = useLauncherStore((state) => state.refreshing)
@@ -404,7 +364,7 @@ export function SettingsPage({ onBack, onAddGame }: SettingsPageProps) {
 
   // Tab order mirrors the visual order of the page.
   const tabOrder = useMemo(() => {
-    const order: string[] = [FOCUS.back, FOCUS.refresh, FOCUS.add, FOCUS.shortcuts]
+    const order: string[] = [FOCUS.refresh, FOCUS.add, FOCUS.shortcuts]
     for (const game of games) {
       if (game.source === 'manual') order.push(FOCUS.remove(game.id))
     }
@@ -501,9 +461,6 @@ export function SettingsPage({ onBack, onAddGame }: SettingsPageProps) {
   }, [cycleTab])
 
   // --- Arrow graph -------------------------------------------------------
-  const backArrows = (direction: string): boolean =>
-    direction === 'down' ? moveTo(FOCUS.refresh) : false
-
   const refreshArrows = (direction: string): boolean => {
     if (direction === 'right') return moveTo(FOCUS.add)
     if (direction === 'down') return moveTo(FOCUS.shortcuts)
@@ -720,16 +677,15 @@ export function SettingsPage({ onBack, onAddGame }: SettingsPageProps) {
 
   return (
     <main className="relative z-10 flex min-h-0 flex-1 flex-col">
-      <div className="px-gutter pb-4">
-        <div className="mx-auto flex w-full max-w-[48rem] items-center gap-4">
-          <BackToLibrary onBack={onBack} onArrowPress={backArrows} />
+      <div className="px-6 pb-4 pt-5">
+        <div className="mx-auto flex w-full items-center gap-4">
           <div className="min-w-0">
             <h1 className="text-label font-semibold tracking-tight text-text-primary">Settings</h1>
             <p className="mt-0.5 text-caption text-text-secondary">
               Library, artwork, and window preferences.
             </p>
           </div>
-          <p className="ml-auto hidden text-right text-caption leading-relaxed text-text-muted md:block">
+          <p className="ml-auto mr-12 hidden text-right text-caption leading-relaxed text-text-muted md:block">
             Tab moves between controls
             <br />
             Esc leaves a field, then closes
@@ -737,8 +693,8 @@ export function SettingsPage({ onBack, onAddGame }: SettingsPageProps) {
         </div>
       </div>
 
-      <div ref={scrollerRef} className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-gutter pb-16">
-        <div className="mx-auto grid w-full max-w-[48rem] gap-7 rounded-2xl border border-white/10 bg-[#08080d]/92 px-6 py-6 backdrop-blur-xl">
+      <div ref={scrollerRef} className="min-h-0 flex-1 overflow-y-auto px-6 pb-6">
+        <div className="mx-auto grid w-full gap-6">
           <section className="grid gap-3">
             <SectionLabel>Library</SectionLabel>
             <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">

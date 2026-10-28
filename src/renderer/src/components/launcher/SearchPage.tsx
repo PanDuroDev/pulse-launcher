@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo } from 'react'
 import {
-  ArrowLeftFilled,
   CloseFilled,
   SearchFilled,
 } from '@mingcute/react/core-filled'
@@ -15,20 +14,17 @@ import type { GameSummary } from '@shared/types'
 import { filterGames } from '@shared/library'
 import { sourceLabel } from '@shared/format'
 import { uiAccent } from '@/lib/accent'
-import { cn } from 'cn'
 import { GameCard } from './GameCard'
 
 interface SearchPageProps {
   games: GameSummary[]
   query: string
   onQueryChange: (query: string) => void
-  onBack: () => void
   onSelect: (game: GameSummary, focusKey: string) => void
   onLaunch: (game: GameSummary) => void
 }
 
 const INPUT_KEY = 'search-input'
-const BACK_KEY = 'search-back'
 const resultKey = (gameId: string): string => `search-result-${gameId}`
 
 /** First card in the result strip, used by ArrowDown and Enter. */
@@ -41,25 +37,11 @@ export function SearchPage({
   games,
   query,
   onQueryChange,
-  onBack,
   onSelect,
   onLaunch,
 }: SearchPageProps) {
   const results = useMemo(() => filterGames(games, query), [games, query])
   const trimmed = query.trim()
-
-  const { ref: backRef, focused: backFocused } = useFocusable<
-    Record<string, never>,
-    HTMLButtonElement
-  >({
-    focusKey: BACK_KEY,
-    accessibilityLabel: 'Back to library',
-    onEnterPress: onBack,
-    onArrowPress: (direction) => {
-      if (direction === 'down') focusInput()
-      return false
-    },
-  })
 
   const { ref: inputRef, focused: inputFocused } = useFocusable<
     Record<string, never>,
@@ -151,30 +133,7 @@ export function SearchPage({
     <section data-search-page="" className="flex min-h-0 flex-1 flex-col">
       <h1 className="sr-only">Search</h1>
 
-      <div className="flex items-center gap-4 px-gutter pt-6">
-        <button
-          ref={backRef}
-          type="button"
-          tabIndex={-1}
-          data-focus-key={BACK_KEY}
-          aria-label="Back to library"
-          onClick={onBack}
-          className={cn(
-            'inline-flex h-10 shrink-0 items-center gap-2 rounded-full px-4 text-caption font-medium outline-none transition-colors',
-            backFocused
-              ? 'bg-white text-black'
-              : 'bg-white/5 text-text-secondary ring-1 ring-white/12 hover:bg-white/10 hover:text-text-primary',
-          )}
-          style={
-            backFocused
-              ? { boxShadow: `0 0 0 2px ${uiAccent()}` }
-              : undefined
-          }
-        >
-          <ArrowLeftFilled className="size-4" />
-          Library
-        </button>
-
+      <div className="flex items-center gap-4 pr-16 pl-6 pt-5">
         <div
           className="flex h-12 min-w-0 flex-1 items-center gap-3 rounded-2xl border bg-black/35 px-4 backdrop-blur-xl transition-colors"
           style={{
@@ -273,7 +232,7 @@ export function SearchPage({
         </div>
       )}
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex items-center gap-5 bg-gradient-to-t from-[#050508] via-[#050508]/80 to-transparent px-gutter pt-10 pb-5 text-caption text-text-muted">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex items-center gap-5 bg-gradient-to-t from-[#050508] via-[#050508]/80 to-transparent px-6 pt-10 pb-5 text-caption text-text-muted">
         <span>
           <span className="text-text-secondary">Type</span> to filter instantly
         </span>

@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import {
-  ArrowLeftFilled,
   CheckFilled,
   ExternalLinkFilled,
   FolderOpenFilled,
@@ -48,7 +47,6 @@ import { useMusicEngineState } from '@/hooks/use-music-engine'
 import { useMusicStore } from '@/store/music'
 import { cn } from 'cn'
 
-const BACK_KEY = 'music-back'
 const MODE_ALL_KEY = 'music-mode-all'
 const MODE_LIBRARY_KEY = 'music-mode-library'
 const MODE_ONLINE_KEY = 'music-mode-online'
@@ -129,10 +127,6 @@ function providerSummary(statuses: MusicOnlineProviderStatus[]): string {
     .map((status) => `${PROVIDER_LABELS[status.provider]} ${status.count}`)
     .join(' · ')
   return unavailable > 0 ? `${summary} · ${unavailable} unavailable` : summary
-}
-
-interface MusicPageProps {
-  onBack: () => void
 }
 
 interface ToolProps {
@@ -350,7 +344,7 @@ function SeekBar({ positionMs, durationMs }: { positionMs: number; durationMs: n
   )
 }
 
-export function MusicPage({ onBack }: MusicPageProps) {
+export function MusicPage() {
   const tracks = useMusicStore((state) => state.tracks)
   const folders = useMusicStore((state) => state.folders)
   const scanning = useMusicStore((state) => state.scanning)
@@ -426,14 +420,6 @@ export function MusicPage({ onBack }: MusicPageProps) {
   )
 
   const listRef = useRef<HTMLDivElement>(null)
-  const { ref: backRef, focused: backFocused } = useFocusable<
-    Record<string, never>,
-    HTMLButtonElement
-  >({
-    focusKey: BACK_KEY,
-    accessibilityLabel: 'Back to library',
-    onEnterPress: onBack,
-  })
 
   const { ref: filterRef, focused: filterFocused } = useFocusable<
     Record<string, never>,
@@ -819,26 +805,7 @@ export function MusicPage({ onBack }: MusicPageProps) {
     <section data-music-page="" className="flex min-h-0 flex-1 flex-col">
       <h1 className="sr-only">Music</h1>
 
-      <div className="flex items-center gap-4 px-gutter pt-6">
-        <button
-          ref={backRef}
-          type="button"
-          tabIndex={-1}
-          data-focus-key={BACK_KEY}
-          aria-label="Back to library"
-          onClick={onBack}
-          className={cn(
-            'inline-flex h-10 shrink-0 items-center gap-2 rounded-full px-4 text-caption font-medium outline-none transition-colors',
-            backFocused
-              ? 'bg-white text-black'
-              : 'bg-white/5 text-text-secondary ring-1 ring-white/12 hover:bg-white/10 hover:text-text-primary',
-          )}
-          style={backFocused ? { boxShadow: `0 0 0 2px ${uiAccent()}` } : undefined}
-        >
-          <ArrowLeftFilled className="size-4" />
-          Back
-        </button>
-
+      <div className="flex items-center gap-4 pr-16 pl-6 pt-5">
         <div className="flex shrink-0 items-center gap-1 rounded-full bg-white/5 p-1 ring-1 ring-white/10">
           <ModeTab
             focusKey={MODE_ALL_KEY}
@@ -866,7 +833,7 @@ export function MusicPage({ onBack }: MusicPageProps) {
           />
         </div>
 
-        <div className="ml-auto flex shrink-0 items-center gap-2">
+        <div className="ml-auto mr-12 flex shrink-0 items-center gap-2">
           {mode === 'library' ? (
             <>
               <Tool
@@ -911,7 +878,7 @@ export function MusicPage({ onBack }: MusicPageProps) {
         </div>
       </div>
 
-      <div className="mt-5 flex min-h-0 flex-1 gap-6 px-gutter pb-8">
+      <div className="mt-5 flex min-h-0 flex-1 gap-6 px-6 pb-6">
         <div className="flex min-h-0 min-w-0 flex-1 flex-col rounded-[1.35rem] border border-white/10 bg-black/30 backdrop-blur-xl">
           {(mode === 'youtube' || mode === 'all') && setupOpen ? (
             <YouTubeSetup
