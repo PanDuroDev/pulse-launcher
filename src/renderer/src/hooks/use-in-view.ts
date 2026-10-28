@@ -25,7 +25,7 @@ export function useInView<T extends Element>(
     )
     observer.observe(node)
     return () => observer.disconnect()
-  }, [rootMargin])
+  }, [ref, rootMargin])
 
   return [ref, visible]
 }
