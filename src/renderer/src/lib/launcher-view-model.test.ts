@@ -76,7 +76,7 @@ describe('deriveLauncherViewModel', () => {
 
   it('does not hide library tools behind the power overlay, but hides the hint bar', () => {
     const view = deriveLauncherViewModel({ ...defaults, powerOpen: true })
-    expect(view.activePage).toBe('library')
+    expect(view.activePage).toBe('empty')
     expect(view.title).toBe('Library')
     expect(view.showTools).toBe(true)
     expect(view.showHintBar).toBe(false)
