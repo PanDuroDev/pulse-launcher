@@ -1,19 +1,13 @@
-import { useEffect, useState } from 'react'
-import { pause, resume } from '@noriginmedia/norigin-spatial-navigation-core'
+import { useState } from 'react'
 import { useLauncherStore } from '@/store/launcher'
 import { useLauncherBootSequence } from '@/hooks/use-launcher-boot-sequence'
-import { useLauncherInitialization } from '@/hooks/use-launcher-initialization'
-import { useGameActionController } from '@/hooks/use-game-action-controller'
-import { useGameLaunchController } from '@/hooks/use-game-launch-controller'
+import { useLauncherGameRuntime } from '@/hooks/use-launcher-game-runtime'
 import { useLibraryActions } from '@/hooks/use-library-actions'
 import { useLauncherInputHandlers } from '@/hooks/use-launcher-input-handlers'
 import { useLauncherNavigationController } from '@/hooks/use-launcher-navigation-controller'
 import { useLauncherPageState } from '@/hooks/use-launcher-page-state'
 import { useLauncherViewModel } from '@/hooks/use-launcher-view-model'
-import { useAutoHideCursor } from '@/hooks/use-clock'
-import { useUISounds } from '@/hooks/use-ui-sounds'
-import { useMusicEngine } from '@/hooks/use-music-engine'
-import { useMusicStore } from '@/store/music'
+import { useLauncherRuntimeServices } from '@/hooks/use-launcher-runtime-services'
 import { LauncherPageContent } from '@/components/launcher/LauncherPageContent'
 import { LauncherFrame } from '@/components/launcher/LauncherFrame'
 
@@ -92,12 +86,9 @@ export default function App() {
     handleCloseGame,
     handleForceQuit,
     handleCancelForceQuit,
-  } = useGameActionController()
-  const { pendingLaunch, handleLaunch } = useGameLaunchController({
-    games,
-    demo,
-    onFocusGame: handleFocusGame,
-  })
+    pendingLaunch,
+    handleLaunch,
+  } = useLauncherGameRuntime({ games, demo })
 
   const { markMood, showLoading, showError, showEmpty, selectedAction, selectedForceRemaining } =
     useLauncherViewModel({
@@ -116,23 +107,12 @@ export default function App() {
     librarySort: settings.librarySort,
   })
 
-  useLauncherInitialization({
+  useLauncherRuntimeServices({
+    settings,
+    bootDone,
     clearFinishedGameAction,
     onDemoLoaded: setDemo,
   })
-
-  const musicTracks = useMusicStore((state) => state.tracks)
-  useMusicEngine(musicTracks, bootDone)
-
-  useAutoHideCursor(settings.hideCursorAfterMs)
-  useUISounds(settings.uiSounds)
-
-  // Spatial navigation also listens to the arrow keys. Freeze it while the
-  // overlay is up, then hand the library back on the same tick the fade ends.
-  useEffect(() => {
-    if (bootDone) resume()
-    else pause()
-  }, [bootDone])
 
   const { openPower, closePower } = useLauncherInputHandlers({
     addOpen,
