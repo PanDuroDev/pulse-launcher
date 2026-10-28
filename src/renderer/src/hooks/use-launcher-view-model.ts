@@ -25,7 +25,23 @@ export function useLauncherViewModel(options: LauncherViewModelInput): LauncherV
   } = options
 
   return useMemo(
-    () => deriveLauncherViewModel(options),
+    () =>
+      deriveLauncherViewModel({
+        status,
+        games,
+        refreshing,
+        pendingLaunch,
+        selected,
+        gameAction,
+        actionClock,
+        searchOpen,
+        addOpen,
+        addMode,
+        detailsOpen,
+        musicOpen,
+        settingsOpen,
+        powerOpen,
+      }),
     [
       status,
       games,
