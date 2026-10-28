@@ -39,10 +39,10 @@ function BoundaryButton({ focusKey, label, onClick, primary, icon }: BoundaryBut
       aria-label={label}
       onClick={onClick}
       className={cn(
-        'inline-flex h-11 items-center gap-2 rounded-full px-5 text-[0.8rem] font-semibold outline-none transition-colors',
+        'inline-flex h-11 items-center gap-2 rounded-full px-5 text-caption font-semibold outline-none transition-colors',
         primary
           ? 'bg-white text-black'
-          : 'border border-white/15 bg-white/5 text-white/75 hover:bg-white/10 hover:text-white',
+          : 'border border-white/15 bg-white/5 text-text-secondary hover:bg-white/10 hover:text-text-primary',
       )}
       style={focused ? { boxShadow: `0 0 0 3px ${uiAccent(0.7)}` } : undefined}
     >
@@ -118,13 +118,13 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           isOverlay ? 'h-screen w-screen bg-[#0b0b10] p-4' : 'h-full',
         )}
       >
-        <span className="grid size-12 place-items-center rounded-2xl bg-white/8 text-white/70">
+        <span className="grid size-12 place-items-center rounded-2xl bg-white/8 text-text-secondary">
           <WarningFilled className="size-6" />
         </span>
         <div className="max-w-md">
-          <p className="text-[1.05rem] font-semibold text-white">{title}</p>
-          <p className="mt-1.5 text-[0.8rem] leading-relaxed text-white/55">{body}</p>
-          <p className="mt-2 line-clamp-3 break-words text-[0.72rem] leading-relaxed text-white/40">
+          <p className="text-label font-semibold text-text-primary">{title}</p>
+          <p className="mt-1.5 text-caption leading-relaxed text-text-muted">{body}</p>
+          <p className="mt-2 line-clamp-3 break-words text-caption leading-relaxed text-text-faint">
             {error.message || 'No error message was provided.'}
           </p>
         </div>
@@ -154,7 +154,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           )}
         </div>
         {isOverlay ? null : (
-          <p className="text-[0.68rem] text-white/30">
+          <p className="text-caption text-text-faint">
             The details were written to the log file.
           </p>
         )}

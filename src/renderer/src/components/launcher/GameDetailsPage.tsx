@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import {
-  ArrowLeftFilled,
   ArrowUpFilled,
   ClockFilled,
   DriveFilled,
@@ -23,7 +22,7 @@ import type { GameSummary } from '@shared/types'
 import { formatBytes, formatLastPlayed, sourceLabel } from '@shared/format'
 import { describeRunEvidence, runAssurance } from '@shared/run-state'
 import { cn } from 'cn'
-import { accentAlpha, initialsFor, uiAccent } from '@/lib/accent'
+import { accentAlpha, focusRing, initialsFor } from '@/lib/accent'
 import { type GameActionState, isGameActionBusy } from '@/lib/game-actions'
 import { useArtwork } from '@/hooks/use-artwork'
 import { Input } from '@/components/ui/input'
@@ -56,9 +55,9 @@ interface GameDetailsPageProps {
 }
 
 const FOCUS = {
-  back: 'details-back',
   primary: 'details-primary',
   favorite: 'details-favorite',
+  edit: 'details-edit',
   name: 'details-name',
   path: 'details-path',
   art: 'details-art',
@@ -71,12 +70,6 @@ const FOCUS = {
 /** How long the remove button stays armed before it goes back to safe. */
 const REMOVE_CONFIRM_MS = 3_000
 
-function focusRing(active: boolean): { boxShadow?: string } {
-  return active
-    ? { boxShadow: `0 0 0 2px ${uiAccent(0.8)}, 0 0 22px -8px ${uiAccent(0.6)}` }
-    : {}
-}
-
 /** Move focus and always consume the direction, so geometry cannot escape. */
 function moveTo(focusKey: string | null): boolean {
   if (!focusKey || !doesFocusableExist(focusKey)) return false
@@ -86,7 +79,7 @@ function moveTo(focusKey: string | null): boolean {
 
 function SectionLabel({ children }: { children: ReactNode }) {
   return (
-    <p className="text-[0.6rem] font-semibold tracking-[0.2em] text-white/55 uppercase">
+    <p className="text-caption font-semibold tracking-[0.2em] text-text-muted uppercase">
       {children}
     </p>
   )
@@ -137,12 +130,12 @@ function DetailsAction({
         if (!disabled) onPress()
       }}
       className={cn(
-        'inline-flex h-10 items-center justify-center gap-2 rounded-full px-5 text-[0.8rem] font-medium outline-none transition-colors',
+        'inline-flex h-10 items-center justify-center gap-2 rounded-full px-5 text-caption font-medium outline-none transition-colors',
         primary
           ? 'bg-white font-semibold text-black hover:bg-white/90'
           : danger
             ? 'bg-red-500/12 text-red-200 ring-1 ring-red-400/35 hover:bg-red-500/20'
-            : 'border border-white/10 bg-white/[0.06] text-white/85 hover:bg-white/12 hover:text-white',
+            : 'border border-white/10 bg-white/[0.06] text-text-primary hover:bg-white/12 hover:text-text-primary',
         disabled && 'cursor-default opacity-50',
         className,
       )}
@@ -178,8 +171,11 @@ export function GameDetailsPage({
   const scrollerRef = useRef<HTMLDivElement>(null)
   const [confirmRemove, setConfirmRemove] = useState(false)
   const removeTimer = useRef<number | null>(null)
+  // Read first: the edit form only exists for a local game whose ✎ Edit was pressed.
+  const [editing, setEditing] = useState(false)
 
   const manual = Boolean(draft)
+  const showForm = manual && editing
   const running = game.running
   const assurance = runAssurance(game.runState)
   const evidence = describeRunEvidence(game.runState)
@@ -202,6 +198,15 @@ export function GameDetailsPage({
       if (removeTimer.current !== null) window.clearTimeout(removeTimer.current)
     }
   }, [])
+
+  // D4: Edit lands on the name field as soon as the form is painted.
+  useEffect(() => {
+    if (!editing) return
+    const frame = requestAnimationFrame(() => {
+      if (doesFocusableExist(FOCUS.name)) void setFocus(FOCUS.name)
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [editing])
 
   // A long page should start at the top like Settings does.
   useEffect(() => {
@@ -257,19 +262,22 @@ export function GameDetailsPage({
   }, [confirmRemove, onRemove, removing])
 
   // --- Arrow graph -------------------------------------------------------
-  const backArrows = (direction: string): boolean =>
-    direction === 'down' ? moveTo(FOCUS.primary) : false
+  const editArrows = (direction: string): boolean => {
+    if (direction === 'left') return moveTo(FOCUS.favorite)
+    if (direction === 'down') return true
+    return true
+  }
 
   const primaryArrows = (direction: string): boolean => {
-    if (direction === 'left') return moveTo(FOCUS.back)
     if (direction === 'right') return moveTo(FOCUS.favorite)
-    if (direction === 'down') return moveTo(manual ? FOCUS.name : FOCUS.back)
+    if (direction === 'down') return showForm ? moveTo(FOCUS.name) : false
     return true
   }
 
   const favoriteArrows = (direction: string): boolean => {
     if (direction === 'left') return moveTo(FOCUS.primary)
-    if (direction === 'down') return moveTo(manual ? FOCUS.name : FOCUS.back)
+    if (direction === 'right') return manual ? moveTo(FOCUS.edit) : false
+    if (direction === 'down') return showForm ? moveTo(FOCUS.name) : false
     return false
   }
 
@@ -325,17 +333,6 @@ export function GameDetailsPage({
   }
 
   // --- Focusable controls ------------------------------------------------
-  const { ref: backRef, focused: backFocused } = useFocusable<
-    Record<string, never>,
-    HTMLButtonElement
-  >({
-    focusKey: FOCUS.back,
-    accessibilityLabel: 'Back to library',
-    onEnterPress: onBack,
-    onArrowPress: backArrows,
-    onFocus: () => backRef.current?.scrollIntoView({ block: 'nearest' }),
-  })
-
   const {
     ref: nameFieldRef,
     focused: nameFocused,
@@ -346,14 +343,15 @@ export function GameDetailsPage({
   })
 
   const tabOrder = useMemo(() => {
-    const order: string[] = [FOCUS.back, FOCUS.primary, FOCUS.favorite]
-    if (manual) {
+    const order: string[] = [FOCUS.primary, FOCUS.favorite]
+    if (manual) order.push(FOCUS.edit)
+    if (showForm) {
       order.push(FOCUS.name, FOCUS.path, FOCUS.art)
       if (hasCustomArtwork) order.push(FOCUS.artClear)
       order.push(FOCUS.save, FOCUS.cancel, FOCUS.remove)
     }
     return order
-  }, [hasCustomArtwork, manual])
+  }, [hasCustomArtwork, manual, showForm])
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
@@ -399,49 +397,31 @@ export function GameDetailsPage({
       data-page="game-details"
       data-game-id={game.id}
     >
-      <div className="px-[6vw] pb-4">
-        <div className="mx-auto flex w-full max-w-[64rem] items-center gap-4">
-          <button
-            ref={backRef}
-            type="button"
-            tabIndex={-1}
-            aria-label="Back to library"
-            data-focus-key={FOCUS.back}
-            onClick={onBack}
-            className={cn(
-              'inline-flex h-9 shrink-0 items-center gap-2 rounded-full px-3.5 text-[0.72rem] font-medium outline-none transition-colors',
-              backFocused
-                ? 'bg-white text-black'
-                : 'bg-white/[0.05] text-white/70 ring-1 ring-white/15 hover:bg-white/10 hover:text-white',
-            )}
-            style={backFocused ? { boxShadow: `0 0 0 2px ${uiAccent(0.45)}` } : undefined}
-          >
-            <ArrowLeftFilled className="size-4" />
-            Library
-          </button>
+      <div className="px-6 pb-4 pt-5">
+        <div className="mx-auto flex w-full items-center gap-4">
           <div className="min-w-0">
-            <h1 className="text-[1.05rem] font-semibold tracking-tight text-white/95">
+            <h1 className="text-label font-semibold tracking-tight text-text-primary">
               Game details
             </h1>
-            <p className="mt-0.5 text-[0.7rem] text-white/60">
+            <p className="mt-0.5 text-caption text-text-secondary">
               {manual
                 ? 'Edit the name, launch file, or cover of this local game.'
                 : 'What Pulse knows about this game.'}
             </p>
           </div>
-          <p className="ml-auto hidden text-right text-[0.62rem] leading-relaxed text-white/55 md:block">
+          <p className="ml-auto mr-12 hidden text-right text-caption leading-relaxed text-text-muted md:block">
             Enter activates
             <br />
-            Esc returns to the library
+            Esc closes this panel
           </p>
         </div>
       </div>
 
       <div
         ref={scrollerRef}
-        className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-[6vw] pb-16"
+        className="min-h-0 flex-1 overflow-y-auto px-6 pb-6"
       >
-        <div className="mx-auto grid w-full max-w-[64rem] gap-7 rounded-2xl border border-white/10 bg-[#08080d]/92 px-6 py-6 backdrop-blur-xl md:grid-cols-[15rem_minmax(0,1fr)]">
+        <div className="grid w-full gap-6 md:grid-cols-[14rem_minmax(0,1fr)]">
           <div className="flex flex-col gap-3">
             <div
               className="relative aspect-[2/3] w-full max-w-[15rem] overflow-hidden rounded-2xl bg-white/5 ring-1 ring-white/10"
@@ -459,14 +439,14 @@ export function GameDetailsPage({
                 />
               ) : (
                 <div className="absolute inset-0 grid place-items-center">
-                  <span className="text-6xl font-semibold tracking-[-0.08em] text-white/25">
+                  <span className="text-heading font-semibold tracking-[-0.08em] text-text-faint">
                     {initialsFor(game.name)}
                   </span>
                 </div>
               )}
             </div>
-            <div className="flex flex-wrap items-center gap-2 text-[0.66rem] text-white/45">
-              <span className="rounded-full bg-white/8 px-2.5 py-1 text-[0.58rem] font-semibold tracking-[0.16em] text-white/65 uppercase ring-1 ring-white/12">
+            <div className="flex flex-wrap items-center gap-2 text-caption text-text-faint">
+              <span className="rounded-full bg-white/8 px-2.5 py-1 text-caption font-semibold tracking-[0.16em] text-text-secondary uppercase ring-1 ring-white/12">
                 {sourceLabel(game.source)}
               </span>
               {statusText ? (
@@ -485,10 +465,10 @@ export function GameDetailsPage({
 
           <div className="grid min-w-0 content-start gap-6">
             <div className="min-w-0">
-              <h2 className="truncate text-[clamp(1.6rem,3.2vw,2.6rem)] leading-tight font-semibold tracking-[-0.03em] text-white">
+              <h2 className="truncate text-heading font-semibold tracking-[-0.03em] text-text-primary">
                 {game.name}
               </h2>
-              <p className="mt-1.5 max-w-2xl text-[0.76rem] leading-relaxed text-white/45">
+              <p className="mt-1.5 max-w-2xl text-caption leading-relaxed text-text-faint">
                 {running
                   ? assurance === 'confirmed'
                     ? `${game.name} is running. Use Bring to front to switch back to it.`
@@ -498,7 +478,7 @@ export function GameDetailsPage({
                     : (game.subtitle ??
                       `Ready to ${actionLabel === 'Play' ? 'jump back in' : 'launch'} from your ${sourceLabel(game.source)} library.`)}
               </p>
-              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[0.68rem] text-white/45">
+              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-caption text-text-faint">
                 {lastPlayed ? (
                   <span className="flex items-center gap-1.5">
                     <ClockFilled className="size-4" />
@@ -566,19 +546,30 @@ export function GameDetailsPage({
                 <StarFilled
                   className={cn(
                     'size-4.5',
-                    game.favorite ? 'text-amber-300' : 'text-white/70',
+                    game.favorite ? 'text-amber-300' : 'text-text-secondary',
                   )}
                 />
                 {game.favorite ? 'Favorited' : 'Favorite'}
               </DetailsAction>
+              {manual && !showForm ? (
+                <DetailsAction
+                  focusKey={FOCUS.edit}
+                  label={`Edit ${game.name}`}
+                  onPress={() => setEditing(true)}
+                  onArrowPress={editArrows}
+                >
+                  <EditFilled className="size-4" />
+                  Edit
+                </DetailsAction>
+              ) : null}
             </div>
 
-            {manual && draft ? (
+            {showForm && draft ? (
               <>
                 <section className="grid gap-3 border-t border-white/10 pt-5">
                   <SectionLabel>Name and launch file</SectionLabel>
                   <div className="grid gap-1.5">
-                    <label htmlFor="details-name-field" className="text-[0.72rem] text-white/70">
+                    <label htmlFor="details-name-field" className="text-caption text-text-secondary">
                       Name
                     </label>
                     <Input
@@ -589,12 +580,12 @@ export function GameDetailsPage({
                       maxLength={80}
                       aria-label="Game name"
                       data-focus-key={FOCUS.name}
-                      className="max-w-xl border-white/15 bg-white/[0.06] text-white placeholder:text-white/35"
+                      className="max-w-xl border-white/15 bg-white/[0.06] text-text-primary placeholder:text-text-faint"
                       style={focusRing(nameFocused)}
                       spellCheck={false}
                       autoComplete="off"
                     />
-                    <p className="text-[0.64rem] text-white/40">
+                    <p className="text-caption text-text-faint">
                       Up to 80 characters. Saving a new name keeps the game, its
                       favorite, and its play history.
                     </p>
@@ -602,19 +593,19 @@ export function GameDetailsPage({
 
                   <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
                     <div className="min-w-0">
-                      <p className="flex items-center gap-2 text-[0.78rem] font-medium text-white/85">
-                        <FolderOpenFilled className="size-4 text-white/50" />
+                      <p className="flex items-center gap-2 text-caption font-medium text-text-primary">
+                        <FolderOpenFilled className="size-4 text-text-muted" />
                         Launch file
                       </p>
                       <p
-                        className="mt-1 truncate text-[0.66rem] text-white/45"
+                        className="mt-1 truncate text-caption text-text-faint"
                         title={draft.executable}
                         data-details-path=""
                       >
                         {draft.executable || 'No file chosen'}
                       </p>
                       {draft.executable !== (game.executable ?? '') ? (
-                        <p className="mt-1 text-[0.62rem] text-amber-200/80">
+                        <p className="mt-1 text-caption text-amber-200/80">
                           Changed — saving also updates the game's id and play history.
                         </p>
                       ) : null}
@@ -635,12 +626,12 @@ export function GameDetailsPage({
                   <SectionLabel>Cover art</SectionLabel>
                   <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
                     <div className="min-w-0">
-                      <p className="flex items-center gap-2 text-[0.78rem] font-medium text-white/85">
-                        <PicFilled className="size-4 text-white/50" />
+                      <p className="flex items-center gap-2 text-caption font-medium text-text-primary">
+                        <PicFilled className="size-4 text-text-muted" />
                         {hasCustomArtwork ? 'Custom image' : 'No custom image'}
                       </p>
                       <p
-                        className="mt-1 truncate text-[0.66rem] text-white/45"
+                        className="mt-1 truncate text-caption text-text-faint"
                         title={chosenArtwork ?? undefined}
                         data-details-art=""
                       >

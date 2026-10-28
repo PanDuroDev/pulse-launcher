@@ -2,7 +2,7 @@ import { StarFilled } from '@mingcute/react/core-filled'
 import { useFocusable } from '@noriginmedia/norigin-spatial-navigation-react'
 import { cn } from 'cn'
 import type { GameSummary } from '@shared/types'
-import { accentAlpha, initialsFor, uiAccent } from '@/lib/accent'
+import { initialsFor, uiAccent } from '@/lib/accent'
 import { announceAttention } from '@/lib/attention'
 import { prefersReducedMotion } from '@/lib/motion'
 import { useArtwork } from '@/hooks/use-artwork'
@@ -83,50 +83,42 @@ export function GameCard({
       }`}
       // The outline/shadow live on this layer, so it must never clip. Only the
       // inner cover layer below owns overflow and the rounded corners.
+      // The ring sits on the outer button so it is never clipped. No lift, no
+      // chrome tint: artwork is the only colour on a card.
       className={cn(
-        'group relative aspect-[2/3] w-[clamp(8.5rem,11vw,12rem)] shrink-0 snap-start scroll-mt-6 scroll-mb-10 rounded-[1.35rem] bg-white/5 text-left outline-none transition-[transform,box-shadow,filter] duration-300 ease-out',
-        focused
-          ? 'z-20 -translate-y-1 scale-[1.035]'
-          : 'ring-1 ring-white/10 hover:ring-white/25 hover:shadow-[0_10px_24px_-18px_rgba(0,0,0,0.85)]',
+        'group relative aspect-[2/3] w-[clamp(8.5rem,11vw,12rem)] shrink-0 snap-start scroll-mt-6 scroll-mb-10 rounded-[1.35rem] bg-white/5 text-left outline-none transition-[box-shadow] duration-[--duration-focus] ease-out',
+        focused ? 'z-20' : 'ring-1 ring-white/12 hover:ring-white/24',
       )}
-      style={{
-        boxShadow: focused
-          ? `0 0 0 2px ${uiAccent()}, 0 16px 34px -14px rgba(0,0,0,0.85)`
-          : undefined,
-      }}
+      style={{ boxShadow: focused ? `0 0 0 2px ${uiAccent()}` : undefined }}
     >
       <div
         data-card-clip=""
-        className="absolute inset-0 overflow-hidden rounded-[1.35rem]"
+        className="absolute inset-0 overflow-hidden rounded-[1.35rem] ring-2 ring-transparent ring-offset-2 ring-offset-[#050508]"
+        style={focused ? { '--tw-ring-color': uiAccent() } as React.CSSProperties : undefined}
       >
-        <div
-          className="absolute inset-0"
-          style={{
-            background: `linear-gradient(150deg, ${accentAlpha(game.accent, 0.72)}, #0b0b12 72%)`,
-          }}
-        />
+        <div className="absolute inset-0 bg-[#0b0b12]" />
         {cover ? (
           <img
             src={cover}
             alt=""
             draggable={false}
-            className={`absolute inset-0 h-full w-full object-cover transition-all duration-500 ${
-              focused ? 'scale-[1.03] brightness-105 saturate-[1.08]' : 'brightness-90 saturate-100'
-            }`}
+            className="absolute inset-0 h-full w-full object-cover brightness-90"
           />
         ) : (
           <div className="absolute inset-0 grid place-items-center">
-            <span className="text-6xl font-semibold tracking-[-0.08em] text-white/25">
+            <span className="text-heading font-semibold tracking-[-0.08em] text-text-faint">
               {initialsFor(game.name)}
             </span>
           </div>
         )}
 
-        <div className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
+        <div
+          className="pointer-events-none absolute inset-0 rounded-[1.35rem] bg-gradient-to-t from-black/90 via-black/35 to-transparent"
+        />
         <div className="absolute inset-x-0 bottom-0 p-3.5">
           <p
             className={cn(
-              'line-clamp-2 text-[0.86rem] leading-tight font-semibold text-white transition-all duration-200',
+              'line-clamp-2 text-body leading-tight font-semibold text-text-primary transition-opacity duration-[--duration-focus]',
               focused ? 'opacity-100' : 'opacity-0',
             )}
           >
@@ -134,7 +126,7 @@ export function GameCard({
           </p>
           <p
             className={cn(
-              'mt-1 text-[0.62rem] font-medium tracking-[0.16em] text-white/50 uppercase transition-all duration-200',
+              'mt-1 text-caption font-medium tracking-[0.16em] text-text-muted uppercase transition-opacity duration-[--duration-focus]',
               focused ? 'opacity-100' : 'opacity-0',
             )}
           >
@@ -142,29 +134,15 @@ export function GameCard({
           </p>
         </div>
 
-        <div
-          className={`absolute top-3 left-3 size-1.5 rounded-full transition-opacity duration-200 ${
-            focused ? 'opacity-100' : 'opacity-0'
-          }`}
-          style={{ background: game.accent ? `hsl(${game.accent})` : undefined }}
-        />
         {game.favorite ? (
           <span
             aria-hidden="true"
             data-favorite-badge=""
-            className="pointer-events-none absolute top-2.5 right-2.5 grid size-7 place-items-center rounded-full bg-black/55 ring-1 ring-white/15 backdrop-blur-sm"
+            className="pointer-events-none absolute top-2.5 right-2.5 grid size-7 place-items-center rounded-full bg-black/55 ring-1 ring-white/12"
           >
             <StarFilled className="size-3.5 text-amber-300" />
           </span>
         ) : null}
-        <div
-          className={`pointer-events-none absolute inset-0 rounded-[1.35rem] transition-opacity duration-300 ${
-            focused ? 'opacity-100' : 'opacity-0'
-          }`}
-          style={{
-            background: `linear-gradient(150deg, ${accentAlpha(game.accent, 0.18)}, transparent 55%)`,
-          }}
-        />
       </div>
     </button>
   )

@@ -363,7 +363,7 @@ export function BootScreen({
       >
         <div
           ref={ballRef}
-          className="relative aspect-square w-[min(68vmin,46rem)] transition-opacity duration-150"
+          className="relative aspect-square w-[min(68vmin,46rem)] transition-opacity duration-[--duration-focus]"
           style={leaving ? { opacity: 0 } : undefined}
         >
           <AnimatePresence initial={false}>
@@ -394,23 +394,23 @@ export function BootScreen({
         </div>
 
         <div className="relative -mt-[4vmin] flex w-[min(42vmin,17rem)] flex-col items-center gap-3.5">
-          <span className="text-[0.66rem] font-semibold tracking-[0.52em] text-white/80">
+          <span className="text-caption font-semibold tracking-[0.52em] text-text-primary">
             PULSE
           </span>
 
           <BootProgress phase={displayPhase} still={still} leaving={leaving} />
 
           <div className="flex w-full items-center justify-between gap-3">
-            <p className="truncate text-[0.7rem] font-medium tracking-[0.02em] text-white/50">
+            <p className="truncate text-caption font-medium tracking-[0.02em] text-text-muted">
               {label}
             </p>
             <span
-              className={`shrink-0 text-[0.52rem] font-semibold tracking-[0.22em] ${
+              className={`shrink-0 text-caption font-semibold tracking-[0.22em] ${
                 displayPhase === 'error'
-                  ? 'text-white/30'
+                  ? 'text-text-faint'
                   : displayPhase === 'ready'
                     ? 'text-[hsl(var(--pulse-accent))]/80'
-                    : 'text-white/25'
+                    : 'text-text-faint'
               }`}
             >
               {tag}
@@ -418,7 +418,7 @@ export function BootScreen({
           </div>
 
           {displayPhase === 'error' && error ? (
-            <p className="line-clamp-2 max-w-[min(70vw,30rem)] text-center text-[0.66rem] leading-relaxed text-white/30">
+            <p className="line-clamp-2 max-w-[min(70vw,30rem)] text-center text-caption leading-relaxed text-text-faint">
               {error}
             </p>
           ) : null}

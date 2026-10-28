@@ -38,9 +38,11 @@ import { announceAttention } from '@/lib/attention'
 import { markMoodFor } from '@/lib/mark-mood'
 import { playUI } from '@/lib/ui-sfx'
 import { Backdrop } from '@/components/launcher/Backdrop'
+import { AppShell } from '@/components/launcher/AppShell'
+import { Panel } from '@/components/launcher/Panel'
 import { TopBar } from '@/components/launcher/TopBar'
 import { Hero } from '@/components/launcher/Hero'
-import { GameRow, SortControl } from '@/components/launcher/GameRow'
+import { GameRow, SortControl, SourceChip } from '@/components/launcher/GameRow'
 import { SearchPage } from '@/components/launcher/SearchPage'
 import { MusicPage } from '@/components/launcher/MusicPage'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
@@ -63,6 +65,18 @@ interface Row {
   id: string
   title: string
   games: GameSummary[]
+}
+
+/** Source groups the All Games toolbar can filter on; `all` is "no filter". */
+const SOURCE_FILTERS: Array<{ id: string; label: string }> = [
+  { id: 'all', label: 'All' },
+  { id: 'steam', label: 'Steam' },
+  { id: 'epic', label: 'Epic' },
+  { id: 'local', label: 'Local' },
+]
+
+function sourceGroup(source: GameSummary['source']): string {
+  return source === 'manual' || source === 'start-menu' ? 'local' : source
 }
 
 const LAUNCH_DETECT_TIMEOUT_MS = 60_000
@@ -101,6 +115,7 @@ export default function App() {
   const [detailsRemoving, setDetailsRemoving] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [sourceFilter, setSourceFilter] = useState('all')
   const [powerOpen, setPowerOpen] = useState(false)
   const [musicOpen, setMusicOpen] = useState(false)
   const [pendingLaunch, setPendingLaunch] = useState<PendingLaunch | null>(null)
@@ -134,8 +149,22 @@ export default function App() {
     [games, settings.librarySort],
   )
 
+  // Only offer a source the library actually has; `all` is always there.
+  const sources = useMemo(() => {
+    const present = new Set(games.map((game) => sourceGroup(game.source)))
+    return SOURCE_FILTERS.filter((filter) => filter.id === 'all' || present.has(filter.id))
+  }, [games])
+
+  // A rescan can remove the last game of the chosen source; fall back to All so
+  // the row never renders empty under a chip that still looks selected.
+  const activeFilter = sources.some((filter) => filter.id === sourceFilter)
+    ? sourceFilter
+    : 'all'
+
   const rows = useMemo<Row[]>(() => {
     const next: Row[] = []
+    const bySource = (id: string): GameSummary[] =>
+      id === 'all' ? sortedGames : sortedGames.filter((game) => sourceGroup(game.source) === id)
     // Live games come first: Up from Running Now reaches the hero, not another
     // game's card, and a running session is the most immediate thing to act on.
     if (runningGames.length > 0) {
@@ -147,23 +176,10 @@ export default function App() {
     if (favoriteList.length > 0) {
       next.push({ id: 'favorites', title: 'Favorites', games: favoriteList })
     }
-    next.push({ id: 'all', title: 'All Games', games: sortedGames })
+    next.push({ id: 'all', title: 'All Games', games: bySource(activeFilter) })
 
-    const sources = new Set(games.map((game) => game.source))
-    if (sources.size > 1) {
-      const steam = sortedGames.filter((game) => game.source === 'steam')
-      const epic = sortedGames.filter((game) => game.source === 'epic')
-      const local = sortedGames.filter(
-        (game) => game.source === 'manual' || game.source === 'start-menu',
-      )
-      if (steam.length > 0) next.push({ id: 'steam', title: 'Steam', games: steam })
-      if (epic.length > 0) next.push({ id: 'epic', title: 'Epic Games', games: epic })
-      if (local.length > 0) {
-        next.push({ id: 'local', title: 'Local & Desktop', games: local })
-      }
-    }
     return next
-  }, [continueGames, favoriteList, games, runningGames, sortedGames])
+  }, [continueGames, favoriteList, runningGames, sortedGames, activeFilter])
 
   const selected = useMemo(
     () => games.find((game) => game.id === selectedId) ?? games[0],
@@ -666,7 +682,7 @@ export default function App() {
     setPowerOpen(false)
     setSettingsOpen(true)
     window.setTimeout(() => {
-      if (doesFocusableExist('settings-back')) void setFocus('settings-back')
+      if (doesFocusableExist('settings-refresh')) void setFocus('settings-refresh')
     }, 80)
   }, [settingsOpen])
 
@@ -702,7 +718,7 @@ export default function App() {
     setPowerOpen(false)
     setMusicOpen(true)
     window.setTimeout(() => {
-      if (doesFocusableExist('music-back')) void setFocus('music-back')
+      if (doesFocusableExist('music-mode-all')) void setFocus('music-mode-all')
     }, 80)
   }, [])
 
@@ -738,8 +754,8 @@ export default function App() {
           void setFocus(key)
           return
         }
-        if (doesFocusableExist('details-back')) {
-          void setFocus('details-back')
+        if (doesFocusableExist('details-primary')) {
+          void setFocus('details-primary')
           return
         }
       }
@@ -796,9 +812,15 @@ export default function App() {
   const openDetails = useCallback(
     (game: GameSummary) => {
       const current = getCurrentFocusKey()
-      if (current && !current.startsWith('details-')) {
-        detailsReturnFocus.current = current
-      }
+      // A mouse click leaves focus nowhere useful; fall back to the hero row
+      // button when this game is the selected one, else its card.
+      const fromCard = game.id === selected?.id ? 'hero-details' : `all-${game.id}`
+      detailsReturnFocus.current =
+        current && !current.startsWith('details-')
+          ? current
+          : doesFocusableExist(fromCard)
+            ? fromCard
+            : current
       setPowerOpen(false)
       setDetailsSnapshot(game)
       setManualDraft(
@@ -814,10 +836,10 @@ export default function App() {
       select(game.id)
       setDetailsOpen(true)
       window.setTimeout(() => {
-        if (doesFocusableExist('details-back')) void setFocus('details-back')
+        if (doesFocusableExist('details-primary')) void setFocus('details-primary')
       }, 90)
     },
-    [select],
+    [select, selected?.id],
   )
 
   const closeDetails = useCallback(() => {
@@ -836,10 +858,10 @@ export default function App() {
     setDetailsOpen(false)
     setDetailsSnapshot(null)
     setManualDraft(null)
+    const opener = detailsReturnFocus.current
     window.setTimeout(() => {
-      const preferred = detailsReturnFocus.current
-      if (preferred && doesFocusableExist(preferred)) {
-        void setFocus(preferred)
+      if (opener && doesFocusableExist(opener)) {
+        void setFocus(opener)
         return
       }
       const fallback = lastFocusKey.current ?? initialFocusKey
@@ -865,7 +887,6 @@ export default function App() {
     setAddOpen(false)
     window.setTimeout(() => {
       if (doesFocusableExist('details-path')) void setFocus('details-path')
-      else if (doesFocusableExist('details-back')) void setFocus('details-back')
     }, 100)
   }, [])
 
@@ -876,7 +897,6 @@ export default function App() {
     setAddOpen(false)
     window.setTimeout(() => {
       if (doesFocusableExist('details-art')) void setFocus('details-art')
-      else if (doesFocusableExist('details-back')) void setFocus('details-back')
     }, 100)
   }, [])
 
@@ -1014,6 +1034,8 @@ export default function App() {
         target?.isContentEditable
 
       if (event.key === 'Escape') {
+        // A panel already closed itself (capture phase) for this press.
+        if (event.defaultPrevented) return
         if (powerOpen) {
           event.preventDefault()
           closePower()
@@ -1247,16 +1269,85 @@ export default function App() {
       : FORCE_QUIT_GRACE_MS
     : 0
 
+  // One panel at a time, highest priority first: a second request replaces the
+  // first instead of stacking. Power is not a panel — it sits above everything.
+  const panel = addOpen ? (
+    <Panel
+      title={
+        addMode === 'image'
+          ? 'Cover art'
+          : addMode === 'path'
+            ? 'Game file'
+            : 'Add game'
+      }
+      onClose={closeAddGame}
+    >
+      <AddGamePage
+        mode={addMode}
+        onAdded={addMode === 'game' ? handleGameAdded : undefined}
+        onPicked={
+          addMode === 'image'
+            ? handlePickedArtwork
+            : addMode === 'path'
+              ? handlePickedPath
+              : undefined
+        }
+      />
+    </Panel>
+  ) : detailsGame ? (
+    <Panel title="Game details" onClose={closeDetails}>
+      <GameDetailsPage
+        key={detailsGame.id}
+        game={detailsGame}
+        pending={Boolean(pendingLaunch && pendingLaunch.id === detailsGame.id)}
+        action={selectedAction}
+        draft={
+          manualDraft && manualDraft.gameId === detailsGame.id ? manualDraft : null
+        }
+        saving={detailsSaving}
+        removing={detailsRemoving}
+        onDraftChange={(patch) =>
+          setManualDraft((current) => (current ? { ...current, ...patch } : current))
+        }
+        onSave={() => void handleSaveDetails()}
+        onRemove={() => void handleRemoveDetails()}
+        onBack={closeDetails}
+        onLaunch={(game) => void handleLaunch(game)}
+        onToggleFavorite={(game) => void handleToggleFavorite(game)}
+        onPickExecutable={() => openDetailsPicker('path')}
+        onPickArtwork={() => openDetailsPicker('image')}
+      />
+    </Panel>
+  ) : settingsOpen ? (
+    <Panel
+      title="Settings"
+      description="Library, artwork, and window preferences."
+      onClose={closeSettings}
+    >
+      <SettingsPage onAddGame={handleAddFromSettings} />
+    </Panel>
+  ) : searchOpen ? (
+    <Panel title="Search" onClose={closeSearch}>
+      <SearchPage
+        games={games}
+        query={searchQuery}
+        onQueryChange={setSearchQuery}
+        onSelect={handleSelect}
+        onLaunch={(game) => void handleLaunch(game)}
+      />
+    </Panel>
+  ) : null
+
   return (
     <div
-      className="relative h-screen w-screen overflow-hidden text-white"
+      className="relative h-screen w-screen overflow-hidden text-text-primary"
       data-motion={settings.motion}
     >
       {/* The wallpaper belongs to the library, not the splash: it arrives with the
           content, once the mark has landed. */}
       <div
         aria-hidden={!revealed}
-        className={`transition-opacity duration-700 ease-out ${
+        className={`transition-opacity duration-[--duration-focus] ease-out ${
           revealed ? 'opacity-100' : 'opacity-0'
         }`}
       >
@@ -1267,41 +1358,26 @@ export default function App() {
         {/* Chrome first, and early: the splash ball flies into the mark, so the
             header has to be there — dimmed to nothing until the ball lands. */}
         <div
-          className={`transition-opacity duration-200 ease-out ${
+          className={`transition-opacity duration-[--duration-focus] ease-out ${
             bootDone ? 'opacity-100' : 'opacity-0'
           }`}
+          inert={Boolean(panel)}
         >
           <TopBar
             demo={demo}
-            title={
-              searchOpen
-                ? 'Search'
-                : addOpen
-                  ? addMode === 'image'
-                    ? 'Cover art'
-                    : addMode === 'path'
-                      ? 'Game file'
-                      : 'Add game'
-                  : detailsOpen
-                    ? 'Game details'
-                    : musicOpen
-                      ? 'Music'
-                      : settingsOpen
-                        ? 'Settings'
-                        : 'Library'
-            }
+            title={musicOpen ? 'Music' : 'Library'}
             reducedMotion={settings.motion === 'reduced'}
             // The header appears on the frame the ball lands, and the mark with
             // it: the crossing ends exactly on that box.
             markVisible={bootDone}
             markMood={markMood}
-            showTools={!settingsOpen && !addOpen && !searchOpen && !detailsOpen && !musicOpen}
+            showTools
             refreshing={refreshing}
             scanProgress={scanProgress}
             staleSources={staleSources}
             onRefresh={() => void handleRefresh()}
             onAddGame={handleAddGame}
-            onOpenMusic={openMusic}
+            onOpenMusic={musicOpen ? closeMusic : openMusic}
             onOpenSettings={openSettings}
             onOpenPower={openPower}
           />
@@ -1309,144 +1385,91 @@ export default function App() {
 
         {/* Everything else waits for the landing, then rises into place. */}
         <div
-          className={`flex min-h-0 flex-1 flex-col transition-opacity duration-500 ease-out ${
+          className={`flex min-h-0 flex-1 flex-col transition-opacity duration-[--duration-focus] ease-out ${
             revealed ? 'opacity-100' : 'opacity-0'
           }`}
         >
-          {searchOpen ? (
-            <ErrorBoundary
-              surface="launcher"
-              onBack={{ label: 'Back to library', onClick: closeSearch }}
-            >
-              <SearchPage
-                games={games}
-                query={searchQuery}
-                onQueryChange={setSearchQuery}
-                onBack={closeSearch}
-                onSelect={handleSelect}
-                onLaunch={(game) => void handleLaunch(game)}
-              />
-            </ErrorBoundary>
-          ) : addOpen ? (
-            <ErrorBoundary
-              surface="launcher"
-              onBack={{ label: 'Back to library', onClick: closeAddGame }}
-            >
-              <AddGamePage
-                mode={addMode}
-                onBack={closeAddGame}
-                onAdded={addMode === 'game' ? handleGameAdded : undefined}
-                onPicked={
-                  addMode === 'image'
-                    ? handlePickedArtwork
-                    : addMode === 'path'
-                      ? handlePickedPath
-                      : undefined
-                }
-              />
-            </ErrorBoundary>
-          ) : detailsGame ? (
-            <ErrorBoundary
-              surface="launcher"
-              onBack={{ label: 'Back to library', onClick: closeDetails }}
-            >
-              <GameDetailsPage
-                key={detailsGame.id}
-                game={detailsGame}
-                pending={Boolean(
-                  pendingLaunch && pendingLaunch.id === detailsGame.id,
-                )}
-                action={selectedAction}
-                draft={
-                  manualDraft && manualDraft.gameId === detailsGame.id
-                    ? manualDraft
-                    : null
-                }
-                saving={detailsSaving}
-                removing={detailsRemoving}
-                onDraftChange={(patch) =>
-                  setManualDraft((current) =>
-                    current ? { ...current, ...patch } : current,
-                  )
-                }
-                onSave={() => void handleSaveDetails()}
-                onRemove={() => void handleRemoveDetails()}
-                onBack={closeDetails}
-                onLaunch={(game) => void handleLaunch(game)}
-                onToggleFavorite={(game) => void handleToggleFavorite(game)}
-                onPickExecutable={() => openDetailsPicker('path')}
-                onPickArtwork={() => openDetailsPicker('image')}
-              />
-            </ErrorBoundary>
-          ) : musicOpen ? (
-            <ErrorBoundary
-              surface="launcher"
-              onBack={{ label: 'Back to library', onClick: closeMusic }}
-            >
-              <MusicPage onBack={closeMusic} />
-            </ErrorBoundary>
-          ) : settingsOpen ? (
-            <ErrorBoundary
-              surface="launcher"
-              onBack={{ label: 'Back to library', onClick: closeSettings }}
-            >
-              <SettingsPage onBack={closeSettings} onAddGame={handleAddFromSettings} />
-            </ErrorBoundary>
-          ) : showLoading ? (
-            <LibraryLoading scanning={refreshing || status === 'loading'} />
-          ) : showEmpty ? (
-            <EmptyLibrary
-              error={showError ? error : null}
-              onRefresh={() => void handleRefresh()}
-              onAddGame={handleAddGame}
-            />
-          ) : (
-            <>
-              <Hero
-                game={selected}
-                pending={Boolean(pendingLaunch && selected && pendingLaunch.id === selected.id)}
-                reducedMotion={settings.motion === 'reduced'}
-                action={selectedAction}
-                forceRemainingMs={selectedForceRemaining}
-                onLaunch={(game) => void handleLaunch(game)}
-                onFocus={(game) => void handleFocusGame(game)}
-                onClose={(game) => void handleCloseGame(game)}
-                onForceQuit={(game) => void handleForceQuit(game)}
-                onCancelForce={handleCancelForceQuit}
-                onToggleFavorite={(game) => void handleToggleFavorite(game)}
-                onDetails={openDetails}
-              />
-              <div
-                data-library-scroll=""
-                className="no-scrollbar relative max-h-[54vh] shrink-0 scroll-py-4 overflow-y-auto pb-24"
+          <div className="flex min-h-0 flex-1 flex-col">
+            <AppShell panel={panel}>
+            {musicOpen ? (
+              <ErrorBoundary
+                surface="launcher"
+                onBack={{ label: 'Back to library', onClick: closeMusic }}
               >
-                {rows.map((row, index) => (
-                  <GameRow
-                    key={row.id}
-                    rowId={row.id}
-                    title={row.title}
-                    games={row.games}
-                    onSelect={handleSelect}
-                    onLaunch={(game) => void handleLaunch(game)}
-                    upTarget={index === 0 ? 'hero-primary' : undefined}
-                    action={
-                      row.id === 'all' ? (
-                        <SortControl
-                          sort={settings.librarySort}
-                          onPress={handleCycleSort}
-                        />
-                      ) : undefined
-                    }
-                  />
-                ))}
-              </div>
-            </>
-          )}
+                <MusicPage />
+              </ErrorBoundary>
+            ) : showLoading ? (
+              <LibraryLoading scanning={refreshing || status === 'loading'} />
+            ) : showEmpty ? (
+              <EmptyLibrary
+                error={showError ? error : null}
+                onRefresh={() => void handleRefresh()}
+                onAddGame={handleAddGame}
+              />
+            ) : (
+              <>
+                <Hero
+                  game={selected}
+                  pending={Boolean(pendingLaunch && selected && pendingLaunch.id === selected.id)}
+                  reducedMotion={settings.motion === 'reduced'}
+                  action={selectedAction}
+                  forceRemainingMs={selectedForceRemaining}
+                  onLaunch={(game) => void handleLaunch(game)}
+                  onFocus={(game) => void handleFocusGame(game)}
+                  onClose={(game) => void handleCloseGame(game)}
+                  onForceQuit={(game) => void handleForceQuit(game)}
+                  onCancelForce={handleCancelForceQuit}
+                  onToggleFavorite={(game) => void handleToggleFavorite(game)}
+                  onDetails={openDetails}
+                />
+                <div
+                  data-library-scroll=""
+                  className="no-scrollbar relative max-h-[54vh] shrink-0 scroll-py-4 overflow-y-auto pb-24"
+                >
+                  {rows.map((row, index) => (
+                    <GameRow
+                      key={row.id}
+                      rowId={row.id}
+                      title={row.title}
+                      games={row.games}
+                      onSelect={handleSelect}
+                      onLaunch={(game) => void handleLaunch(game)}
+                      upTarget={index === 0 ? 'hero-primary' : undefined}
+                      action={
+                        row.id === 'all' ? (
+                          <SortControl
+                            sort={settings.librarySort}
+                            onPress={handleCycleSort}
+                          />
+                        ) : undefined
+                      }
+                      toolbar={
+                        row.id === 'all' && sources.length > 1 ? (
+                          <>
+                            {sources.map((filter) => (
+                              <SourceChip
+                                key={filter.id}
+                                id={filter.id}
+                                label={filter.label}
+                                selected={activeFilter === filter.id}
+                                onPress={() => setSourceFilter(filter.id)}
+                              />
+                            ))}
+                          </>
+                        ) : undefined
+                      }
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+          </AppShell>
+          </div>
         </div>
 
-        {settingsOpen || addOpen || searchOpen || powerOpen || detailsOpen || musicOpen ? null : (
+        {panel ? null : (
           <div
-            className={`transition-opacity duration-500 ease-out ${
+            className={`transition-opacity duration-[--duration-focus] ease-out ${
               revealed ? 'opacity-100' : 'opacity-0'
             }`}
           >

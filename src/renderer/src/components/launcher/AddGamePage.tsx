@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import {
-  ArrowLeftFilled,
   ArrowRightFilled,
   ArrowUpFilled,
   DriveFilled,
@@ -27,7 +26,6 @@ import { cn } from 'cn'
 import { Spinner } from '@/components/ui/spinner'
 
 interface AddGamePageProps {
-  onBack: () => void
   /** Called after main accepted the file; the library is already updated. */
   onAdded?: (game: GameSummary) => void
   /**
@@ -41,7 +39,6 @@ interface AddGamePageProps {
 }
 
 const FOCUS = {
-  back: 'add-back',
   up: 'add-up',
   confirm: 'add-confirm',
   cancel: 'add-cancel',
@@ -50,7 +47,7 @@ const FOCUS = {
 }
 
 function focusRing(active: boolean): { boxShadow?: string } {
-  return active ? { boxShadow: `0 0 0 2px ${uiAccent(0.8)}, 0 0 22px -8px ${uiAccent(0.5)}` } : {}
+  return active ? { boxShadow: `0 0 0 2px ${uiAccent()}` } : {}
 }
 
 /** Move focus, then always consume the arrow so geometry cannot escape. */
@@ -103,10 +100,10 @@ function PageAction({
         if (!disabled) onPress()
       }}
       className={cn(
-        'inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-[0.78rem] font-semibold outline-none transition-colors',
+        'inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-caption font-semibold outline-none transition-colors',
         primary
           ? 'bg-white text-black hover:bg-white/90'
-          : 'border border-white/10 bg-white/[0.06] text-white/80 hover:bg-white/12 hover:text-white',
+          : 'border border-white/10 bg-white/[0.06] text-text-primary hover:bg-white/12 hover:text-text-primary',
         disabled && 'cursor-default opacity-50',
         className,
       )}
@@ -143,18 +140,18 @@ function PlaceButton({ place, activePath, onOpen, onArrowPress }: PlaceButtonPro
       data-focus-key={FOCUS.place(place.id)}
       onClick={() => onOpen(place)}
       className={cn(
-        'flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[0.72rem] outline-none transition-colors',
+        'flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-caption outline-none transition-colors',
         active
-          ? 'bg-white/12 text-white'
-          : 'text-white/60 hover:bg-white/[0.07] hover:text-white/90',
-        focused && 'text-white',
+          ? 'bg-white/12 text-text-primary'
+          : 'text-text-secondary hover:bg-white/[0.07] hover:text-text-primary',
+        focused && 'text-text-primary',
       )}
       style={focusRing(focused)}
     >
       {place.kind === 'drive' ? (
-        <DriveFilled className="size-4 shrink-0 text-white/55" />
+        <DriveFilled className="size-4 shrink-0 text-text-muted" />
       ) : (
-        <FolderOpenFilled className="size-4 shrink-0 text-white/55" />
+        <FolderOpenFilled className="size-4 shrink-0 text-text-muted" />
       )}
       <span className="truncate">{place.label}</span>
     </button>
@@ -212,10 +209,10 @@ function EntryRow({
       className={cn(
         'flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left outline-none transition-colors',
         selected
-          ? 'border-white/25 bg-white/12 text-white'
+          ? 'border-white/25 bg-white/12 text-text-primary'
           : focused
-            ? 'border-white/20 bg-white/[0.08] text-white'
-            : 'border-transparent text-white/80 hover:border-white/10 hover:bg-white/[0.05] hover:text-white',
+            ? 'border-white/20 bg-white/[0.08] text-text-primary'
+            : 'border-transparent text-text-primary hover:border-white/10 hover:bg-white/[0.05] hover:text-text-primary',
       )}
       style={focusRing(focused)}
     >
@@ -223,7 +220,7 @@ function EntryRow({
         aria-hidden
         className={cn(
           'grid size-10 shrink-0 place-items-center rounded-lg',
-          isFile ? 'bg-white/10 text-white/85' : 'bg-white/[0.06] text-white/60',
+          isFile ? 'bg-white/10 text-text-primary' : 'bg-white/[0.06] text-text-secondary',
         )}
       >
         {isFile ? (
@@ -237,8 +234,8 @@ function EntryRow({
         )}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[0.8rem] font-medium">{entry.name}</span>
-        <span className="mt-0.5 block text-[0.62rem] tracking-wide text-white/45 uppercase">
+        <span className="block truncate text-caption font-medium">{entry.name}</span>
+        <span className="mt-0.5 block text-caption tracking-wide text-text-faint uppercase">
           {isFile
             ? kind === 'image'
               ? `${entry.extension} image`
@@ -247,11 +244,11 @@ function EntryRow({
         </span>
       </span>
       {isFile ? (
-        <span className="shrink-0 rounded-md border border-white/10 px-1.5 py-0.5 text-[0.58rem] font-semibold tracking-wider text-white/50 uppercase">
+        <span className="shrink-0 rounded-md border border-white/10 px-1.5 py-0.5 text-caption font-semibold tracking-wider text-text-muted uppercase">
           {entry.extension}
         </span>
       ) : (
-        <ArrowRightFilled className="size-4 shrink-0 text-white/30" />
+        <ArrowRightFilled className="size-4 shrink-0 text-text-faint" />
       )}
     </button>
   )
@@ -264,7 +261,6 @@ function EntryRow({
  * a separate, validated call.
  */
 export function AddGamePage({
-  onBack,
   onAdded,
   mode = 'game',
   onPicked,
@@ -293,7 +289,6 @@ export function AddGamePage({
         return
       }
       if (doesFocusableExist(FOCUS.up)) void setFocus(FOCUS.up)
-      else if (doesFocusableExist(FOCUS.back)) void setFocus(FOCUS.back)
     }, delay)
   }, [])
 
@@ -362,7 +357,7 @@ export function AddGamePage({
     const timer = window.setTimeout(() => {
       const current = getCurrentFocusKey()
       if (current && current.startsWith('add-')) return
-      if (doesFocusableExist(FOCUS.back)) void setFocus(FOCUS.back)
+      if (doesFocusableExist(FOCUS.up)) void setFocus(FOCUS.up)
     }, 90)
     return () => window.clearTimeout(timer)
   }, [])
@@ -423,24 +418,16 @@ export function AddGamePage({
   }, [adding, onAdded, onPicked, pickOnly, selected])
 
   // --- Arrow graph -------------------------------------------------------
-  const backArrows = (direction: string): boolean => {
-    if (direction === 'down' || direction === 'right') {
-      return moveTo(places[0] ? FOCUS.place(places[0].id) : FOCUS.up)
-    }
-    return false
-  }
-
   const upArrows = (direction: string): boolean => {
-    if (direction === 'up') return moveTo(FOCUS.back)
     if (direction === 'down' || direction === 'right') return moveTo(FOCUS.entry(0))
-    if (direction === 'left') return moveTo(lastPlaceKey ?? FOCUS.back)
+    if (direction === 'left') return moveTo(lastPlaceKey)
     return false
   }
 
   const placeArrows = (index: number) => (direction: string): boolean => {
     if (direction === 'up') {
       if (index > 0) return moveTo(FOCUS.place(places[index - 1]!.id))
-      return moveTo(FOCUS.back)
+      return false
     }
     if (direction === 'down') {
       const next = places[index + 1]
@@ -461,7 +448,7 @@ export function AddGamePage({
       if (next) return moveTo(FOCUS.entry(index + 1))
       return selected ? moveTo(FOCUS.confirm) : false
     }
-    if (direction === 'left') return moveTo(lastPlaceKey ?? FOCUS.back)
+    if (direction === 'left') return moveTo(lastPlaceKey)
     if (direction === 'right') return selected ? moveTo(FOCUS.confirm) : false
     return false
   }
@@ -479,16 +466,6 @@ export function AddGamePage({
   }
 
   // --- Focusable header actions -----------------------------------------
-  const { ref: backRef, focused: backFocused } = useFocusable<
-    Record<string, never>,
-    HTMLButtonElement
-  >({
-    focusKey: FOCUS.back,
-    accessibilityLabel: 'Back to library',
-    onEnterPress: onBack,
-    onArrowPress: backArrows,
-    onFocus: () => backRef.current?.scrollIntoView({ block: 'nearest' }),
-  })
   const { ref: upRef, focused: upFocused } = useFocusable<
     Record<string, never>,
     HTMLButtonElement
@@ -502,7 +479,7 @@ export function AddGamePage({
   })
 
   const tabOrder = useMemo(() => {
-    const order: string[] = [FOCUS.back, FOCUS.up]
+    const order: string[] = [FOCUS.up]
     for (const place of places) order.push(FOCUS.place(place.id))
     for (let index = 0; index < entries.length; index += 1) order.push(FOCUS.entry(index))
     if (selected) order.push(FOCUS.cancel, FOCUS.confirm)
@@ -533,35 +510,17 @@ export function AddGamePage({
 
   return (
     <main className="relative z-10 flex min-h-0 flex-1 flex-col">
-      <div className="px-[6vw] pb-4">
-        <div className="mx-auto flex w-full max-w-[64rem] items-center gap-4">
-          <button
-            ref={backRef}
-            type="button"
-            tabIndex={-1}
-            aria-label={pickOnly ? 'Back to game details' : 'Back to library'}
-            data-focus-key={FOCUS.back}
-            onClick={onBack}
-            className={cn(
-              'inline-flex h-9 shrink-0 items-center gap-2 rounded-full px-3.5 text-[0.72rem] font-medium outline-none transition-colors',
-              backFocused
-                ? 'bg-white text-black'
-                : 'bg-white/[0.05] text-white/70 ring-1 ring-white/15 hover:bg-white/10 hover:text-white',
-            )}
-            style={backFocused ? { boxShadow: `0 0 0 2px ${uiAccent(0.45)}` } : undefined}
-          >
-            <ArrowLeftFilled className="size-4" />
-            {pickOnly ? 'Details' : 'Library'}
-          </button>
+      <div className="px-6 pb-4 pt-5">
+        <div className="mx-auto flex w-full items-center gap-4">
           <div className="min-w-0">
-            <h1 className="text-[1.05rem] font-semibold tracking-tight text-white/95">
+            <h1 className="text-label font-semibold tracking-tight text-text-primary">
               {imageMode
                 ? 'Choose cover art'
                 : mode === 'path'
                   ? 'Choose the game file'
                   : 'Add a local game'}
             </h1>
-            <p className="mt-0.5 text-[0.7rem] text-white/60">
+            <p className="mt-0.5 text-caption text-text-secondary">
               {imageMode
                 ? 'Browse for a PNG, JPEG, WebP, or AVIF image to use as the cover.'
                 : mode === 'path'
@@ -569,18 +528,18 @@ export function AddGamePage({
                   : 'Browse for a game .exe or a .lnk shortcut, then add it to your library.'}
             </p>
           </div>
-          <p className="ml-auto hidden text-right text-[0.62rem] leading-relaxed text-white/55 md:block">
+          <p className="ml-auto mr-12 hidden text-right text-caption leading-relaxed text-text-muted md:block">
             Enter opens or selects
             <br />
-            {pickOnly ? 'Esc returns to game details' : 'Esc returns to the library'}
+            Esc closes this panel
           </p>
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 gap-4 px-[6vw] pb-8">
+      <div className="flex min-h-0 flex-1 gap-4 px-6 pb-6">
         {places.length > 0 ? (
           <aside className="hidden w-52 shrink-0 flex-col rounded-2xl border border-white/10 bg-[#08080d]/92 p-2 backdrop-blur-xl sm:flex">
-            <p className="px-2 pt-1.5 pb-2 text-[0.58rem] font-semibold tracking-[0.2em] text-white/45 uppercase">
+            <p className="px-2 pt-1.5 pb-2 text-caption font-semibold tracking-[0.2em] text-text-faint uppercase">
               Places
             </p>
             <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto">
@@ -615,23 +574,23 @@ export function AddGamePage({
               className={cn(
                 'grid size-8 shrink-0 place-items-center rounded-lg outline-none transition-colors',
                 listing?.parent
-                  ? 'text-white/70 hover:bg-white/10 hover:text-white'
-                  : 'cursor-default text-white/20',
-                upFocused && 'bg-white/12 text-white',
+                  ? 'text-text-secondary hover:bg-white/10 hover:text-text-primary'
+                  : 'cursor-default text-text-faint',
+                upFocused && 'bg-white/12 text-text-primary',
               )}
               style={upFocused ? focusRing(true) : undefined}
             >
               <ArrowUpFilled className="size-4" />
             </button>
-            <div className="no-scrollbar flex min-w-0 flex-1 items-center gap-1 overflow-x-auto whitespace-nowrap text-[0.68rem]">
+            <div className="no-scrollbar flex min-w-0 flex-1 items-center gap-1 overflow-x-auto whitespace-nowrap text-caption">
               {crumbs.map((crumb, index) => (
                 <span key={crumb.path} className="flex shrink-0 items-center gap-1">
-                  {index > 0 ? <span className="text-white/25">/</span> : null}
+                  {index > 0 ? <span className="text-text-faint">/</span> : null}
                   <span
                     className={
                       index === crumbs.length - 1
-                        ? 'font-medium text-white/85'
-                        : 'text-white/45'
+                        ? 'font-medium text-text-primary'
+                        : 'text-text-faint'
                     }
                   >
                     {crumb.name}
@@ -639,10 +598,10 @@ export function AddGamePage({
                 </span>
               ))}
               {crumbs.length === 0 ? (
-                <span className="text-white/45">Select a place to start</span>
+                <span className="text-text-faint">Select a place to start</span>
               ) : null}
             </div>
-            <span className="hidden shrink-0 text-[0.62rem] text-white/40 sm:inline">
+            <span className="hidden shrink-0 text-caption text-text-faint sm:inline">
               {folderCount} folders · {fileCount} {imageMode ? 'images' : 'games'}
             </span>
           </div>
@@ -650,7 +609,7 @@ export function AddGamePage({
           {error ? (
             <p
               role="alert"
-              className="mx-3 mt-3 rounded-lg border border-amber-300/20 bg-amber-300/[0.08] px-3 py-2 text-[0.68rem] text-amber-100/85"
+              className="mx-3 mt-3 rounded-lg border border-amber-300/20 bg-amber-300/[0.08] px-3 py-2 text-caption text-amber-100/85"
             >
               {error}
             </p>
@@ -659,7 +618,7 @@ export function AddGamePage({
           <div ref={scrollerRef} className="no-scrollbar min-h-0 flex-1 overflow-y-auto p-2">
             {loading ? (
               <div className="grid gap-1.5" aria-live="polite" aria-busy>
-                <p className="flex items-center gap-2 px-2 py-1.5 text-[0.68rem] text-white/55">
+                <p className="flex items-center gap-2 px-2 py-1.5 text-caption text-text-muted">
                   <Spinner className="size-4" />
                   Reading folder…
                 </p>
@@ -672,11 +631,11 @@ export function AddGamePage({
               </div>
             ) : entries.length === 0 ? (
               <div className="grid place-items-center gap-2 px-4 py-12 text-center">
-                <FolderOpenFilled className="size-8 text-white/25" />
-                <p className="text-[0.8rem] font-medium text-white/75">
+                <FolderOpenFilled className="size-8 text-text-faint" />
+                <p className="text-caption font-medium text-text-secondary">
                   {imageMode ? 'No folders or images here' : 'No folders or game files here'}
                 </p>
-                <p className="max-w-[22rem] text-[0.68rem] leading-relaxed text-white/45">
+                <p className="max-w-[22rem] text-caption leading-relaxed text-text-faint">
                   {imageMode
                     ? 'Pulse shows folders plus PNG, JPEG, WebP and AVIF images. Use Up one level or pick another place.'
                     : 'Pulse shows folders plus .exe and .lnk files. Use Up one level or pick another place.'}
@@ -697,7 +656,7 @@ export function AddGamePage({
                   />
                 ))}
                 {listing?.truncated ? (
-                  <p className="px-3 py-2 text-[0.64rem] text-white/40">
+                  <p className="px-3 py-2 text-caption text-text-faint">
                     Showing the first entries only. Open a subfolder to narrow the list.
                   </p>
                 ) : null}
@@ -709,11 +668,11 @@ export function AddGamePage({
             {selected ? (
               <div className="flex flex-wrap items-center gap-3">
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[0.78rem] font-medium text-white/90">
+                  <p className="truncate text-caption font-medium text-text-primary">
                     {selected.name}
                   </p>
                   <p
-                    className="truncate text-[0.62rem] text-white/45"
+                    className="truncate text-caption text-text-faint"
                     title={selected.path}
                   >
                     {selected.path}
@@ -756,7 +715,7 @@ export function AddGamePage({
                 </div>
               </div>
             ) : (
-              <p className="px-1 text-[0.64rem] text-white/45">
+              <p className="px-1 text-caption text-text-faint">
                 {loading
                   ? 'Reading this folder…'
                   : imageMode

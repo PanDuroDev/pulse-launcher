@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import {
-  ArrowLeftFilled,
   CheckFilled,
   ExternalLinkFilled,
   FolderOpenFilled,
@@ -48,7 +47,6 @@ import { useMusicEngineState } from '@/hooks/use-music-engine'
 import { useMusicStore } from '@/store/music'
 import { cn } from 'cn'
 
-const BACK_KEY = 'music-back'
 const MODE_ALL_KEY = 'music-mode-all'
 const MODE_LIBRARY_KEY = 'music-mode-library'
 const MODE_ONLINE_KEY = 'music-mode-online'
@@ -131,10 +129,6 @@ function providerSummary(statuses: MusicOnlineProviderStatus[]): string {
   return unavailable > 0 ? `${summary} · ${unavailable} unavailable` : summary
 }
 
-interface MusicPageProps {
-  onBack: () => void
-}
-
 interface ToolProps {
   focusKey: string
   label: string
@@ -165,15 +159,15 @@ function Tool({ focusKey, label, icon, onClick, active, disabled }: ToolProps) {
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        'inline-flex h-9 items-center gap-2 rounded-full px-3.5 text-[0.72rem] font-medium outline-none transition-colors',
+        'inline-flex h-9 items-center gap-2 rounded-full px-3.5 text-caption font-medium outline-none transition-colors',
         disabled && 'cursor-not-allowed opacity-35',
         focused && !disabled
           ? 'bg-white text-black'
           : active
-            ? 'bg-white/12 text-white ring-1 ring-white/20'
-            : 'bg-white/5 text-white/65 ring-1 ring-white/12 hover:bg-white/10 hover:text-white',
+            ? 'bg-white/12 text-text-primary ring-1 ring-white/20'
+            : 'bg-white/5 text-text-secondary ring-1 ring-white/12 hover:bg-white/10 hover:text-text-primary',
       )}
-      style={focused && !disabled ? { boxShadow: `0 0 0 2px ${uiAccent(0.7)}` } : undefined}
+      style={focused && !disabled ? { boxShadow: `0 0 0 2px ${uiAccent()}` } : undefined}
     >
       {icon}
       {label}
@@ -205,14 +199,14 @@ function ModeTab({ focusKey, label, active, onClick }: ModeTabProps) {
       aria-pressed={active}
       onClick={onClick}
       className={cn(
-        'h-8 rounded-full px-3.5 text-[0.72rem] font-medium outline-none transition-colors',
+        'h-8 rounded-full px-3.5 text-caption font-medium outline-none transition-colors',
         focused
           ? 'bg-white text-black'
           : active
-            ? 'bg-white/14 text-white ring-1 ring-white/20'
-            : 'text-white/55 hover:text-white',
+            ? 'bg-white/14 text-text-primary ring-1 ring-white/20'
+            : 'text-text-muted hover:text-text-primary',
       )}
-      style={focused ? { boxShadow: `0 0 0 2px ${uiAccent(0.7)}` } : undefined}
+      style={focused ? { boxShadow: `0 0 0 2px ${uiAccent()}` } : undefined}
     >
       {label}
     </button>
@@ -244,16 +238,16 @@ function Transport({ focusKey, label, onClick, children, primary, active }: Tran
       aria-label={label}
       onClick={onClick}
       className={cn(
-        'grid place-items-center rounded-full outline-none transition-all duration-200',
+        'grid place-items-center rounded-full outline-none transition-all duration-[--duration-focus]',
         primary ? 'size-14' : 'size-11',
         focused
           ? 'scale-[1.04] bg-white text-black'
           : primary
-            ? 'bg-white/12 text-white hover:bg-white/20'
-            : 'bg-white/6 text-white/75 hover:bg-white/12 hover:text-white',
-        active && !focused && 'text-white ring-1 ring-white/25',
+            ? 'bg-white/12 text-text-primary hover:bg-white/20'
+            : 'bg-white/6 text-text-secondary hover:bg-white/12 hover:text-text-primary',
+        active && !focused && 'text-text-primary ring-1 ring-white/25',
       )}
-      style={focused ? { boxShadow: `0 0 0 2px ${uiAccent(0.75)}` } : undefined}
+      style={focused ? { boxShadow: `0 0 0 2px ${uiAccent()}` } : undefined}
     >
       {children}
     </button>
@@ -287,7 +281,7 @@ function Cover({ track, size }: { track: MusicTrack | null; size: string }) {
   return (
     <div
       className={cn(
-        'grid shrink-0 place-items-center rounded-xl bg-white/6 text-white/30 ring-1 ring-white/10',
+        'grid shrink-0 place-items-center rounded-xl bg-white/6 text-text-faint ring-1 ring-white/10',
         size,
       )}
     >
@@ -334,14 +328,14 @@ function SeekBar({ positionMs, durationMs }: { positionMs: number; durationMs: n
     >
       <div className="relative h-1 w-full overflow-hidden rounded-full bg-white/12">
         <div
-          className="absolute inset-y-0 left-0 rounded-full transition-[width] duration-200"
+          className="absolute inset-y-0 left-0 rounded-full transition-[width] duration-[--duration-focus]"
           style={{ width: `${ratio * 100}%`, background: uiAccent(0.95) }}
         />
       </div>
       <span
         className={cn(
-          'ml-3 w-20 shrink-0 text-right text-[0.66rem] tabular-nums transition-colors',
-          focused ? 'text-white' : 'text-white/45',
+          'ml-3 w-20 shrink-0 text-right text-caption tabular-nums transition-colors',
+          focused ? 'text-text-primary' : 'text-text-faint',
         )}
       >
         {formatDuration(positionMs)} / {formatDuration(durationMs)}
@@ -350,7 +344,7 @@ function SeekBar({ positionMs, durationMs }: { positionMs: number; durationMs: n
   )
 }
 
-export function MusicPage({ onBack }: MusicPageProps) {
+export function MusicPage() {
   const tracks = useMusicStore((state) => state.tracks)
   const folders = useMusicStore((state) => state.folders)
   const scanning = useMusicStore((state) => state.scanning)
@@ -426,14 +420,6 @@ export function MusicPage({ onBack }: MusicPageProps) {
   )
 
   const listRef = useRef<HTMLDivElement>(null)
-  const { ref: backRef, focused: backFocused } = useFocusable<
-    Record<string, never>,
-    HTMLButtonElement
-  >({
-    focusKey: BACK_KEY,
-    accessibilityLabel: 'Back to library',
-    onEnterPress: onBack,
-  })
 
   const { ref: filterRef, focused: filterFocused } = useFocusable<
     Record<string, never>,
@@ -819,26 +805,7 @@ export function MusicPage({ onBack }: MusicPageProps) {
     <section data-music-page="" className="flex min-h-0 flex-1 flex-col">
       <h1 className="sr-only">Music</h1>
 
-      <div className="flex items-center gap-4 px-[6vw] pt-6">
-        <button
-          ref={backRef}
-          type="button"
-          tabIndex={-1}
-          data-focus-key={BACK_KEY}
-          aria-label="Back to library"
-          onClick={onBack}
-          className={cn(
-            'inline-flex h-10 shrink-0 items-center gap-2 rounded-full px-4 text-[0.78rem] font-medium outline-none transition-colors',
-            backFocused
-              ? 'bg-white text-black'
-              : 'bg-white/5 text-white/65 ring-1 ring-white/12 hover:bg-white/10 hover:text-white',
-          )}
-          style={backFocused ? { boxShadow: `0 0 0 2px ${uiAccent(0.7)}` } : undefined}
-        >
-          <ArrowLeftFilled className="size-4" />
-          Back
-        </button>
-
+      <div className="flex items-center gap-4 pr-16 pl-6 pt-5">
         <div className="flex shrink-0 items-center gap-1 rounded-full bg-white/5 p-1 ring-1 ring-white/10">
           <ModeTab
             focusKey={MODE_ALL_KEY}
@@ -866,7 +833,7 @@ export function MusicPage({ onBack }: MusicPageProps) {
           />
         </div>
 
-        <div className="ml-auto flex shrink-0 items-center gap-2">
+        <div className="ml-auto mr-12 flex shrink-0 items-center gap-2">
           {mode === 'library' ? (
             <>
               <Tool
@@ -911,7 +878,7 @@ export function MusicPage({ onBack }: MusicPageProps) {
         </div>
       </div>
 
-      <div className="mt-5 flex min-h-0 flex-1 gap-6 px-[6vw] pb-8">
+      <div className="mt-5 flex min-h-0 flex-1 gap-6 px-6 pb-6">
         <div className="flex min-h-0 min-w-0 flex-1 flex-col rounded-[1.35rem] border border-white/10 bg-black/30 backdrop-blur-xl">
           {(mode === 'youtube' || mode === 'all') && setupOpen ? (
             <YouTubeSetup
@@ -941,7 +908,7 @@ export function MusicPage({ onBack }: MusicPageProps) {
               filterFocused ? 'border-white/25' : 'border-white/8',
             )}
           >
-            <SearchFilled className="size-4 shrink-0 text-white/35" />
+            <SearchFilled className="size-4 shrink-0 text-text-faint" />
             <input
               ref={filterRef}
               type="text"
@@ -974,9 +941,9 @@ export function MusicPage({ onBack }: MusicPageProps) {
               autoComplete="off"
               spellCheck={false}
               data-focus-key={FILTER_KEY}
-              className="h-7 min-w-0 flex-1 bg-transparent text-[0.82rem] text-white outline-none placeholder:text-white/30"
+              className="h-7 min-w-0 flex-1 bg-transparent text-caption text-text-primary outline-none placeholder:text-text-faint"
             />
-            <span className="shrink-0 text-[0.72rem] tabular-nums text-white/55">
+            <span className="shrink-0 text-caption tabular-nums text-text-muted">
               {mode === 'library'
                 ? `${visible.length} / ${tracks.length}`
                 : mode === 'all'
@@ -1018,28 +985,28 @@ export function MusicPage({ onBack }: MusicPageProps) {
             {mode === 'all' ? (
               allPrompt ? (
                 <div className="px-4 py-10">
-                  <div className="flex items-center gap-2 text-white">
+                  <div className="flex items-center gap-2 text-text-primary">
                     <SearchFilled className="size-5" />
-                    <p className="text-[0.95rem] font-medium">One search, every source</p>
+                    <p className="text-body font-medium">One search, every source</p>
                   </div>
-                  <p className="mt-1.5 max-w-lg text-[0.8rem] leading-relaxed text-white/45">
+                  <p className="mt-1.5 max-w-lg text-caption leading-relaxed text-text-faint">
                     Type at least two characters to search your local folders, the legal online
                     catalogs, and YouTube at the same time. Local matches appear instantly; remote
                     results follow as each source answers. Use the source chips to narrow the list.
                   </p>
-                  <p className="mt-3 text-[0.62rem] tracking-[0.12em] text-white/30 uppercase">
+                  <p className="mt-3 text-caption tracking-[0.12em] text-text-faint uppercase">
                     Local files · {ONLINE_CATALOG_HINT} · YouTube
                   </p>
                 </div>
               ) : mixedVisible.length === 0 ? (
                 <div className="px-4 py-8">
-                  <p className="text-[0.8rem] leading-relaxed text-white/45">
+                  <p className="text-caption leading-relaxed text-text-faint">
                     {allSearching
                       ? 'Searching your library, the online catalogs, and YouTube…'
                       : `No match for “${query.trim()}” in any source.`}
                   </p>
                   {!allSearching && (onlineError || youtubeError) ? (
-                    <p className="mt-2 text-[0.72rem] leading-relaxed text-white/40">
+                    <p className="mt-2 text-caption leading-relaxed text-text-faint">
                       {[onlineError, youtubeError].filter(Boolean).join(' ')}
                     </p>
                   ) : null}
@@ -1047,7 +1014,7 @@ export function MusicPage({ onBack }: MusicPageProps) {
               ) : (
                 <>
                   {sourceFilter === 'youtube' && youtubeWarning ? (
-                    <p className="mx-1 mb-1 rounded-lg bg-white/5 px-3 py-2 text-[0.7rem] leading-relaxed text-white/50">
+                    <p className="mx-1 mb-1 rounded-lg bg-white/5 px-3 py-2 text-caption leading-relaxed text-text-muted">
                       {youtubeWarning}
                     </p>
                   ) : null}
@@ -1073,13 +1040,13 @@ export function MusicPage({ onBack }: MusicPageProps) {
               )
             ) : mode === 'library' ? (
               loading ? (
-                <p className="px-3 py-6 text-[0.8rem] text-white/45">
+                <p className="px-3 py-6 text-caption text-text-faint">
                   Reading your music library…
                 </p>
               ) : tracks.length === 0 ? (
                 <div className="px-4 py-10">
-                  <p className="text-[0.95rem] font-medium text-white">No music yet</p>
-                  <p className="mt-1.5 max-w-md text-[0.8rem] leading-relaxed text-white/45">
+                  <p className="text-body font-medium text-text-primary">No music yet</p>
+                  <p className="mt-1.5 max-w-md text-caption leading-relaxed text-text-faint">
                     Add a folder of MP3, FLAC, M4A, OGG, or WAV files. Pulse reads the tags and
                     embedded covers once, then keeps the index on disk.
                   </p>
@@ -1093,7 +1060,7 @@ export function MusicPage({ onBack }: MusicPageProps) {
                   </div>
                 </div>
               ) : visible.length === 0 ? (
-                <p className="px-3 py-6 text-[0.8rem] text-white/45">
+                <p className="px-3 py-6 text-caption text-text-faint">
                   Nothing matches “{query.trim()}”.
                 </p>
               ) : (
@@ -1112,35 +1079,35 @@ export function MusicPage({ onBack }: MusicPageProps) {
             ) : mode === 'online' ? (
               onlinePrompt ? (
               <div className="px-4 py-10">
-                <p className="text-[0.95rem] font-medium text-white">Search the legal catalogs</p>
-                <p className="mt-1.5 max-w-md text-[0.8rem] leading-relaxed text-white/45">
+                <p className="text-body font-medium text-text-primary">Search the legal catalogs</p>
+                <p className="mt-1.5 max-w-md text-caption leading-relaxed text-text-faint">
                   Type at least two characters to search Apple Music, Deezer, Audius, Openverse,
                   and Internet Archive. Pulse ranks the results and plays them through the same
                   player; nothing is downloaded.
                 </p>
-                <p className="mt-3 text-[0.62rem] tracking-[0.12em] text-white/30 uppercase">
+                <p className="mt-3 text-caption tracking-[0.12em] text-text-faint uppercase">
                   Previews from Apple Music and Deezer · full tracks from the open catalogs
                 </p>
               </div>
             ) : onlineSearching ? (
-              <p className="px-3 py-6 text-[0.8rem] text-white/45">
+              <p className="px-3 py-6 text-caption text-text-faint">
                 Searching the online catalogs…
               </p>
             ) : onlineError ? (
-              <p className="px-3 py-6 text-[0.8rem] text-white/45">{onlineError}</p>
+              <p className="px-3 py-6 text-caption text-text-faint">{onlineError}</p>
             ) : onlineFailed ? (
-              <p className="px-3 py-6 text-[0.8rem] text-white/45">
+              <p className="px-3 py-6 text-caption text-text-faint">
                 The online catalogs could not be reached. Check your connection and try again.
               </p>
             ) : onlineTracks.length === 0 ? (
-              <p className="px-3 py-6 text-[0.8rem] text-white/45">
+              <p className="px-3 py-6 text-caption text-text-faint">
                 No online match for “{onlineQuery.trim()}”. Try the artist and song title
                 together.
               </p>
             ) : (
               <>
                 {onlineWarning ? (
-                  <p className="mx-1 mb-1 rounded-lg bg-white/5 px-3 py-2 text-[0.7rem] leading-relaxed text-white/50">
+                  <p className="mx-1 mb-1 rounded-lg bg-white/5 px-3 py-2 text-caption leading-relaxed text-text-muted">
                     {onlineWarning}
                   </p>
                 ) : null}
@@ -1159,40 +1126,40 @@ export function MusicPage({ onBack }: MusicPageProps) {
               )
             ) : youtubePrompt ? (
               <div className="px-4 py-10">
-                <div className="flex items-center gap-2 text-white">
+                <div className="flex items-center gap-2 text-text-primary">
                   <YoutubeFilled className="size-5" />
-                  <p className="text-[0.95rem] font-medium">Search YouTube</p>
+                  <p className="text-body font-medium">Search YouTube</p>
                 </div>
-                <p className="mt-1.5 max-w-md text-[0.8rem] leading-relaxed text-white/45">
+                <p className="mt-1.5 max-w-md text-caption leading-relaxed text-text-faint">
                   Type at least two characters. Search uses the YouTube Data API when a key is
                   configured and falls back to yt-dlp. Playing a result extracts an MP3 once and
                   keeps it in the local cache.
                 </p>
                 {youtubeStatus && (!youtubeStatus.ytDlp.ok || !youtubeStatus.ffmpeg.ok) ? (
-                  <div className="mt-3 max-w-md rounded-lg bg-white/5 px-3 py-2 text-[0.72rem] leading-relaxed text-white/55 ring-1 ring-white/8">
+                  <div className="mt-3 max-w-md rounded-lg bg-white/5 px-3 py-2 text-caption leading-relaxed text-text-muted ring-1 ring-white/8">
                     {!youtubeStatus.ffmpeg.ok
                       ? 'FFmpeg is missing. Install it with "winget install Gyan.FFmpeg", then open Setup and press Refresh.'
                       : 'yt-dlp is not installed yet; Pulse downloads the official build automatically on the first search.'}
                   </div>
                 ) : null}
-                <p className="mt-3 text-[0.62rem] tracking-[0.12em] text-white/30 uppercase">
+                <p className="mt-3 text-caption tracking-[0.12em] text-text-faint uppercase">
                   MP3 extraction uses the official yt-dlp · only download content you have rights to
                 </p>
               </div>
             ) : youtubeSearching ? (
-              <p className="px-3 py-6 text-[0.8rem] text-white/45">Searching YouTube…</p>
+              <p className="px-3 py-6 text-caption text-text-faint">Searching YouTube…</p>
             ) : youtubeError ? (
-              <p className="px-3 py-6 text-[0.8rem] text-white/45">{youtubeError}</p>
+              <p className="px-3 py-6 text-caption text-text-faint">{youtubeError}</p>
             ) : youtubeTracks.length === 0 ? (
               <div className="px-4 py-6">
-                <p className="text-[0.8rem] leading-relaxed text-white/45">
+                <p className="text-caption leading-relaxed text-text-faint">
                   {youtubeWarning ?? `No YouTube match for “${youtubeQuery.trim()}”. Try the artist and song title together.`}
                 </p>
               </div>
             ) : (
               <>
                 {youtubeWarning ? (
-                  <p className="mx-1 mb-1 rounded-lg bg-white/5 px-3 py-2 text-[0.7rem] leading-relaxed text-white/50">
+                  <p className="mx-1 mb-1 rounded-lg bg-white/5 px-3 py-2 text-caption leading-relaxed text-text-muted">
                     {youtubeWarning}
                   </p>
                 ) : null}
@@ -1218,7 +1185,7 @@ export function MusicPage({ onBack }: MusicPageProps) {
             )}
           </div>
 
-          <div className="flex items-center justify-between gap-4 border-t border-white/8 px-4 py-2.5 text-[0.66rem] text-white/40">
+          <div className="flex items-center justify-between gap-4 border-t border-white/8 px-4 py-2.5 text-caption text-text-faint">
             <span className="min-w-0 truncate">
               {mode === 'library'
                 ? `${folders.length === 0 ? 'No folders added' : `${folders.length} ${folders.length === 1 ? 'folder' : 'folders'}`}${scanning ? ` · scanning ${scannedFiles} files…` : ''}${scanError ? ` · ${scanError}` : ''}`
@@ -1286,7 +1253,7 @@ export function MusicPage({ onBack }: MusicPageProps) {
               sleeve always fits instead of overflowing into a scroll area.
               The transport and the overlay switch below never move. */}
           <div className="flex min-h-0 flex-1 flex-col">
-            <p className="shrink-0 text-[0.64rem] font-medium tracking-[0.16em] text-white/45 uppercase">
+            <p className="shrink-0 text-caption font-medium tracking-[0.16em] text-text-faint uppercase">
               Now playing
             </p>
 
@@ -1300,15 +1267,15 @@ export function MusicPage({ onBack }: MusicPageProps) {
             </div>
 
             <div className="mt-3 min-w-0 shrink-0 text-center">
-              <p className="truncate text-[1.06rem] font-semibold text-white">
+              <p className="truncate text-label font-semibold text-text-primary">
                 {playback.track?.title ?? 'Nothing playing'}
               </p>
-              <p className="mt-1 truncate text-[0.84rem] text-white/65">
+              <p className="mt-1 truncate text-caption text-text-secondary">
                 {playback.track?.artist ?? 'Pick a track from the list'}
               </p>
               {playback.track?.provider === 'youtube' ? (
                 <p
-                  className="mt-0.5 truncate text-[0.76rem] text-white/55"
+                  className="mt-0.5 truncate text-caption text-text-muted"
                   title={playback.track.videoTitle ?? undefined}
                 >
                   {playback.track.videoTitle &&
@@ -1317,7 +1284,7 @@ export function MusicPage({ onBack }: MusicPageProps) {
                     : ''}
                 </p>
               ) : (
-                <p className="mt-0.5 truncate text-[0.76rem] text-white/55">
+                <p className="mt-0.5 truncate text-caption text-text-muted">
                   {playback.track?.album || ''}
                 </p>
               )}
@@ -1326,7 +1293,7 @@ export function MusicPage({ onBack }: MusicPageProps) {
               {playback.track?.provider ? (
                 <div className="mt-2 flex flex-wrap items-center justify-center gap-x-2 gap-y-1.5">
                   {playback.track.streamKind ? (
-                    <span className="rounded-full bg-white/8 px-2 py-0.5 text-[0.6rem] font-semibold tracking-[0.06em] text-white/70 uppercase">
+                    <span className="rounded-full bg-white/8 px-2 py-0.5 text-caption font-semibold tracking-[0.06em] text-text-secondary uppercase">
                       {playback.track.provider === 'youtube'
                         ? 'MP3'
                         : playback.track.streamKind === 'full'
@@ -1334,11 +1301,11 @@ export function MusicPage({ onBack }: MusicPageProps) {
                           : 'Preview'}
                     </span>
                   ) : null}
-                  <span className="truncate text-[0.76rem] text-white/65">
+                  <span className="truncate text-caption text-text-secondary">
                     {playback.track.publisher ?? PROVIDER_LABELS[playback.track.provider]}
                   </span>
                   {playback.track.license ? (
-                    <span className="text-[0.64rem] text-white/50">
+                    <span className="text-caption text-text-muted">
                       {playback.track.license}
                     </span>
                   ) : null}
@@ -1352,7 +1319,7 @@ export function MusicPage({ onBack }: MusicPageProps) {
                 </div>
               ) : null}
               {playback.status === 'error' && playback.error ? (
-                <p className="mx-auto mt-2 line-clamp-2 max-w-[18rem] text-[0.68rem] leading-relaxed text-white/55">
+                <p className="mx-auto mt-2 line-clamp-2 max-w-[18rem] text-caption leading-relaxed text-text-muted">
                   {playback.error}
                 </p>
               ) : null}
@@ -1416,8 +1383,8 @@ export function MusicPage({ onBack }: MusicPageProps) {
           <div className="mt-3 shrink-0 border-t border-white/8 pt-3">
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-[0.8rem] font-medium text-white">Desktop overlay</p>
-                <p className="mt-0.5 text-[0.7rem] leading-relaxed text-white/50 [@media(max-height:760px)]:hidden">
+                <p className="text-caption font-medium text-text-primary">Desktop overlay</p>
+                <p className="mt-0.5 text-caption leading-relaxed text-text-muted [@media(max-height:760px)]:hidden">
                   {overlay?.shortcut
                     ? `Shows over other apps · ${overlay.shortcut} toggles it.`
                     : 'Shows over other apps while music plays.'}
@@ -1461,15 +1428,15 @@ function SourceChip({ focusKey, label, count, active, onClick }: SourceChipProps
       aria-label={`Show ${label} results`}
       onClick={onClick}
       className={cn(
-        'inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.68rem] font-medium outline-none transition-colors',
+        'inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-caption font-medium outline-none transition-colors',
         active
           ? 'bg-white text-black'
-          : 'bg-white/6 text-white/60 hover:bg-white/12 hover:text-white',
+          : 'bg-white/6 text-text-secondary hover:bg-white/12 hover:text-text-primary',
       )}
-      style={focused ? { boxShadow: `0 0 0 2px ${uiAccent(0.55)}` } : undefined}
+      style={focused ? { boxShadow: `0 0 0 2px ${uiAccent()}` } : undefined}
     >
       {label}
-      <span className={cn('tabular-nums', active ? 'text-black/55' : 'text-white/40')}>
+      <span className={cn('tabular-nums', active ? 'text-black/55' : 'text-text-faint')}>
         {count}
       </span>
     </button>
@@ -1550,16 +1517,16 @@ function MixedTrackRow({
         onClick={() => onPlay(track)}
         className={cn(
           'flex min-w-0 flex-1 items-center gap-3 rounded-xl px-2.5 py-1.5 text-left outline-none transition-colors',
-          focused ? 'bg-white text-black' : 'text-white hover:bg-white/6',
+          focused ? 'bg-white text-black' : 'text-text-primary hover:bg-white/6',
         )}
-        style={focused ? { boxShadow: `0 0 0 2px ${uiAccent(0.55)}` } : undefined}
+        style={focused ? { boxShadow: `0 0 0 2px ${uiAccent()}` } : undefined}
       >
         <span className="grid w-3 shrink-0 place-items-center">
           {current ? (
             <MusicFilled
               className={cn(
                 'size-3.5',
-                focused ? 'text-black' : playing ? 'text-white' : 'text-white/45',
+                focused ? 'text-black' : playing ? 'text-text-primary' : 'text-text-faint',
                 preparing && 'animate-pulse',
               )}
             />
@@ -1568,11 +1535,11 @@ function MixedTrackRow({
         <Cover track={track} size="size-10" />
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-2">
-            <span className="truncate text-[0.86rem] font-medium">{track.title}</span>
+            <span className="truncate text-caption font-medium">{track.title}</span>
             <span
               className={cn(
-                'shrink-0 rounded-full px-2 py-0.5 text-[0.64rem] font-medium',
-                focused ? 'bg-black/10 text-black/65' : 'bg-white/12 text-white/70',
+                'shrink-0 rounded-full px-2 py-0.5 text-caption font-medium',
+                focused ? 'bg-black/10 text-black/65' : 'bg-white/12 text-text-secondary',
               )}
             >
               {badge}
@@ -1580,8 +1547,8 @@ function MixedTrackRow({
           </span>
           <span
             className={cn(
-              'mt-0.5 block truncate text-[0.78rem]',
-              focused ? 'text-black/65' : 'text-white/60',
+              'mt-0.5 block truncate text-caption',
+              focused ? 'text-black/65' : 'text-text-secondary',
             )}
           >
             {track.artist}
@@ -1590,16 +1557,16 @@ function MixedTrackRow({
         </span>
         <span
           className={cn(
-            'shrink-0 rounded-full px-2 py-0.5 text-[0.62rem] font-medium',
-            focused ? 'bg-black/10 text-black/60' : 'bg-white/8 text-white/50',
+            'shrink-0 rounded-full px-2 py-0.5 text-caption font-medium',
+            focused ? 'bg-black/10 text-black/60' : 'bg-white/8 text-text-muted',
           )}
         >
           {SOURCE_LABELS[source]}
         </span>
         <span
           className={cn(
-            'w-11 shrink-0 text-right text-[0.74rem] tabular-nums',
-            focused ? 'text-black/65' : 'text-white/55',
+            'w-11 shrink-0 text-right text-caption tabular-nums',
+            focused ? 'text-black/65' : 'text-text-muted',
           )}
         >
           {formatDuration(track.durationMs)}
@@ -1614,12 +1581,12 @@ function MixedTrackRow({
           aria-label={`Cancel extracting ${track.title}`}
           onClick={onCancel}
           className={cn(
-            'grid size-9 shrink-0 place-items-center rounded-full text-[0.62rem] font-semibold outline-none transition-colors',
+            'grid size-9 shrink-0 place-items-center rounded-full text-caption font-semibold outline-none transition-colors',
             cancelFocused
               ? 'bg-white text-black'
-              : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white',
+              : 'bg-white/5 text-text-secondary hover:bg-white/10 hover:text-text-primary',
           )}
-          style={cancelFocused ? { boxShadow: `0 0 0 2px ${uiAccent(0.55)}` } : undefined}
+          style={cancelFocused ? { boxShadow: `0 0 0 2px ${uiAccent()}` } : undefined}
         >
           Stop
         </button>
@@ -1636,9 +1603,9 @@ function MixedTrackRow({
             'grid size-9 shrink-0 place-items-center rounded-full outline-none transition-colors',
             linkFocused
               ? 'bg-white text-black'
-              : 'bg-white/5 text-white/55 hover:bg-white/10 hover:text-white',
+              : 'bg-white/5 text-text-muted hover:bg-white/10 hover:text-text-primary',
           )}
-          style={linkFocused ? { boxShadow: `0 0 0 2px ${uiAccent(0.55)}` } : undefined}
+          style={linkFocused ? { boxShadow: `0 0 0 2px ${uiAccent()}` } : undefined}
         >
           <ExternalLinkFilled className="size-4" />
         </button>
@@ -1682,7 +1649,7 @@ function SetupField({
 
   return (
     <label className={cn('block min-w-0', wide && 'md:col-span-2')}>
-      <span className="text-[0.62rem] font-medium tracking-[0.08em] text-white/45 uppercase">
+      <span className="text-caption font-medium tracking-[0.08em] text-text-faint uppercase">
         {label}
       </span>
       <input
@@ -1696,10 +1663,10 @@ function SetupField({
         spellCheck={false}
         data-focus-key={focusKey}
         className={cn(
-          'mt-1 h-8 w-full rounded-lg border bg-black/25 px-2.5 text-[0.72rem] text-white outline-none placeholder:text-white/25',
+          'mt-1 h-8 w-full rounded-lg border bg-black/25 px-2.5 text-caption text-text-primary outline-none placeholder:text-text-faint',
           focused ? 'border-white/35' : 'border-white/10',
         )}
-        style={focused ? { boxShadow: `0 0 0 2px ${uiAccent(0.55)}` } : undefined}
+        style={focused ? { boxShadow: `0 0 0 2px ${uiAccent()}` } : undefined}
       />
     </label>
   )
@@ -1714,11 +1681,11 @@ function ToolBadge({ label, info }: ToolBadgeProps) {
   const ready = info?.ok ?? false
   return (
     <div className="flex min-w-0 items-center justify-between gap-2 rounded-lg bg-black/20 px-2 py-1.5 ring-1 ring-white/8">
-      <span className="shrink-0 text-[0.62rem] text-white/40">{label}</span>
+      <span className="shrink-0 text-caption text-text-faint">{label}</span>
       <span
         className={cn(
-          'min-w-0 truncate text-[0.64rem]',
-          ready ? 'text-white/70' : 'text-white/40',
+          'min-w-0 truncate text-caption',
+          ready ? 'text-text-secondary' : 'text-text-faint',
         )}
         title={info?.path ?? undefined}
       >
@@ -1790,11 +1757,11 @@ function YouTubeSetup({
     <div className="m-2 mb-0 rounded-xl border border-white/10 bg-white/4 p-3">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="flex items-center gap-2 text-[0.78rem] font-medium text-white">
+          <p className="flex items-center gap-2 text-caption font-medium text-text-primary">
             <YoutubeFilled className="size-4" />
             YouTube setup
           </p>
-          <p className="mt-1 max-w-xl text-[0.66rem] leading-relaxed text-white/45">
+          <p className="mt-1 max-w-xl text-caption leading-relaxed text-text-faint">
             Add a YouTube Data API v3 key for structured search. It is optional: without a key,
             Pulse searches with yt-dlp. The key is stored locally and only sent to googleapis.com.
           </p>
@@ -1809,7 +1776,7 @@ function YouTubeSetup({
       </div>
 
       {statusError ? (
-        <p className="mt-2 text-[0.68rem] text-white/45">{statusError}</p>
+        <p className="mt-2 text-caption text-text-faint">{statusError}</p>
       ) : null}
 
       <div className="mt-2 grid gap-2 md:grid-cols-2">
@@ -1850,8 +1817,8 @@ function YouTubeSetup({
         <ToolBadge label="yt-dlp" info={status?.ytDlp ?? null} />
         <ToolBadge label="FFmpeg" info={status?.ffmpeg ?? null} />
         <div className="flex items-center justify-between gap-2 rounded-lg bg-black/20 px-2 py-1.5 ring-1 ring-white/8">
-          <span className="text-[0.62rem] text-white/40">MP3 cache</span>
-          <span className={cn('truncate text-[0.64rem]', overLimit ? 'text-white' : 'text-white/70')}>
+          <span className="text-caption text-text-faint">MP3 cache</span>
+          <span className={cn('truncate text-caption', overLimit ? 'text-text-primary' : 'text-text-secondary')}>
             {status ? `${status.cache.tracks} · ${formatBytes(status.cache.bytes)}` : 'Checking…'}
           </span>
         </div>
@@ -1860,7 +1827,7 @@ function YouTubeSetup({
       {entries.length > 0 ? (
         <div className="mt-2 rounded-lg bg-black/20 p-1.5 ring-1 ring-white/8">
           <div className="flex items-center justify-between gap-2 px-1 pb-1">
-            <span className="text-[0.6rem] tracking-[0.08em] text-white/35 uppercase">
+            <span className="text-caption tracking-[0.08em] text-text-faint uppercase">
               Cached tracks · oldest first
             </span>
             <button
@@ -1872,14 +1839,14 @@ function YouTubeSetup({
               onClick={onClearCache}
               disabled={clearing}
               className={cn(
-                'rounded-full px-2 py-0.5 text-[0.62rem] font-medium outline-none transition-colors',
+                'rounded-full px-2 py-0.5 text-caption font-medium outline-none transition-colors',
                 clearing
-                  ? 'text-white/25'
+                  ? 'text-text-faint'
                   : clearFocused
                     ? 'bg-white text-black'
-                    : 'text-white/60 hover:bg-white/10 hover:text-white',
+                    : 'text-text-secondary hover:bg-white/10 hover:text-text-primary',
               )}
-              style={clearFocused ? { boxShadow: `0 0 0 2px ${uiAccent(0.55)}` } : undefined}
+              style={clearFocused ? { boxShadow: `0 0 0 2px ${uiAccent()}` } : undefined}
             >
               {clearing ? 'Clearing…' : 'Clear cache'}
             </button>
@@ -1888,20 +1855,20 @@ function YouTubeSetup({
             {entries.slice(0, 12).map((entry) => (
               <li
                 key={entry.videoId}
-                className="flex items-center justify-between gap-2 rounded px-1 py-0.5 text-[0.64rem] text-white/55"
+                className="flex items-center justify-between gap-2 rounded px-1 py-0.5 text-caption text-text-muted"
               >
                 <span className="min-w-0 truncate">
                   {entry.title} · {entry.artist}
                 </span>
                 <span className="flex shrink-0 items-center gap-2">
-                  <span className="tabular-nums text-white/35">{formatBytes(entry.bytes)}</span>
+                  <span className="tabular-nums text-text-faint">{formatBytes(entry.bytes)}</span>
                   <button
                     type="button"
                     tabIndex={-1}
                     data-focus-key={`${YOUTUBE_REMOVE_KEY}-${entry.videoId}`}
                     aria-label={`Delete the cached MP3 for ${entry.title}`}
                     onClick={() => onRemoveCached(entry.videoId)}
-                    className="rounded-full px-1.5 text-[0.6rem] text-white/40 transition-colors hover:bg-white/10 hover:text-white"
+                    className="rounded-full px-1.5 text-caption text-text-faint transition-colors hover:bg-white/10 hover:text-text-primary"
                   >
                     Delete
                   </button>
@@ -1913,7 +1880,7 @@ function YouTubeSetup({
       ) : null}
 
       <div className="mt-2 flex items-center justify-between gap-3">
-        <p className="max-w-xl text-[0.62rem] leading-relaxed text-white/35">
+        <p className="max-w-xl text-caption leading-relaxed text-text-faint">
           Pulse downloads the official yt-dlp automatically. FFmpeg must be installed separately
           (for example with winget install Gyan.FFmpeg) or pointed to above.
         </p>
@@ -1925,9 +1892,9 @@ function YouTubeSetup({
           disabled={saving}
         />
       </div>
-      {saveError ? <p className="mt-1 text-[0.66rem] text-white/45">{saveError}</p> : null}
+      {saveError ? <p className="mt-1 text-caption text-text-faint">{saveError}</p> : null}
       {status && !status.ffmpeg.ok ? (
-        <p className="mt-1 text-[0.64rem] leading-relaxed text-white/40">{status.ffmpeg.error}</p>
+        <p className="mt-1 text-caption leading-relaxed text-text-faint">{status.ffmpeg.error}</p>
       ) : null}
     </div>
   )
@@ -1985,16 +1952,16 @@ function YouTubeTrackRow({
         onClick={() => onPlay(track)}
         className={cn(
           'flex min-w-0 flex-1 items-center gap-3 rounded-xl px-2.5 py-1.5 text-left outline-none transition-colors',
-          focused ? 'bg-white text-black' : 'text-white hover:bg-white/6',
+          focused ? 'bg-white text-black' : 'text-text-primary hover:bg-white/6',
         )}
-        style={focused ? { boxShadow: `0 0 0 2px ${uiAccent(0.55)}` } : undefined}
+        style={focused ? { boxShadow: `0 0 0 2px ${uiAccent()}` } : undefined}
       >
         <span className="grid w-3 shrink-0 place-items-center">
           {current ? (
             <MusicFilled
               className={cn(
                 'size-3.5',
-                focused ? 'text-black' : playing ? 'text-white' : 'text-white/45',
+                focused ? 'text-black' : playing ? 'text-text-primary' : 'text-text-faint',
                 preparing && 'animate-pulse',
               )}
             />
@@ -2003,11 +1970,11 @@ function YouTubeTrackRow({
         <Cover track={track} size="size-10" />
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-2">
-            <span className="truncate text-[0.86rem] font-medium">{track.title}</span>
+            <span className="truncate text-caption font-medium">{track.title}</span>
             <span
               className={cn(
-                'shrink-0 rounded-full px-2 py-0.5 text-[0.64rem] font-medium',
-                focused ? 'bg-black/10 text-black/65' : 'bg-white/12 text-white/70',
+                'shrink-0 rounded-full px-2 py-0.5 text-caption font-medium',
+                focused ? 'bg-black/10 text-black/65' : 'bg-white/12 text-text-secondary',
               )}
             >
               {preparing ? 'Preparing…' : 'MP3'}
@@ -2015,8 +1982,8 @@ function YouTubeTrackRow({
           </span>
           <span
             className={cn(
-              'mt-0.5 block truncate text-[0.78rem]',
-              focused ? 'text-black/65' : 'text-white/60',
+              'mt-0.5 block truncate text-caption',
+              focused ? 'text-black/65' : 'text-text-secondary',
             )}
           >
             {track.artist} · {track.publisher}
@@ -2024,8 +1991,8 @@ function YouTubeTrackRow({
           {track.videoTitle !== track.title ? (
             <span
               className={cn(
-                'mt-0.5 block truncate text-[0.68rem] [@media(max-height:760px)]:hidden',
-                focused ? 'text-black/45' : 'text-white/35',
+                'mt-0.5 block truncate text-caption [@media(max-height:760px)]:hidden',
+                focused ? 'text-black/45' : 'text-text-faint',
               )}
               title={track.videoTitle}
             >
@@ -2035,8 +2002,8 @@ function YouTubeTrackRow({
         </span>
         <span
           className={cn(
-            'w-11 shrink-0 text-right text-[0.74rem] tabular-nums',
-            focused ? 'text-black/65' : 'text-white/55',
+            'w-11 shrink-0 text-right text-caption tabular-nums',
+            focused ? 'text-black/65' : 'text-text-muted',
           )}
         >
           {formatDuration(track.durationMs)}
@@ -2051,12 +2018,12 @@ function YouTubeTrackRow({
           aria-label={`Cancel extracting ${track.title}`}
           onClick={onCancel}
           className={cn(
-            'grid size-9 shrink-0 place-items-center rounded-full text-[0.62rem] font-semibold outline-none transition-colors',
+            'grid size-9 shrink-0 place-items-center rounded-full text-caption font-semibold outline-none transition-colors',
             cancelFocused
               ? 'bg-white text-black'
-              : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white',
+              : 'bg-white/5 text-text-secondary hover:bg-white/10 hover:text-text-primary',
           )}
-          style={cancelFocused ? { boxShadow: `0 0 0 2px ${uiAccent(0.55)}` } : undefined}
+          style={cancelFocused ? { boxShadow: `0 0 0 2px ${uiAccent()}` } : undefined}
         >
           Stop
         </button>
@@ -2072,9 +2039,9 @@ function YouTubeTrackRow({
           'grid size-9 shrink-0 place-items-center rounded-full outline-none transition-colors',
           linkFocused
             ? 'bg-white text-black'
-            : 'bg-white/5 text-white/55 hover:bg-white/10 hover:text-white',
+            : 'bg-white/5 text-text-muted hover:bg-white/10 hover:text-text-primary',
         )}
-        style={linkFocused ? { boxShadow: `0 0 0 2px ${uiAccent(0.55)}` } : undefined}
+        style={linkFocused ? { boxShadow: `0 0 0 2px ${uiAccent()}` } : undefined}
       >
         <ExternalLinkFilled className="size-4" />
       </button>
@@ -2104,12 +2071,12 @@ function WatchOnYouTube({ videoId, title, onOpen }: WatchOnYouTubeProps) {
       aria-label={`Open ${title} on YouTube`}
       onClick={() => onOpen(videoId)}
       className={cn(
-        'inline-flex h-11 items-center gap-1.5 rounded-full px-4 text-[0.7rem] font-medium outline-none transition-colors',
+        'inline-flex h-11 items-center gap-1.5 rounded-full px-4 text-caption font-medium outline-none transition-colors',
         focused
           ? 'bg-white text-black'
-          : 'bg-white/5 text-white/60 ring-1 ring-white/10 hover:bg-white/10 hover:text-white',
+          : 'bg-white/5 text-text-secondary ring-1 ring-white/10 hover:bg-white/10 hover:text-text-primary',
       )}
-      style={focused ? { boxShadow: `0 0 0 2px ${uiAccent(0.6)}` } : undefined}
+      style={focused ? { boxShadow: `0 0 0 2px ${uiAccent()}` } : undefined}
     >
       <YoutubeFilled className="size-3.5" />
       Watch on YouTube
@@ -2143,24 +2110,24 @@ function TrackRow({ track, current, playing, onPlay }: TrackRowProps) {
         onClick={() => onPlay(track)}
         className={cn(
           'flex w-full items-center gap-3 rounded-xl px-2.5 py-1.5 text-left outline-none transition-colors',
-          focused ? 'bg-white text-black' : 'text-white hover:bg-white/6',
+          focused ? 'bg-white text-black' : 'text-text-primary hover:bg-white/6',
         )}
-        style={focused ? { boxShadow: `0 0 0 2px ${uiAccent(0.55)}` } : undefined}
+        style={focused ? { boxShadow: `0 0 0 2px ${uiAccent()}` } : undefined}
       >
         <span className="grid w-3 shrink-0 place-items-center">
           {current ? (
             <MusicFilled
-              className={cn('size-3.5', focused ? 'text-black' : playing ? 'text-white' : 'text-white/45')}
+              className={cn('size-3.5', focused ? 'text-black' : playing ? 'text-text-primary' : 'text-text-faint')}
             />
           ) : null}
         </span>
         <Cover track={track} size="size-10" />
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-[0.86rem] font-medium">{track.title}</span>
+          <span className="block truncate text-caption font-medium">{track.title}</span>
           <span
             className={cn(
-              'mt-0.5 block truncate text-[0.78rem]',
-              focused ? 'text-black/65' : 'text-white/60',
+              'mt-0.5 block truncate text-caption',
+              focused ? 'text-black/65' : 'text-text-secondary',
             )}
           >
             {track.artist}
@@ -2169,8 +2136,8 @@ function TrackRow({ track, current, playing, onPlay }: TrackRowProps) {
         </span>
         <span
           className={cn(
-            'shrink-0 text-[0.72rem] tabular-nums',
-            focused ? 'text-black/65' : 'text-white/55',
+            'shrink-0 text-caption tabular-nums',
+            focused ? 'text-black/65' : 'text-text-muted',
           )}
         >
           {formatDuration(track.durationMs)}
@@ -2206,16 +2173,16 @@ function OnlineTrackRow({ track, current, playing, onPlay }: OnlineTrackRowProps
         onClick={() => onPlay(track)}
         className={cn(
           'flex w-full items-center gap-3 rounded-xl px-2.5 py-1.5 text-left outline-none transition-colors',
-          focused ? 'bg-white text-black' : 'text-white hover:bg-white/6',
+          focused ? 'bg-white text-black' : 'text-text-primary hover:bg-white/6',
         )}
-        style={focused ? { boxShadow: `0 0 0 2px ${uiAccent(0.55)}` } : undefined}
+        style={focused ? { boxShadow: `0 0 0 2px ${uiAccent()}` } : undefined}
       >
         <span className="grid w-3 shrink-0 place-items-center">
           {current ? (
             <MusicFilled
               className={cn(
                 'size-3.5',
-                focused ? 'text-black' : playing ? 'text-white' : 'text-white/45',
+                focused ? 'text-black' : playing ? 'text-text-primary' : 'text-text-faint',
               )}
             />
           ) : null}
@@ -2223,11 +2190,11 @@ function OnlineTrackRow({ track, current, playing, onPlay }: OnlineTrackRowProps
         <Cover track={track} size="size-10" />
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-2">
-            <span className="truncate text-[0.86rem] font-medium">{track.title}</span>
+            <span className="truncate text-caption font-medium">{track.title}</span>
             <span
               className={cn(
-                'shrink-0 rounded-full px-2 py-0.5 text-[0.64rem] font-medium',
-                focused ? 'bg-black/10 text-black/65' : 'bg-white/12 text-white/70',
+                'shrink-0 rounded-full px-2 py-0.5 text-caption font-medium',
+                focused ? 'bg-black/10 text-black/65' : 'bg-white/12 text-text-secondary',
               )}
             >
               {kindLabel}
@@ -2235,8 +2202,8 @@ function OnlineTrackRow({ track, current, playing, onPlay }: OnlineTrackRowProps
           </span>
           <span
             className={cn(
-              'mt-0.5 block truncate text-[0.78rem]',
-              focused ? 'text-black/65' : 'text-white/60',
+              'mt-0.5 block truncate text-caption',
+              focused ? 'text-black/65' : 'text-text-secondary',
             )}
           >
             {track.artist} · {track.publisher}
@@ -2245,16 +2212,16 @@ function OnlineTrackRow({ track, current, playing, onPlay }: OnlineTrackRowProps
         </span>
         <span
           className={cn(
-            'shrink-0 rounded-full px-2 py-0.5 text-[0.64rem] font-medium',
-            focused ? 'bg-black/10 text-black/60' : 'bg-white/12 text-white/65',
+            'shrink-0 rounded-full px-2 py-0.5 text-caption font-medium',
+            focused ? 'bg-black/10 text-black/60' : 'bg-white/12 text-text-secondary',
           )}
         >
           {PROVIDER_LABELS[track.provider]}
         </span>
         <span
           className={cn(
-            'w-11 shrink-0 text-right text-[0.74rem] tabular-nums',
-            focused ? 'text-black/65' : 'text-white/55',
+            'w-11 shrink-0 text-right text-caption tabular-nums',
+            focused ? 'text-black/65' : 'text-text-muted',
           )}
         >
           {formatDuration(track.durationMs)}
@@ -2298,7 +2265,7 @@ function OverlaySwitch({
         'grid size-11 shrink-0 place-items-center rounded-full outline-none',
         disabled && 'cursor-not-allowed opacity-40',
       )}
-      style={focused && !disabled ? { boxShadow: `0 0 0 2px ${uiAccent(0.75)}` } : undefined}
+      style={focused && !disabled ? { boxShadow: `0 0 0 2px ${uiAccent()}` } : undefined}
     >
       <span
         className={cn(
@@ -2353,7 +2320,7 @@ function VolumeControl({ volume, muted }: { volume: number; muted: boolean }) {
         aria-pressed={muted}
         onClick={() => musicEngine.toggleMute()}
         className={cn(
-          'grid size-11 shrink-0 place-items-center rounded-full text-white/60 outline-none transition-colors',
+          'grid size-11 shrink-0 place-items-center rounded-full text-text-secondary outline-none transition-colors',
           muteFocused ? 'bg-white text-black' : 'bg-white/5 hover:bg-white/10',
         )}
       >

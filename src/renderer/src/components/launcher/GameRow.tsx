@@ -14,6 +14,47 @@ import {
 import { cn } from 'cn'
 import { GameCard } from './GameCard'
 
+interface SourceChipProps {
+  /** Row id used for the focus key and for filtering, e.g. `steam`. */
+  id: string
+  label: string
+  selected: boolean
+  onPress: () => void
+}
+
+/** A source filter chip in the All Games toolbar; same focus pattern as the sort control. */
+export function SourceChip({ id, label, selected, onPress }: SourceChipProps) {
+  const { ref, focused } = useFocusable<Record<string, never>, HTMLButtonElement>({
+    focusKey: `filter-${id}`,
+    accessibilityLabel: `Show ${label}`,
+    onEnterPress: onPress,
+    onFocus: () => ref.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' }),
+  })
+
+  return (
+    <button
+      ref={ref}
+      type="button"
+      tabIndex={-1}
+      data-focus-key={`filter-${id}`}
+      aria-label={`Show ${label}`}
+      aria-pressed={selected}
+      onClick={onPress}
+      className={cn(
+        'inline-flex h-8 shrink-0 items-center rounded-full px-3 text-caption font-semibold tracking-[0.08em] uppercase outline-none transition-colors',
+        focused
+          ? 'bg-white text-black'
+          : selected
+            ? 'bg-white/15 text-text-primary'
+            : 'bg-white/5 text-text-muted ring-1 ring-white/10 hover:bg-white/10 hover:text-text-primary',
+      )}
+      style={focused ? { boxShadow: `0 0 0 2px ${uiAccent()}` } : undefined}
+    >
+      {label}
+    </button>
+  )
+}
+
 interface GameRowProps {
   rowId: string
   title: string
@@ -22,6 +63,8 @@ interface GameRowProps {
   onLaunch: (game: GameSummary) => void
   /** Optional header control, e.g. the sort action on All Games. */
   action?: ReactNode
+  /** Optional chips under the header, e.g. the source filter on All Games. */
+  toolbar?: ReactNode
   /**
    * Focus key reached with ArrowUp from this row. The top-most row uses it so
    * Up always lands on the hero's primary action instead of being pulled to
@@ -58,12 +101,12 @@ export function SortControl({ sort, onPress }: SortControlProps) {
       aria-label={`Sort library, currently ${librarySortDescription(sort)}`}
       onClick={onPress}
       className={cn(
-        'ml-auto inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-[0.66rem] font-semibold tracking-[0.08em] uppercase outline-none transition-colors',
+        'ml-auto inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-caption font-semibold tracking-[0.08em] uppercase outline-none transition-colors',
         focused
           ? 'bg-white text-black'
-          : 'bg-white/5 text-white/55 ring-1 ring-white/10 hover:bg-white/10 hover:text-white',
+          : 'bg-white/5 text-text-muted ring-1 ring-white/10 hover:bg-white/10 hover:text-text-primary',
       )}
-      style={focused ? { boxShadow: `0 0 0 2px ${uiAccent(0.7)}` } : undefined}
+      style={focused ? { boxShadow: `0 0 0 2px ${uiAccent()}` } : undefined}
     >
       <AzSortAscendingLettersFilled className="size-4" />
       {label}
@@ -78,6 +121,7 @@ export function GameRow({
   onSelect,
   onLaunch,
   action,
+  toolbar,
   upTarget,
 }: GameRowProps) {
   const { ref, hasFocusedChild } = useFocusable({
@@ -98,17 +142,17 @@ export function GameRow({
 
   return (
     <section ref={ref} className="relative">
-      <div className="mb-2.5 flex items-center gap-3 px-[6vw]">
+      <div className="mb-2.5 flex items-center gap-3 px-gutter">
         <h2
-          className={`text-[0.95rem] font-semibold tracking-wide transition-colors duration-200 ${
-            hasFocusedChild ? 'text-white' : 'text-white/70'
+          className={`text-body font-semibold tracking-wide transition-colors duration-[--duration-focus] ${
+            hasFocusedChild ? 'text-text-primary' : 'text-text-secondary'
           }`}
         >
           {title}
         </h2>
-        <span className="text-[0.65rem] font-medium text-white/25">{games.length}</span>
+        <span className="text-caption font-medium text-text-faint">{games.length}</span>
         <div
-          className={`h-px flex-1 transition-opacity duration-300 ${
+          className={`h-px flex-1 transition-opacity duration-[--duration-focus] ${
             hasFocusedChild ? 'opacity-30' : 'opacity-0'
           }`}
           style={{
@@ -117,9 +161,10 @@ export function GameRow({
         />
         {action}
       </div>
+      {toolbar ? <div className="mb-1 flex flex-wrap items-center gap-2 px-gutter">{toolbar}</div> : null}
       <div
         data-game-strip={rowId}
-        className="no-scrollbar flex snap-x scroll-px-[6vw] gap-4 overflow-x-auto overflow-y-hidden px-[6vw] pt-8 pb-12"
+        className="no-scrollbar flex snap-x scroll-px-gutter gap-4 overflow-x-auto overflow-y-hidden px-gutter pt-8 pb-12"
       >
         {games.map((game) => (
           <GameCard

@@ -108,7 +108,7 @@ function HeroAction({
         disabled && 'pointer-events-none cursor-default opacity-60',
         className,
       )}
-      style={focused ? { boxShadow: '0 0 0 2px rgba(255,255,255,0.95), 0 0 26px rgba(255,255,255,0.28)' } : undefined}
+      style={focused ? { boxShadow: '0 0 0 2px #fff' } : undefined}
     >
       {children}
     </button>
@@ -238,7 +238,7 @@ export function Hero({
   }
 
   return (
-    <div className="relative z-10 flex min-h-0 flex-1 items-end px-[6vw] pb-7">
+    <div className="relative z-10 flex min-h-0 flex-1 items-end px-gutter pb-7">
       <AnimatePresence mode="wait">
         {game ? (
           <motion.div
@@ -250,13 +250,13 @@ export function Hero({
             className="max-w-[min(58rem,68vw)]"
           >
             <div className="mb-3 flex flex-wrap items-center gap-2.5">
-              <span className="rounded-full bg-white/8 px-2.5 py-1 text-[0.6rem] font-semibold tracking-[0.16em] text-white/65 uppercase ring-1 ring-white/12">
+              <span className="rounded-full bg-white/8 px-2.5 py-1 text-caption font-semibold tracking-[0.16em] text-text-secondary uppercase ring-1 ring-white/12">
                 {sourceLabel(game.source)}
               </span>
               {running ? (
                 <span
                   className={cn(
-                    'flex items-center gap-1.5 text-[0.68rem] font-medium',
+                    'flex items-center gap-1.5 text-caption font-medium',
                     assurance === 'confirmed' ? 'text-emerald-300' : 'text-amber-200/90',
                   )}
                 >
@@ -264,37 +264,37 @@ export function Hero({
                     className={cn(
                       'size-2 rounded-full',
                       assurance === 'confirmed'
-                        ? 'bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.8)]'
+                        ? 'bg-emerald-400'
                         : 'bg-amber-300',
                     )}
                   />
                   {assurance === 'confirmed' ? 'Running now' : 'Possibly running'}
                 </span>
               ) : pending ? (
-                <span className="flex items-center gap-1.5 text-[0.68rem] font-medium text-amber-200/80">
-                  <span className="size-2 animate-pulse rounded-full bg-amber-300" />
+                <span className="flex items-center gap-1.5 text-caption font-medium text-amber-200/80">
+                  <span className="size-2 rounded-full bg-amber-300" />
                   Launch requested
                 </span>
               ) : null}
               {lastPlayed ? (
-                <span className="flex items-center gap-1.5 text-[0.68rem] text-white/45">
+                <span className="flex items-center gap-1.5 text-caption text-text-faint">
                   <ClockFilled className="size-4.5" />
                   Played {lastPlayed}
                 </span>
               ) : null}
               {size ? (
-                <span className="flex items-center gap-1.5 text-[0.68rem] text-white/45">
+                <span className="flex items-center gap-1.5 text-caption text-text-faint">
                   <DriveFilled className="size-4.5" />
                   {size}
                 </span>
               ) : null}
             </div>
 
-            <h1 className="max-w-[min(54rem,64vw)] text-[clamp(2.6rem,5.6vw,5.4rem)] leading-[0.92] font-semibold tracking-[-0.045em] text-white drop-shadow-[0_8px_40px_rgba(0,0,0,0.65)]">
+            <h1 className="max-w-[min(54rem,64vw)] text-hero font-semibold tracking-[-0.045em] text-text-primary">
               {game.name}
             </h1>
 
-            <p className="mt-3 max-w-xl text-[0.8rem] leading-relaxed text-white/40">
+            <p className="mt-3 max-w-xl text-caption leading-relaxed text-text-faint">
               {running
                 ? confirming
                   ? `Force quit will terminate ${game.name} immediately and may lose unsaved progress.`
@@ -324,7 +324,7 @@ export function Hero({
                 disabled={busy || (!running && pending)}
                 onClick={() => (running ? onFocus(game) : onLaunch(game))}
                 onArrowPress={primaryNeighbours}
-                className="group inline-flex h-11 items-center gap-2.5 rounded-full bg-white px-6 text-[0.82rem] font-semibold text-black shadow-[0_10px_40px_-8px_rgba(255,255,255,0.35)] hover:scale-[1.02] hover:bg-white/90 active:scale-[0.99]"
+                className="group inline-flex h-11 items-center gap-2.5 rounded-full bg-white px-6 text-caption font-semibold text-black hover:bg-white/90 active:scale-[0.99]"
               >
                 {running ? (
                   inFlight === 'focus' ? (
@@ -347,18 +347,18 @@ export function Hero({
                   disabled={busy || closeRequested}
                   onClick={() => onClose(game)}
                   onArrowPress={closeNeighbours}
-                  className="inline-flex h-11 items-center gap-2 rounded-full bg-white/5 px-5 text-[0.82rem] font-medium text-white/80 ring-1 ring-white/15 hover:bg-white/10 hover:text-white"
+                  className="inline-flex h-11 items-center gap-2 rounded-full bg-white/5 px-5 text-caption font-medium text-text-primary ring-1 ring-white/15 hover:bg-white/10 hover:text-text-primary"
                 >
                   {inFlight === 'close' ? (
-                    <Spinner className="size-4 text-white" />
+                    <Spinner className="size-4 text-text-primary" />
                   ) : (
                     <CloseFilled className="size-4.5" />
                   )}
                   {closeRequested ? 'Close requested' : 'Close game'}
                 </HeroAction>
               ) : (
-                <span className="text-[0.7rem] text-white/30">
-                  Press <span className="text-white/60">Enter</span> on any cover
+                <span className="text-caption text-text-faint">
+                  Press <span className="text-text-secondary">Enter</span> on any cover
                 </span>
               )}
 
@@ -371,21 +371,21 @@ export function Hero({
                     onClick={() => onForceQuit(game)}
                     onArrowPress={forceNeighbours}
                     className={cn(
-                      'inline-flex h-11 items-center gap-2 rounded-full px-5 text-[0.82rem] font-semibold ring-1',
+                      'inline-flex h-11 items-center gap-2 rounded-full px-5 text-caption font-semibold ring-1',
                       confirming
-                        ? 'bg-red-500 text-white ring-red-400 hover:bg-red-500/90'
+                        ? 'bg-red-500 text-text-primary ring-red-400 hover:bg-red-500/90'
                         : 'bg-red-500/10 text-red-200 ring-red-400/40 hover:bg-red-500/20',
                     )}
                   >
                     {inFlight === 'force-close' ? (
-                      <Spinner className="size-4.5 text-white" />
+                      <Spinner className="size-4.5 text-text-primary" />
                     ) : (
                       <PowerFilled className="size-4.5" />
                     )}
                     {confirming ? 'Press again to force quit' : 'Force quit'}
                   </HeroAction>
                 ) : (
-                  <span className="text-[0.72rem] text-white/35">
+                  <span className="text-caption text-text-faint">
                     Force quit in {forceCountdown}s
                   </span>
                 )
@@ -397,7 +397,7 @@ export function Hero({
                   label="Keep waiting for the game to exit"
                   onClick={() => onCancelForce(game)}
                   onArrowPress={cancelNeighbours}
-                  className="text-[0.72rem] font-medium text-white/40 underline decoration-white/20 underline-offset-4 hover:text-white/70"
+                  className="text-caption font-medium text-text-faint underline decoration-white/20 underline-offset-4 hover:text-text-secondary"
                 >
                   Keep waiting
                 </HeroAction>
@@ -413,16 +413,16 @@ export function Hero({
                 onClick={() => onToggleFavorite(game)}
                 onArrowPress={favoriteNeighbours}
                 className={cn(
-                  'inline-flex h-11 items-center gap-2 rounded-full px-5 text-[0.82rem] font-medium ring-1 transition-colors',
+                  'inline-flex h-11 items-center gap-2 rounded-full px-5 text-caption font-medium ring-1 transition-colors',
                   game.favorite
                     ? 'bg-amber-300/12 text-amber-200 ring-amber-300/30 hover:bg-amber-300/20'
-                    : 'bg-white/5 text-white/65 ring-white/15 hover:bg-white/10 hover:text-white',
+                    : 'bg-white/5 text-text-secondary ring-white/15 hover:bg-white/10 hover:text-text-primary',
                 )}
               >
                 <StarFilled
                   className={cn(
                     'size-4.5',
-                    game.favorite ? 'text-amber-300' : 'text-white/70',
+                    game.favorite ? 'text-amber-300' : 'text-text-secondary',
                   )}
                 />
                 {game.favorite ? 'Favorited' : 'Favorite'}
@@ -433,9 +433,9 @@ export function Hero({
                 label={`Game details for ${game.name}`}
                 onClick={() => onDetails(game)}
                 onArrowPress={detailsNeighbours}
-                className="inline-flex h-11 items-center gap-2 rounded-full bg-white/5 px-5 text-[0.82rem] font-medium text-white/65 ring-1 ring-white/15 hover:bg-white/10 hover:text-white"
+                className="inline-flex h-11 items-center gap-2 rounded-full bg-white/5 px-5 text-caption font-medium text-text-secondary ring-1 ring-white/15 hover:bg-white/10 hover:text-text-primary"
               >
-                <InformationFilled className="size-4.5 text-white/70" />
+                <InformationFilled className="size-4.5 text-text-secondary" />
                 Details
               </HeroAction>
             </div>

@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import {
-  ArrowLeftFilled,
   BackFilled,
   CursorFilled,
   Delete2Filled,
@@ -29,6 +28,7 @@ import type { AppInfo, GameSummary, MotionPreference, WindowMode } from '@shared
 import { sourceLabel } from '@shared/format'
 import { useLauncherStore } from '@/store/launcher'
 import { uiAccent } from '@/lib/accent'
+import { focusRing } from '@/lib/accent'
 import { playUI } from '@/lib/ui-sfx'
 import { cn } from 'cn'
 import { Input } from '@/components/ui/input'
@@ -36,7 +36,6 @@ import { Separator } from '@/components/ui/separator'
 import { Spinner } from '@/components/ui/spinner'
 
 interface SettingsPageProps {
-  onBack: () => void
   onAddGame: () => void
 }
 
@@ -53,7 +52,6 @@ const WINDOW_MODE_OPTIONS: Array<{ value: WindowMode; label: string }> = [
 ]
 
 const FOCUS = {
-  back: 'settings-back',
   refresh: 'settings-refresh',
   add: 'settings-add',
   shortcuts: 'settings-shortcuts',
@@ -69,22 +67,23 @@ const FOCUS = {
   windowMode: (value: WindowMode) => `settings-window-${value}`,
 }
 
-function focusRing(active: boolean): { boxShadow?: string } {
-  return active
-    ? { boxShadow: `0 0 0 2px ${uiAccent(0.8)}, 0 0 22px -8px ${uiAccent(0.6)}` }
-    : {}
-}
-
 /** Move focus and always consume the direction, so geometry cannot escape. */
 function moveTo(focusKey: string | null): boolean {
-  if (!focusKey || !doesFocusableExist(focusKey)) return false
+  if (!focusKey) return false
+  // The panel header's ✕ is a plain button, not registered with the spatial
+  // navigator, so it is reached by DOM focus instead (still keyboard-only).
+  if (focusKey === 'panel-close') {
+    document.querySelector<HTMLElement>(`[data-focus-key="${focusKey}"]`)?.focus()
+    return false
+  }
+  if (!doesFocusableExist(focusKey)) return false
   void setFocus(focusKey)
   return false
 }
 
 function SectionLabel({ children }: { children: ReactNode }) {
   return (
-    <p className="text-[0.6rem] font-semibold tracking-[0.2em] text-white/55 uppercase">
+    <p className="text-caption font-semibold tracking-[0.2em] text-text-muted uppercase">
       {children}
     </p>
   )
@@ -98,7 +97,7 @@ function RowIcon({ children }: { children: ReactNode }) {
   return (
     <span
       aria-hidden
-      className="grid size-8 shrink-0 place-items-center rounded-lg bg-white/6 text-white/55 ring-1 ring-white/8"
+      className="grid size-8 shrink-0 place-items-center rounded-lg bg-white/6 text-text-muted ring-1 ring-white/8"
     >
       {children}
     </span>
@@ -147,7 +146,7 @@ function SettingsAction({
         if (!disabled) onPress()
       }}
       className={cn(
-        'inline-flex h-10 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.06] px-3 text-[0.78rem] font-medium text-white/85 outline-none transition-colors hover:bg-white/12 hover:text-white',
+        'inline-flex h-10 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.06] px-3 text-caption font-medium text-text-primary outline-none transition-colors hover:bg-white/12 hover:text-text-primary',
         disabled && 'cursor-default opacity-50',
         className,
       )}
@@ -218,8 +217,8 @@ function SettingsToggle({
           </span>
         ) : null}
         <span className="min-w-0">
-          <span className="block text-[0.8rem] font-medium text-white/90">{label}</span>
-          <span className="mt-1 block text-[0.67rem] leading-relaxed text-white/50">
+          <span className="block text-caption font-medium text-text-primary">{label}</span>
+          <span className="mt-1 block text-caption leading-relaxed text-text-muted">
             {description}
           </span>
         </span>
@@ -283,11 +282,11 @@ function SettingsChoice({
       disabled={disabled}
       onClick={onPress}
       className={cn(
-        'rounded-md px-2.5 py-1.5 text-[0.7rem] font-medium outline-none transition-colors',
-        selected ? 'bg-white text-black' : 'text-white/60 hover:text-white',
+        'rounded-md px-2.5 py-1.5 text-caption font-medium outline-none transition-colors',
+        selected ? 'bg-white text-black' : 'text-text-secondary hover:text-text-primary',
         disabled && 'cursor-default opacity-60',
       )}
-      style={focused ? { boxShadow: `0 0 0 2px ${uiAccent(0.85)}` } : undefined}
+      style={focused ? { boxShadow: `0 0 0 2px ${uiAccent()}` } : undefined}
     >
       {label}
     </button>
@@ -315,8 +314,8 @@ function ManualGameRow({
   return (
     <div className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">
       <div className="min-w-0">
-        <p className="truncate text-[0.78rem] font-medium text-white/85">{game.name}</p>
-        <p className="text-[0.62rem] tracking-[0.12em] text-white/50 uppercase">
+        <p className="truncate text-caption font-medium text-text-primary">{game.name}</p>
+        <p className="text-caption tracking-[0.12em] text-text-muted uppercase">
           {sourceLabel(game.source)}
         </p>
       </div>
@@ -331,50 +330,13 @@ function ManualGameRow({
           'grid size-9 shrink-0 place-items-center rounded-lg outline-none transition-colors',
           focused
             ? 'bg-red-500/15 text-red-200'
-            : 'text-white/45 hover:bg-red-500/10 hover:text-red-300',
+            : 'text-text-faint hover:bg-red-500/10 hover:text-red-300',
         )}
-        style={focused ? { boxShadow: `0 0 0 2px rgba(248,113,113,0.55)` } : undefined}
+        style={focused ? { boxShadow: `0 0 0 2px rgb(248 113 113)` } : undefined}
       >
         <Delete2Filled className="size-5" />
       </button>
     </div>
-  )
-}
-
-function BackToLibrary({
-  onBack,
-  onArrowPress,
-}: {
-  onBack: () => void
-  onArrowPress: (direction: string) => boolean
-}) {
-  const { ref, focused } = useFocusable<Record<string, never>, HTMLButtonElement>({
-    focusKey: FOCUS.back,
-    accessibilityLabel: 'Back to library',
-    onEnterPress: onBack,
-    onArrowPress,
-    onFocus: () => ref.current?.scrollIntoView({ block: 'nearest' }),
-  })
-
-  return (
-    <button
-      ref={ref}
-      type="button"
-      tabIndex={-1}
-      aria-label="Back to library"
-      data-focus-key={FOCUS.back}
-      onClick={onBack}
-      className={cn(
-        'inline-flex h-9 shrink-0 items-center gap-2 rounded-full px-3.5 text-[0.72rem] font-medium outline-none transition-colors',
-        focused
-          ? 'bg-white text-black'
-          : 'bg-white/[0.05] text-white/70 ring-1 ring-white/15 hover:bg-white/10 hover:text-white',
-      )}
-      style={focused ? { boxShadow: `0 0 0 2px ${uiAccent(0.45)}` } : undefined}
-    >
-      <ArrowLeftFilled className="size-4" />
-      Library
-    </button>
   )
 }
 
@@ -386,7 +348,7 @@ function BackToLibrary({
  * consumed, and Tab walks the same controls in visual order. Text fields are
  * the only place where keys are handed back to the DOM while editing.
  */
-export function SettingsPage({ onBack, onAddGame }: SettingsPageProps) {
+export function SettingsPage({ onAddGame }: SettingsPageProps) {
   const games = useLauncherStore((state) => state.games)
   const settings = useLauncherStore((state) => state.settings)
   const refreshing = useLauncherStore((state) => state.refreshing)
@@ -409,7 +371,7 @@ export function SettingsPage({ onBack, onAddGame }: SettingsPageProps) {
 
   // Tab order mirrors the visual order of the page.
   const tabOrder = useMemo(() => {
-    const order: string[] = [FOCUS.back, FOCUS.refresh, FOCUS.add, FOCUS.shortcuts]
+    const order: string[] = [FOCUS.refresh, FOCUS.add, FOCUS.shortcuts]
     for (const game of games) {
       if (game.source === 'manual') order.push(FOCUS.remove(game.id))
     }
@@ -506,17 +468,19 @@ export function SettingsPage({ onBack, onAddGame }: SettingsPageProps) {
   }, [cycleTab])
 
   // --- Arrow graph -------------------------------------------------------
-  const backArrows = (direction: string): boolean =>
-    direction === 'down' ? moveTo(FOCUS.refresh) : false
-
+  // The panel header sits above the content now, so up from a first row
+  // reaches the ✕ instead of nothing.
+  const CLOSE = 'panel-close'
   const refreshArrows = (direction: string): boolean => {
     if (direction === 'right') return moveTo(FOCUS.add)
+    if (direction === 'up') return moveTo(CLOSE)
     if (direction === 'down') return moveTo(FOCUS.shortcuts)
     return false
   }
 
   const addArrows = (direction: string): boolean => {
     if (direction === 'left') return moveTo(FOCUS.refresh)
+    if (direction === 'up') return moveTo(CLOSE)
     if (direction === 'down') return moveTo(FOCUS.shortcuts)
     return false
   }
@@ -526,7 +490,6 @@ export function SettingsPage({ onBack, onAddGame }: SettingsPageProps) {
     if (direction === 'down') return moveTo(lastManualKey ?? FOCUS.apiKey)
     return false
   }
-
   const removeArrows = (gameId: string) => (direction: string): boolean => {
     const index = manualIds.indexOf(gameId)
     if (direction === 'up') {
@@ -724,303 +687,284 @@ export function SettingsPage({ onBack, onAddGame }: SettingsPageProps) {
   }
 
   return (
-    <main className="relative z-10 flex min-h-0 flex-1 flex-col">
-      <div className="px-[6vw] pb-4">
-        <div className="mx-auto flex w-full max-w-[48rem] items-center gap-4">
-          <BackToLibrary onBack={onBack} onArrowPress={backArrows} />
-          <div className="min-w-0">
-            <h1 className="text-[1.05rem] font-semibold tracking-tight text-white/95">Settings</h1>
-            <p className="mt-0.5 text-[0.7rem] text-white/60">
-              Library, artwork, and window preferences.
-            </p>
+    <div ref={scrollerRef} className="min-h-0 flex-1 overflow-y-auto px-6 pb-6">
+      <div className="mx-auto grid w-full gap-6">
+        <section className="grid gap-3">
+          <SectionLabel>Library</SectionLabel>
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+            <SettingsAction
+              focusKey={FOCUS.refresh}
+              label={refreshing ? 'Refreshing library' : 'Refresh library'}
+              onPress={() => void handleRefresh()}
+              onArrowPress={refreshArrows}
+              disabled={refreshing}
+              className="justify-start"
+            >
+              {refreshing ? <Spinner className="size-5" /> : <Refresh2Filled className="size-5" />}
+              {refreshing ? 'Scanning…' : 'Refresh library'}
+            </SettingsAction>
+            <SettingsAction
+              focusKey={FOCUS.add}
+              label="Add local game"
+              onPress={onAddGame}
+              onArrowPress={addArrows}
+              className="justify-start"
+            >
+              <FolderOpenFilled className="size-5" />
+              Add local game
+            </SettingsAction>
           </div>
-          <p className="ml-auto hidden text-right text-[0.62rem] leading-relaxed text-white/55 md:block">
-            Tab moves between controls
-            <br />
-            Esc leaves a field, then closes
-          </p>
-        </div>
-      </div>
-
-      <div ref={scrollerRef} className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-[6vw] pb-16">
-        <div className="mx-auto grid w-full max-w-[48rem] gap-7 rounded-2xl border border-white/10 bg-[#08080d]/92 px-6 py-6 backdrop-blur-xl">
-          <section className="grid gap-3">
-            <SectionLabel>Library</SectionLabel>
-            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-              <SettingsAction
-                focusKey={FOCUS.refresh}
-                label={refreshing ? 'Refreshing library' : 'Refresh library'}
-                onPress={() => void handleRefresh()}
-                onArrowPress={refreshArrows}
-                disabled={refreshing}
-                className="justify-start"
-              >
-                {refreshing ? <Spinner className="size-5" /> : <Refresh2Filled className="size-5" />}
-                {refreshing ? 'Scanning…' : 'Refresh library'}
-              </SettingsAction>
-              <SettingsAction
-                focusKey={FOCUS.add}
-                label="Add local game"
-                onPress={onAddGame}
-                onArrowPress={addArrows}
-                className="justify-start"
-              >
-                <FolderOpenFilled className="size-5" />
-                Add local game
-              </SettingsAction>
-            </div>
-            <SettingsToggle
-              focusKey={FOCUS.shortcuts}
-              label="Show desktop shortcuts"
-              description="Adds Start Menu shortcuts to the library. Refreshing takes a moment."
-              checked={settings.showStartMenuApps}
-              icon={<GridFilled className="size-4" />}
-              onChange={(checked) => void handleToggleStartMenu(checked)}
-              onArrowPress={shortcutsArrows}
-            />
-            {manualGames.length > 0 ? (
-              <div className="grid gap-2">
-                <p className="text-[0.7rem] text-white/50">Manually added</p>
-                {manualGames.map((game) => (
-                  <ManualGameRow
-                    key={game.id}
-                    game={game}
-                    onRemove={(id) => void handleRemoveManual(id)}
-                    onArrowPress={removeArrows(game.id)}
-                  />
-                ))}
-              </div>
-            ) : null}
-          </section>
-
-          <Separator className="bg-white/10" />
-
-          <section className="grid gap-3">
-            <SectionLabel>Artwork</SectionLabel>
+          <SettingsToggle
+            focusKey={FOCUS.shortcuts}
+            label="Show desktop shortcuts"
+            description="Adds Start Menu shortcuts to the library. Refreshing takes a moment."
+            checked={settings.showStartMenuApps}
+            icon={<GridFilled className="size-4" />}
+            onChange={(checked) => void handleToggleStartMenu(checked)}
+            onArrowPress={shortcutsArrows}
+          />
+          {manualGames.length > 0 ? (
             <div className="grid gap-2">
-              <div className="flex items-center gap-2.5">
-                <RowIcon>
-                  <Key2Filled className="size-4" />
-                </RowIcon>
-                <label htmlFor="sgdb-key" className="text-[0.8rem] text-white/90">
-                  SteamGridDB API key
-                </label>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Input
-                  ref={apiKeyRef}
-                  id="sgdb-key"
-                  type={showApiKey ? 'text' : 'password'}
-                  value={apiKey}
-                  onChange={(event) => setApiKey(event.target.value)}
-                  aria-label="SteamGridDB API key"
-                  data-focus-key={FOCUS.apiKey}
-                  placeholder="Optional — for Epic and local game covers"
-                  className="min-w-0 flex-1 border-white/15 bg-white/[0.06] text-white placeholder:text-white/35"
-                  style={focusRing(apiKeyFocused)}
-                  spellCheck={false}
-                  autoComplete="off"
-                  data-1p-ignore="true"
-                  data-lpignore="true"
+              <p className="text-caption text-text-muted">Manually added</p>
+              {manualGames.map((game) => (
+                <ManualGameRow
+                  key={game.id}
+                  game={game}
+                  onRemove={(id) => void handleRemoveManual(id)}
+                  onArrowPress={removeArrows(game.id)}
                 />
-                <SettingsAction
-                  focusKey={FOCUS.keyToggle}
-                  label={showApiKey ? 'Hide API key' : 'Show API key'}
-                  onPress={() => setShowApiKey((value) => !value)}
-                  onArrowPress={keyToggleArrows}
-                  className="w-12 justify-center px-0"
-                >
-                  {showApiKey ? (
-                    <EyeCloseFilled className="size-5" />
-                  ) : (
-                    <EyeFilled className="size-5" />
-                  )}
-                  <span className="sr-only">{showApiKey ? 'Hide' : 'Show'}</span>
-                </SettingsAction>
-                <SettingsAction
-                  focusKey={FOCUS.keySave}
-                  label="Save SteamGridDB API key"
-                  onPress={() => void handleSaveKey()}
-                  onArrowPress={keySaveArrows}
-                  disabled={savingKey}
-                  className="justify-center"
-                >
-                  {savingKey ? <Spinner className="size-5" /> : 'Save'}
-                </SettingsAction>
-              </div>
-              <p className="text-[0.67rem] leading-relaxed text-white/50">
-                Used only when a game has no Steam artwork. Leave empty to use generated covers.
-              </p>
+              ))}
             </div>
-          </section>
+          ) : null}
+        </section>
 
-          <Separator className="bg-white/10" />
+        <Separator className="bg-white/10" />
 
-          <section className="grid gap-4">
-            <SectionLabel>Experience</SectionLabel>
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5">
-                <RowIcon>
-                  <CursorFilled className="size-4" />
-                </RowIcon>
-                <div>
-                  <p className="text-[0.8rem] text-white/90">Hide cursor after</p>
-                  <p className="text-[0.67rem] text-white/50">Seconds of inactivity</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Input
-                  ref={cursorInputRef}
-                  value={cursorSeconds}
-                  onChange={(event) => setCursorSeconds(event.target.value)}
-                  onBlur={() => void handleCursorBlur()}
-                  inputMode="numeric"
-                  className="w-16 border-white/15 bg-white/[0.06] text-center text-white"
-                  style={focusRing(cursorFocused)}
-                  data-focus-key={FOCUS.cursor}
-                  aria-label="Cursor hide delay in seconds"
-                />
-                <span className="text-[0.72rem] text-white/50">sec</span>
-              </div>
+        <section className="grid gap-3">
+          <SectionLabel>Artwork</SectionLabel>
+          <div className="grid gap-2">
+            <div className="flex items-center gap-2.5">
+              <RowIcon>
+                <Key2Filled className="size-4" />
+              </RowIcon>
+              <label htmlFor="sgdb-key" className="text-caption text-text-primary">
+                SteamGridDB API key
+              </label>
             </div>
-
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5">
-                <RowIcon>
-                  <MonitorFilled className="size-4" />
-                </RowIcon>
-                <div>
-                  <p className="text-[0.8rem] text-white/90">Motion</p>
-                  <p className="text-[0.67rem] text-white/50">Animations and parallax</p>
-                </div>
-              </div>
-              <div
-                role="radiogroup"
-                aria-label="Motion"
-                className="flex gap-1 rounded-lg border border-white/10 bg-white/[0.03] p-1"
-              >
-                {MOTION_OPTIONS.map((option, index) => (
-                  <SettingsChoice
-                    key={option.value}
-                    focusKey={FOCUS.motion(option.value)}
-                    label={option.label}
-                    selected={settings.motion === option.value}
-                    onPress={() => void handleMotion(option.value)}
-                    onArrowPress={motionArrows(index)}
-                  />
-                ))}
-              </div>
-            </div>
-
-            <SettingsToggle
-              focusKey={FOCUS.sounds}
-              label="Interface sounds"
-              description="Quiet zen cues for hover, press, selection, and page changes. Nothing plays while you type."
-              checked={settings.uiSounds}
-              icon={<SpeakerFilled className="size-4" />}
-              onChange={(checked) => void handleUiSounds(checked)}
-              onArrowPress={soundsArrows}
-            />
-          </section>
-
-          <Separator className="bg-white/10" />
-
-          <section className="grid gap-4">
-            <SectionLabel>Window</SectionLabel>
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5">
-                <RowIcon>
-                  <FullscreenFilled className="size-4" />
-                </RowIcon>
-                <div>
-                  <p className="text-[0.8rem] text-white/90">Window mode</p>
-                  <p className="text-[0.67rem] text-white/50">Saved and used at startup</p>
-                </div>
-              </div>
-              <div
-                role="radiogroup"
-                aria-label="Window mode"
-                className="flex flex-wrap gap-1 rounded-lg border border-white/10 bg-white/[0.03] p-1"
-              >
-                {WINDOW_MODE_OPTIONS.map((option, index) => (
-                  <SettingsChoice
-                    key={option.value}
-                    focusKey={FOCUS.windowMode(option.value)}
-                    label={option.label}
-                    selected={settings.windowMode === option.value}
-                    disabled={changingWindowMode}
-                    onPress={() => void handleWindowMode(option.value)}
-                    onArrowPress={windowModeArrows(index)}
-                  />
-                ))}
-              </div>
-            </div>
-            {settings.windowMode === 'kiosk' ? (
-              <p className="rounded-lg border border-amber-300/20 bg-amber-300/[0.08] px-3 py-2 text-[0.68rem] leading-relaxed text-amber-100/85">
-                Kiosk stays above other windows and hides from the taskbar. Press
-                <span className="font-medium text-amber-100"> Ctrl+Alt+L </span>
-                to restore it, and quit from the Power menu or the tray icon.
-              </p>
-            ) : (
-              <p className="text-[0.67rem] leading-relaxed text-white/50">
-                Escape and the close button only hide the launcher. Use the Power menu or the
-                tray icon to exit. Switching to Windowed reloads the window.
-              </p>
-            )}
-
-            <SettingsToggle
-              focusKey={FOCUS.returnAfterGame}
-              label="Return after game"
-              description="Show Pulse again when the game it launched exits. The launcher stays hidden until the game has been detected running."
-              checked={settings.returnAfterGame}
-              icon={<BackFilled className="size-4" />}
-              onChange={(checked) => void handleReturnAfterGame(checked)}
-              onArrowPress={returnArrows}
-            />
-          </section>
-
-          <Separator className="bg-white/10" />
-
-          <section className="grid gap-3">
-            <SectionLabel>About</SectionLabel>
-            <div className="grid gap-1.5 text-[0.7rem] text-white/55">
-              <p>
-                Pulse Launcher {info?.version ?? '…'}
-                {info?.demo ? ' · Demo mode' : ''}
-              </p>
-              {info ? (
-                <p>
-                  Electron {info.electron} · Chromium {info.chrome} · {info.platform}
-                </p>
-              ) : null}
-              {info ? (
-                <p>
-                  Restore shortcut {info.restoreShortcut.accelerator}:{' '}
-                  {info.restoreShortcut.registered ? 'active' : 'unavailable — use the tray icon'}
-                </p>
-              ) : null}
-              {info?.demo ? (
-                <p className="text-amber-200/80">
-                  Demo data is loaded from the bundled sample library. Launching is simulated.
-                </p>
-              ) : null}
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap gap-2">
+              <Input
+                ref={apiKeyRef}
+                id="sgdb-key"
+                type={showApiKey ? 'text' : 'password'}
+                value={apiKey}
+                onChange={(event) => setApiKey(event.target.value)}
+                aria-label="SteamGridDB API key"
+                data-focus-key={FOCUS.apiKey}
+                placeholder="Optional — for Epic and local game covers"
+                className="min-w-0 flex-1 border-white/15 bg-white/[0.06] text-text-primary placeholder:text-text-faint"
+                style={focusRing(apiKeyFocused)}
+                spellCheck={false}
+                autoComplete="off"
+                data-1p-ignore="true"
+                data-lpignore="true"
+              />
               <SettingsAction
-                focusKey={FOCUS.logs}
-                label="Open logs"
-                onPress={() => void window.launcher.app.openLogs()}
-                onArrowPress={logsArrows}
+                focusKey={FOCUS.keyToggle}
+                label={showApiKey ? 'Hide API key' : 'Show API key'}
+                onPress={() => setShowApiKey((value) => !value)}
+                onArrowPress={keyToggleArrows}
+                className="w-12 justify-center px-0"
+              >
+                {showApiKey ? (
+                  <EyeCloseFilled className="size-5" />
+                ) : (
+                  <EyeFilled className="size-5" />
+                )}
+                <span className="sr-only">{showApiKey ? 'Hide' : 'Show'}</span>
+              </SettingsAction>
+              <SettingsAction
+                focusKey={FOCUS.keySave}
+                label="Save SteamGridDB API key"
+                onPress={() => void handleSaveKey()}
+                onArrowPress={keySaveArrows}
+                disabled={savingKey}
                 className="justify-center"
               >
-                <Document2Filled className="size-5" />
-                Open logs
+                {savingKey ? <Spinner className="size-5" /> : 'Save'}
               </SettingsAction>
-              <p className="text-[0.67rem] text-white/50">Hide and quit are in the Power menu.</p>
             </div>
-          </section>
-        </div>
+            <p className="text-caption leading-relaxed text-text-muted">
+              Used only when a game has no Steam artwork. Leave empty to use generated covers.
+            </p>
+          </div>
+        </section>
+
+        <Separator className="bg-white/10" />
+
+        <section className="grid gap-4">
+          <SectionLabel>Experience</SectionLabel>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <RowIcon>
+                <CursorFilled className="size-4" />
+              </RowIcon>
+              <div>
+                <p className="text-caption text-text-primary">Hide cursor after</p>
+                <p className="text-caption text-text-muted">Seconds of inactivity</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Input
+                ref={cursorInputRef}
+                value={cursorSeconds}
+                onChange={(event) => setCursorSeconds(event.target.value)}
+                onBlur={() => void handleCursorBlur()}
+                inputMode="numeric"
+                className="w-16 border-white/15 bg-white/[0.06] text-center text-text-primary"
+                style={focusRing(cursorFocused)}
+                data-focus-key={FOCUS.cursor}
+                aria-label="Cursor hide delay in seconds"
+              />
+              <span className="text-caption text-text-muted">sec</span>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <RowIcon>
+                <MonitorFilled className="size-4" />
+              </RowIcon>
+              <div>
+                <p className="text-caption text-text-primary">Motion</p>
+                <p className="text-caption text-text-muted">Animations and parallax</p>
+              </div>
+            </div>
+            <div
+              role="radiogroup"
+              aria-label="Motion"
+              className="flex gap-1 rounded-lg border border-white/10 bg-white/[0.03] p-1"
+            >
+              {MOTION_OPTIONS.map((option, index) => (
+                <SettingsChoice
+                  key={option.value}
+                  focusKey={FOCUS.motion(option.value)}
+                  label={option.label}
+                  selected={settings.motion === option.value}
+                  onPress={() => void handleMotion(option.value)}
+                  onArrowPress={motionArrows(index)}
+                />
+              ))}
+            </div>
+          </div>
+
+          <SettingsToggle
+            focusKey={FOCUS.sounds}
+            label="Interface sounds"
+            description="Quiet zen cues for hover, press, selection, and page changes. Nothing plays while you type."
+            checked={settings.uiSounds}
+            icon={<SpeakerFilled className="size-4" />}
+            onChange={(checked) => void handleUiSounds(checked)}
+            onArrowPress={soundsArrows}
+          />
+        </section>
+
+        <Separator className="bg-white/10" />
+
+        <section className="grid gap-4">
+          <SectionLabel>Window</SectionLabel>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <RowIcon>
+                <FullscreenFilled className="size-4" />
+              </RowIcon>
+              <div>
+                <p className="text-caption text-text-primary">Window mode</p>
+                <p className="text-caption text-text-muted">Saved and used at startup</p>
+              </div>
+            </div>
+            <div
+              role="radiogroup"
+              aria-label="Window mode"
+              className="flex flex-wrap gap-1 rounded-lg border border-white/10 bg-white/[0.03] p-1"
+            >
+              {WINDOW_MODE_OPTIONS.map((option, index) => (
+                <SettingsChoice
+                  key={option.value}
+                  focusKey={FOCUS.windowMode(option.value)}
+                  label={option.label}
+                  selected={settings.windowMode === option.value}
+                  disabled={changingWindowMode}
+                  onPress={() => void handleWindowMode(option.value)}
+                  onArrowPress={windowModeArrows(index)}
+                />
+              ))}
+            </div>
+          </div>
+          {settings.windowMode === 'kiosk' ? (
+            <p className="rounded-lg border border-amber-300/20 bg-amber-300/[0.08] px-3 py-2 text-caption leading-relaxed text-amber-100/85">
+              Kiosk stays above other windows and hides from the taskbar. Press
+              <span className="font-medium text-amber-100"> Ctrl+Alt+L </span>
+              to restore it, and quit from the Power menu or the tray icon.
+            </p>
+          ) : (
+            <p className="text-caption leading-relaxed text-text-muted">
+              Escape and the close button only hide the launcher. Use the Power menu or the
+              tray icon to exit. Switching to Windowed reloads the window.
+            </p>
+          )}
+
+          <SettingsToggle
+            focusKey={FOCUS.returnAfterGame}
+            label="Return after game"
+            description="Show Pulse again when the game it launched exits. The launcher stays hidden until the game has been detected running."
+            checked={settings.returnAfterGame}
+            icon={<BackFilled className="size-4" />}
+            onChange={(checked) => void handleReturnAfterGame(checked)}
+            onArrowPress={returnArrows}
+          />
+        </section>
+
+        <Separator className="bg-white/10" />
+
+        <section className="grid gap-3">
+          <SectionLabel>About</SectionLabel>
+          <div className="grid gap-1.5 text-caption text-text-muted">
+            <p>
+              Pulse Launcher {info?.version ?? '…'}
+              {info?.demo ? ' · Demo mode' : ''}
+            </p>
+            {info ? (
+              <p>
+                Electron {info.electron} · Chromium {info.chrome} · {info.platform}
+              </p>
+            ) : null}
+            {info ? (
+              <p>
+                Restore shortcut {info.restoreShortcut.accelerator}:{' '}
+                {info.restoreShortcut.registered ? 'active' : 'unavailable — use the tray icon'}
+              </p>
+            ) : null}
+            {info?.demo ? (
+              <p className="text-amber-200/80">
+                Demo data is loaded from the bundled sample library. Launching is simulated.
+              </p>
+            ) : null}
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <SettingsAction
+              focusKey={FOCUS.logs}
+              label="Open logs"
+              onPress={() => void window.launcher.app.openLogs()}
+              onArrowPress={logsArrows}
+              className="justify-center"
+            >
+              <Document2Filled className="size-5" />
+              Open logs
+            </SettingsAction>
+            <p className="text-caption text-text-muted">Hide and quit are in the Power menu.</p>
+          </div>
+        </section>
       </div>
-    </main>
+    </div>
   )
 }

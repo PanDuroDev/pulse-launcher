@@ -20,6 +20,10 @@ packaged `app.asar` is older than `out/`.
   NSIS installer with its `.blockmap` and `latest.yml`.
 - `docs/audit/PHASES.md` Phase 8 «الإصدار نفسه» so publishing has its own tracked
   work instead of living in Phase 0.
+- `npm run check` runs every gate in one go (typecheck, lint, design census,
+  tests); CI and the pre-push hook (`.husky/pre-push`, enabled with
+  `git config core.hooksPath .husky`) both call it, so a push cannot leave the
+  machine ahead of what CI will accept.
 
 ### Fixed
 
@@ -35,6 +39,25 @@ packaged `app.asar` is older than `out/`.
   `source: 'bundled'` branch was removed because `resources/bin/` is never
   shipped. yt-dlp still auto-downloads into `music/bin/`, FFmpeg is still detected
   from the configured path, `PATH`, and the usual package-manager locations.
+- Visual foundation (docs/design P2): six text roles replace 22 ad-hoc sizes,
+  four text levels replace 16 white alphas, one page gutter replaces the
+  viewport-relative padding, one blur and one focus ring replace the ad hoc
+  glows. A static census (`npm run design:check`) now guards the vocabulary.
+- Shell and panels (docs/design P3): the library is the only destination, and
+  search, details, add-game and settings open as panels over it instead of
+  swapping the whole page. The five back buttons are gone; a panel closes with
+  its ✕, Escape, or a click outside, and focus returns to whatever opened it.
+  The header hides while a panel is open. Keyboard navigation is unchanged.
+- Panels now carry their own title and one-line description, so the settings
+  page lost its duplicated header; up from its first row reaches the panel's ✕.
+- Every secondary screen (settings, add game, game details, search) is now a
+  full-window screen instead of a floating card: it covers the whole app
+  including the header, which stays mounted but hidden behind it.
+- Home (docs/design P1.2, first half): Steam, Epic and Local are now filter chips
+  inside All Games instead of three more rows, so the library is Running Now /
+  Continue / Favorites / All Games. The chip row only appears when the library
+  actually has more than one source, and a source that disappears falls back to
+  All.
 
 ## [0.1.0] - 2026-10-27
 
