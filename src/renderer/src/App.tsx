@@ -1305,7 +1305,11 @@ export default function App() {
       />
     </Panel>
   ) : settingsOpen ? (
-    <Panel title="Settings" onClose={closeSettings}>
+    <Panel
+      title="Settings"
+      description="Library, artwork, and window preferences."
+      onClose={closeSettings}
+    >
       <SettingsPage onAddGame={handleAddFromSettings} />
     </Panel>
   ) : searchOpen ? (

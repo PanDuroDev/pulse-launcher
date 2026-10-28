@@ -44,6 +44,8 @@ packaged `app.asar` is older than `out/`.
   swapping the whole page. The five back buttons are gone; a panel closes with
   its ✕, Escape, or a click outside, and focus returns to whatever opened it.
   The header hides while a panel is open. Keyboard navigation is unchanged.
+- Panels now carry their own title and one-line description, so the settings
+  page lost its duplicated header; up from its first row reaches the panel's ✕.
 
 ## [0.1.0] - 2026-10-27
 
