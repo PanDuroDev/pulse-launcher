@@ -4,18 +4,8 @@ import type { GameActionState } from '@/lib/game-actions'
 import { actionForGame, forceRemainingMs } from '@/lib/game-actions'
 import { markMoodFor } from '@/lib/mark-mood'
 import type { MarkMood } from '@/lib/mark-mood'
+import type { AddMode, LauncherRoute, LauncherStatus } from './launcher-page-types'
 
-export type LauncherStatus = 'loading' | 'ready' | 'error'
-export type AddMode = 'game' | 'path' | 'image'
-export type LauncherRoute =
-  | 'search'
-  | 'add'
-  | 'details'
-  | 'music'
-  | 'settings'
-  | 'loading'
-  | 'empty'
-  | 'library'
 
 interface PendingLaunchIdentity {
   id: string

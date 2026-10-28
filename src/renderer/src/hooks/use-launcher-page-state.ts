@@ -2,8 +2,8 @@ import { useCallback, useRef, useState } from 'react'
 import type { Dispatch, SetStateAction } from 'react'
 import type { GameSummary } from '@shared/contracts/games'
 import type { GameDetailsDraft } from '@/components/launcher/GameDetailsPage'
+import type { AddMode } from '@/lib/launcher-page-types'
 
-type AddMode = 'game' | 'path' | 'image'
 
 export interface LauncherPageState {
   settingsOpen: boolean

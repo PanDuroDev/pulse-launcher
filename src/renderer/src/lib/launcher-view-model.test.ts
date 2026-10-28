@@ -74,6 +74,39 @@ describe('deriveLauncherViewModel', () => {
       .toMatchObject({ activePage: 'settings', title: 'Settings' })
   })
 
+  it('keeps the established priority between add, details, music, settings, and loading', () => {
+    const addBeatsDetails = deriveLauncherViewModel({
+      ...defaults,
+      addOpen: true,
+      detailsGame: selectedGame,
+      musicOpen: true,
+      settingsOpen: true,
+    })
+    expect(addBeatsDetails.activePage).toBe('add')
+
+    const detailsBeatMusic = deriveLauncherViewModel({
+      ...defaults,
+      detailsGame: selectedGame,
+      musicOpen: true,
+      settingsOpen: true,
+    })
+    expect(detailsBeatMusic.activePage).toBe('details')
+
+    const musicBeatsSettings = deriveLauncherViewModel({
+      ...defaults,
+      musicOpen: true,
+      settingsOpen: true,
+    })
+    expect(musicBeatsSettings.activePage).toBe('music')
+
+    const settingsBeatsLoading = deriveLauncherViewModel({
+      ...defaults,
+      status: 'loading',
+      settingsOpen: true,
+    })
+    expect(settingsBeatsLoading.activePage).toBe('settings')
+  })
+
   it('does not hide library tools behind the power overlay, but hides the hint bar', () => {
     const view = deriveLauncherViewModel({ ...defaults, powerOpen: true })
     expect(view.activePage).toBe('empty')

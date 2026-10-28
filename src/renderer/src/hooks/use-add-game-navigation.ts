@@ -3,8 +3,7 @@ import {
   doesFocusableExist,
   setFocus,
 } from '@noriginmedia/norigin-spatial-navigation-core'
-
-type AddMode = 'game' | 'path' | 'image'
+import type { AddMode } from '@/lib/launcher-page-types'
 
 interface UseAddGameNavigationOptions {
   addMode: AddMode

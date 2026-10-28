@@ -2,6 +2,7 @@ import { useCallback } from 'react'
 import type { GameSummary } from '@shared/contracts/games'
 import type { LibrarySort } from '@shared/contracts/settings'
 import type { LauncherPageState } from '@/hooks/use-launcher-page-state'
+import type { LauncherStatus } from '@/lib/launcher-page-types'
 import { useLibraryView } from '@/hooks/use-library-view'
 import { useAddGameNavigation } from '@/hooks/use-add-game-navigation'
 import { useLauncherViewTransition } from '@/hooks/use-launcher-view-transition'
@@ -11,8 +12,6 @@ import { useSecondaryPageNavigation } from '@/hooks/use-secondary-page-navigatio
 import { useGameAddedFocus } from '@/hooks/use-game-added-focus'
 import { useGameDetailsNavigation } from '@/hooks/use-game-details-navigation'
 import { useGameDetailsActions } from '@/hooks/use-game-details-actions'
-
-type LauncherStatus = 'loading' | 'ready' | 'error'
 
 interface UseLauncherNavigationControllerOptions {
   games: GameSummary[]

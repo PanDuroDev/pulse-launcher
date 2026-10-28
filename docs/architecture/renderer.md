@@ -35,7 +35,7 @@ Zustand stores + preload API (window.launcher)
 | Navigation | `hooks/use-launcher-navigation-controller.ts` and the focused navigation hooks | Coordinates page transitions and focus restoration. The smaller hooks own the behavior for Search, Add Game, Details, Settings, Music, newly-added games, and focus recovery. |
 | Runtime | `hooks/use-launcher-game-runtime.ts`, `hooks/use-launcher-runtime-services.ts` | Composes game launch/running-game actions and app-wide services such as initialization, music playback, cursor behavior, UI sounds, and boot-time spatial-navigation pause/resume. |
 | Input | `hooks/use-launcher-input-handlers.ts`, `hooks/use-launcher-keyboard-shortcuts.ts`, `hooks/use-launcher-gamepad.ts` | Binds keyboard shortcuts, Tab traversal, and gamepad actions to the same page actions. |
-| Presentation model | `lib/launcher-view-model.ts`, `hooks/use-launcher-view-model.ts` | Purely derives page title, visibility flags, selected-game action state, force-quit countdown, and the header mark mood. The pure function is tested without rendering React. |
+| Presentation model | `lib/launcher-view-model.ts`, `hooks/use-launcher-view-model.ts`, `lib/launcher-page-types.ts` | Purely derives the active route, page title, visibility flags, selected-game action state, force-quit countdown, and the header mark mood. The pure function is tested without rendering React. |
 | Frame and page views | `components/launcher/LauncherFrame.tsx`, `LauncherPageContent.tsx`, `LibraryHome.tsx` | Render the top-level frame, active-page route, and populated library hero/rows. Page-specific components remain responsible for their own presentation and focus targets. |
 | Shared contracts | `src/shared/contracts/` | Contains data-only types shared across main, preload, and renderer. `src/shared/types.ts` remains a compatibility barrel for older imports. |
 
@@ -43,7 +43,7 @@ Zustand stores + preload API (window.launcher)
 
 - Keep IPC channel names and preload exposure changes separate from renderer-only refactors. Renderer features call the typed `window.launcher` API rather than reaching into main-process modules.
 - Keep values crossing IPC serializable and free of process-local objects or DOM references.
-- Keep page precedence in `deriveLauncherViewModel` aligned with the conditional route order in `LauncherPageContent`. The order is intentional when more than one page flag is true.
+- `deriveLauncherViewModel` is the single source for `activePage`; `LauncherPageContent` renders that route rather than recalculating precedence. The priority is intentional when multiple page flags are true and is covered by pure tests.
 - Focus restoration should occur only when the destination focus key exists. Preserve the current delayed hand-offs where the destination mounts after a page-state update.
 - New behavior should be added at the narrowest existing boundary: state in the page-state hook, navigation in a page navigation hook, runtime work in a runtime hook, pure decisions in `lib`, and visuals in components.
 - Prefer pure helpers for branching/countdown/precedence rules so they can be tested without mounting Electron or the renderer DOM.

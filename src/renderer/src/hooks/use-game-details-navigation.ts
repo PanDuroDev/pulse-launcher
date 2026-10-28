@@ -7,8 +7,7 @@ import {
   setFocus,
 } from '@noriginmedia/norigin-spatial-navigation-core'
 import type { GameDetailsDraft } from '@/components/launcher/GameDetailsPage'
-
-type AddMode = 'game' | 'path' | 'image'
+import type { AddMode } from '@/lib/launcher-page-types'
 
 interface UseGameDetailsNavigationOptions {
   initialFocusKey: string | null

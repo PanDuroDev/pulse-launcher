@@ -12,10 +12,8 @@ import { LibraryLoading } from '@/components/launcher/LibraryLoading'
 import { EmptyLibrary } from '@/components/launcher/EmptyLibrary'
 import { LibraryHome } from '@/components/launcher/LibraryHome'
 import type { GameActionState } from '@/lib/game-actions'
-import type { LauncherRoute } from '@/lib/launcher-view-model'
+import type { AddMode, LauncherRoute, LauncherStatus } from '@/lib/launcher-page-types'
 
-type AddMode = 'game' | 'path' | 'image'
-type LauncherStatus = 'loading' | 'ready' | 'error'
 
 interface LibraryRow {
   id: string
