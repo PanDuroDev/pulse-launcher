@@ -20,6 +20,10 @@ packaged `app.asar` is older than `out/`.
   NSIS installer with its `.blockmap` and `latest.yml`.
 - `docs/audit/PHASES.md` Phase 8 «الإصدار نفسه» so publishing has its own tracked
   work instead of living in Phase 0.
+- `npm run check` runs every gate in one go (typecheck, lint, design census,
+  tests); CI and the pre-push hook (`.husky/pre-push`, enabled with
+  `git config core.hooksPath .husky`) both call it, so a push cannot leave the
+  machine ahead of what CI will accept.
 
 ### Fixed
 
@@ -46,6 +50,11 @@ packaged `app.asar` is older than `out/`.
   The header hides while a panel is open. Keyboard navigation is unchanged.
 - Panels now carry their own title and one-line description, so the settings
   page lost its duplicated header; up from its first row reaches the panel's ✕.
+- Home (docs/design P1.2, first half): Steam, Epic and Local are now filter chips
+  inside All Games instead of three more rows, so the library is Running Now /
+  Continue / Favorites / All Games. The chip row only appears when the library
+  actually has more than one source, and a source that disappears falls back to
+  All.
 
 ## [0.1.0] - 2026-10-27
 

@@ -42,7 +42,7 @@ import { AppShell } from '@/components/launcher/AppShell'
 import { Panel } from '@/components/launcher/Panel'
 import { TopBar } from '@/components/launcher/TopBar'
 import { Hero } from '@/components/launcher/Hero'
-import { GameRow, SortControl } from '@/components/launcher/GameRow'
+import { GameRow, SortControl, SourceChip } from '@/components/launcher/GameRow'
 import { SearchPage } from '@/components/launcher/SearchPage'
 import { MusicPage } from '@/components/launcher/MusicPage'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
@@ -65,6 +65,18 @@ interface Row {
   id: string
   title: string
   games: GameSummary[]
+}
+
+/** Source groups the All Games toolbar can filter on; `all` is "no filter". */
+const SOURCE_FILTERS: Array<{ id: string; label: string }> = [
+  { id: 'all', label: 'All' },
+  { id: 'steam', label: 'Steam' },
+  { id: 'epic', label: 'Epic' },
+  { id: 'local', label: 'Local' },
+]
+
+function sourceGroup(source: GameSummary['source']): string {
+  return source === 'manual' || source === 'start-menu' ? 'local' : source
 }
 
 const LAUNCH_DETECT_TIMEOUT_MS = 60_000
@@ -103,6 +115,7 @@ export default function App() {
   const [detailsRemoving, setDetailsRemoving] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [sourceFilter, setSourceFilter] = useState('all')
   const [powerOpen, setPowerOpen] = useState(false)
   const [musicOpen, setMusicOpen] = useState(false)
   const [pendingLaunch, setPendingLaunch] = useState<PendingLaunch | null>(null)
@@ -136,8 +149,22 @@ export default function App() {
     [games, settings.librarySort],
   )
 
+  // Only offer a source the library actually has; `all` is always there.
+  const sources = useMemo(() => {
+    const present = new Set(games.map((game) => sourceGroup(game.source)))
+    return SOURCE_FILTERS.filter((filter) => filter.id === 'all' || present.has(filter.id))
+  }, [games])
+
+  // A rescan can remove the last game of the chosen source; fall back to All so
+  // the row never renders empty under a chip that still looks selected.
+  const activeFilter = sources.some((filter) => filter.id === sourceFilter)
+    ? sourceFilter
+    : 'all'
+
   const rows = useMemo<Row[]>(() => {
     const next: Row[] = []
+    const bySource = (id: string): GameSummary[] =>
+      id === 'all' ? sortedGames : sortedGames.filter((game) => sourceGroup(game.source) === id)
     // Live games come first: Up from Running Now reaches the hero, not another
     // game's card, and a running session is the most immediate thing to act on.
     if (runningGames.length > 0) {
@@ -149,23 +176,10 @@ export default function App() {
     if (favoriteList.length > 0) {
       next.push({ id: 'favorites', title: 'Favorites', games: favoriteList })
     }
-    next.push({ id: 'all', title: 'All Games', games: sortedGames })
+    next.push({ id: 'all', title: 'All Games', games: bySource(activeFilter) })
 
-    const sources = new Set(games.map((game) => game.source))
-    if (sources.size > 1) {
-      const steam = sortedGames.filter((game) => game.source === 'steam')
-      const epic = sortedGames.filter((game) => game.source === 'epic')
-      const local = sortedGames.filter(
-        (game) => game.source === 'manual' || game.source === 'start-menu',
-      )
-      if (steam.length > 0) next.push({ id: 'steam', title: 'Steam', games: steam })
-      if (epic.length > 0) next.push({ id: 'epic', title: 'Epic Games', games: epic })
-      if (local.length > 0) {
-        next.push({ id: 'local', title: 'Local & Desktop', games: local })
-      }
-    }
     return next
-  }, [continueGames, favoriteList, games, runningGames, sortedGames])
+  }, [continueGames, favoriteList, runningGames, sortedGames, activeFilter])
 
   const selected = useMemo(
     () => games.find((game) => game.id === selectedId) ?? games[0],
@@ -1426,6 +1440,21 @@ export default function App() {
                             sort={settings.librarySort}
                             onPress={handleCycleSort}
                           />
+                        ) : undefined
+                      }
+                      toolbar={
+                        row.id === 'all' && sources.length > 1 ? (
+                          <>
+                            {sources.map((filter) => (
+                              <SourceChip
+                                key={filter.id}
+                                id={filter.id}
+                                label={filter.label}
+                                selected={activeFilter === filter.id}
+                                onPress={() => setSourceFilter(filter.id)}
+                              />
+                            ))}
+                          </>
                         ) : undefined
                       }
                     />
