@@ -30,8 +30,6 @@ export function GameCard({
   onActivate,
   onArrowPress,
 }: GameCardProps) {
-  const [observerRef, visible] = useInView<HTMLButtonElement>()
-  const cover = useArtwork(game.id, 'cover', visible)
   const { ref, focused, focusSelf } = useFocusable<Record<string, never>, HTMLButtonElement>({
     focusKey,
     accessibilityLabel: `${game.name}, ${sourceLabel(game.source)}`,
@@ -50,14 +48,12 @@ export function GameCard({
     },
     onArrowPress,
   })
+  const [, visible] = useInView<HTMLButtonElement>('500px', ref)
+  const cover = useArtwork(game.id, 'cover', visible)
 
-  const setRef = (node: HTMLButtonElement | null): void => {
-    ;(ref as { current: HTMLButtonElement | null }).current = node
-    observerRef.current = node
-  }
   return (
     <button
-      ref={setRef}
+      ref={ref}
       type="button"
       onPointerEnter={(event) => {
         if (event.pointerType === 'touch') return

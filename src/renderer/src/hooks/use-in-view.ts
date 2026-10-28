@@ -3,8 +3,10 @@ import type { RefObject } from 'react'
 
 export function useInView<T extends Element>(
   rootMargin = '500px',
+  targetRef?: RefObject<T | null>,
 ): [RefObject<T | null>, boolean] {
-  const ref = useRef<T | null>(null)
+  const localRef = useRef<T | null>(null)
+  const ref = targetRef ?? localRef
   const [visible, setVisible] = useState(() => typeof IntersectionObserver === 'undefined')
 
   useEffect(() => {
